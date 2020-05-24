@@ -1,26 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'catalog.dart';
+import 'item_tile.dart';
 
 void main() => runApp(MyApp());
 
+//class MyApp extends StatelessWidget {
+//  // This widget is the root of your application.
+//  @override
+//  Widget build(BuildContext context) {
+//    return MaterialApp(
+//      title: 'Flutter Demo',
+//      theme: ThemeData(
+//        // This is the theme of your application.
+//        //
+//        // Try running your application with "flutter run". You'll see the
+//        // application has a blue toolbar. Then, without quitting the app, try
+//        // changing the primarySwatch below to Colors.green and then invoke
+//        // "hot reload" (press "r" in the console where you ran "flutter run",
+//        // or simply save your changes to "hot reload" in a Flutter IDE).
+//        // Notice that the counter didn't reset back to zero; the application
+//        // is not restarted.
+//        primarySwatch: Colors.blue,
+//      ),
+//      home: MyHomePage(title: 'Flutter Demo Home Page'),
+//    );
+//  }
+//}
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
+    return ChangeNotifierProvider<Catalog>(
+      create: (context) => Catalog(),
+      child: MaterialApp(
+        title: 'Infinite List Sample',
+        home: InfList(),
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
@@ -106,6 +121,46 @@ class _MyHomePageState extends State<MyHomePage> {
         tooltip: 'Increment',
         child: Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+
+class InfList extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Infinite List Sample'),
+      ),
+      body: Selector<Catalog, int>(
+        // Selector is a widget from package:provider. It allows us to listen
+        // to only one aspect of a provided value. In this case, we are only
+        // listening to the catalog's `itemCount`, because that's all we need
+        // at this level.
+        selector: (context, catalog) => catalog.itemCount,
+        builder: (context, itemCount, child) => ListView.builder(
+          // When `itemCount` is null, `ListView` assumes an infinite list.
+          // Once we provide a value, it will stop the scrolling beyond
+          // the last element.
+          itemCount: itemCount,
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          itemBuilder: (context, index) {
+            // Every item of the `ListView` is individually listening
+            // to the catalog.
+            var catalog = Provider.of<Catalog>(context);
+
+            // Catalog provides a single synchronous method for getting
+            // the current data.
+            var item = catalog.getByIndex(index);
+
+            if (item.isLoading) {
+              return LoadingItemTile();
+            }
+
+            return ItemTile(item: item);
+          },
+        ),
+      ),
     );
   }
 }
