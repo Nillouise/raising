@@ -3,6 +3,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:logger/logger.dart';
+
+var logger = Logger();
 
 class Smb {
   static const MethodChannel methodChannel = MethodChannel('nil/channel');
@@ -60,8 +63,10 @@ class Smb {
         "searchPattern": searchPattern
       });
       return result;
-    } on PlatformException {
-      return null;
+    } on PlatformException catch (e) {
+      logger.e("PlatformException {}", e);
+    } catch (e) {
+      logger.e(e);
     }
   }
 
@@ -77,8 +82,10 @@ class Smb {
         "searchPattern": searchPattern
       });
       return result;
-    } on PlatformException {
-      return null;
+    } on PlatformException catch (e) {
+      logger.e("PlatformException {}", e);
+    } catch (e) {
+      logger.e(e);
     }
   }
 }

@@ -7,20 +7,22 @@ import 'dart:io';
 import 'package:archive/archive.dart';
 import 'package:archive/archive_io.dart';
 
-Future<Uint8List> getImage(String filename) async {
-  Uint8List bytes = await Smb.getConfig("[C]").getFile(filename);
-  // Decode the Zip file
-  final archive = ZipDecoder().decodeBytes(bytes);
+Future<Uint8List> getImage(String filename) {
+//  return Future.delayed(Duration(seconds: 1));
+  return Smb.getConfig("[C]").getFile(filename).then((bytes) {
+    // Decode the Zip file
+    final archive = ZipDecoder().decodeBytes(bytes);
 
-  // Extract the contents of the Zip archive to disk.
-  for (final file in archive) {
-    final filename = file.name;
-    if (file.isFile) {
-      final data = file.content as Uint8List;
-      return data;
+    // Extract the contents of the Zip archive to disk.
+    for (final file in archive) {
+      final filename = file.name;
+      if (file.isFile) {
+        final data = file.content as Uint8List;
+        return data;
+      }
     }
-  }
-  return null;
+    return null;
+  });
 }
 
 class ReaderScreen extends StatefulWidget {
