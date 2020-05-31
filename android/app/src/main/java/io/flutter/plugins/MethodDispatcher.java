@@ -12,6 +12,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
@@ -76,6 +77,15 @@ public class MethodDispatcher implements MethodCallHandler {
 
         Result result = new MethodResultWrapper(rawResult);
         Log.i("onMethodCall", call.method.toString() + call.arguments);
+        Smb smb = new Smb(
+                call.argument("hostname"),
+                call.argument("shareName"),
+                call.argument("domain"),
+                call.argument("username"),
+                call.argument("password"),
+                call.argument("path"),
+                call.argument("searchPattern")
+        );
         if (call.method.equals("smbList")) {
             new Thread(
                     () -> {
@@ -130,13 +140,34 @@ public class MethodDispatcher implements MethodCallHandler {
                                         try {
                                             Smb.listZip(call.argument("path"), share);
                                         } catch (SmbException e) {
-                                            Logger.e("{}",ExceptionUtils.getStackTrace(e));
+                                            Logger.e("{}", ExceptionUtils.getStackTrace(e));
                                             throw new RuntimeException(e);
                                         }
                                         return null;
                                     }
                             );
                             result.success(null);
+                        } catch (Exception e) {
+                            Logger.i("SMB", ExceptionUtils.getStackTrace(e));
+                            result.error("getFile", e.toString(), ExceptionUtils.getStackTrace(e));
+                        }
+                    }
+            ).start();
+        } else if (call.method.equals("previewFiles")) {
+            new Thread(
+                    () -> {
+                        try {
+                            HashMap<String, byte[]> res = smb.processShare(share -> {
+                                        try {
+                                            return smb.previewFile(call.argument("filenames"), share);
+                                        } catch (SmbException e) {
+                                            Logger.e("{}", ExceptionUtils.getStackTrace(e));
+                                            throw new RuntimeException(e);
+                                        }
+                                    }
+                            );
+                            Logger.i("previewFiles res {}",res);
+                            result.success(res);
                         } catch (Exception e) {
                             Logger.i("SMB", ExceptionUtils.getStackTrace(e));
                             result.error("getFile", e.toString(), ExceptionUtils.getStackTrace(e));

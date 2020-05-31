@@ -8,23 +8,28 @@ import 'package:archive/archive.dart';
 import 'package:archive/archive_io.dart';
 
 Future<Uint8List> getImage(String filename) {
-  Smb.getConfig("[C]").listZip(filename);
-  return null;
-//  return Future.delayed(Duration(seconds: 1));
-  return Smb.getConfig("[C]").getFile(filename).then((bytes) {
-    // Decode the Zip file
-    final archive = ZipDecoder().decodeBytes(bytes);
-
-    // Extract the contents of the Zip archive to disk.
-    for (final file in archive) {
-      final filename = file.name;
-      if (file.isFile) {
-        final data = file.content as Uint8List;
-        return data;
-      }
-    }
-    return null;
+  List<String> lst = List<String>();
+  lst.add(filename);
+  return Smb.getConfig("[C]").previewFiles(lst).then((res) {
+    Uint8List re = res[filename];
+    return re;
   });
+//  Smb.getConfig("[C]").listZip(filename);
+//  return Future.delayed(Duration(seconds: 1));
+//  return Smb.getConfig("[C]").getFile(filename).then((bytes) {
+//    // Decode the Zip file
+//    final archive = ZipDecoder().decodeBytes(bytes);
+//
+//    // Extract the contents of the Zip archive to disk.
+//    for (final file in archive) {
+//      final filename = file.name;
+//      if (file.isFile) {
+//        final data = file.content as Uint8List;
+//        return data;
+//      }
+//    }
+//    return null;
+//  });
 }
 
 class ReaderScreen extends StatefulWidget {

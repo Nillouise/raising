@@ -18,15 +18,25 @@ import com.hierynomus.smbj.share.File;
 import com.hierynomus.smbj.share.Share;
 import com.orhanobut.logger.Logger;
 
+import net.sf.sevenzipjbinding.ExtractOperationResult;
 import net.sf.sevenzipjbinding.IInArchive;
+import net.sf.sevenzipjbinding.ISequentialOutStream;
 import net.sf.sevenzipjbinding.PropID;
 import net.sf.sevenzipjbinding.SevenZip;
+import net.sf.sevenzipjbinding.SevenZipException;
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
+import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
+import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import io.flutter.plugins.exception.SmbException;
@@ -36,6 +46,27 @@ interface ProcessShare<T> {
 }
 
 public class Smb {
+    String hostname;
+    String shareName;
+    String domain;
+    String username;
+    String passwrod;
+    String path;
+    String searchPattern;
+
+    public Smb(String hostname, String shareName, String domain, String username, String passwrod, String path, String searchPattern) {
+        this.hostname = hostname;
+        this.shareName = shareName;
+        this.domain = domain;
+        this.username = username;
+        this.passwrod = passwrod;
+        this.path = path;
+        this.searchPattern = searchPattern;
+    }
+
+    public Smb() {
+
+    }
 
     private SMBClient getClient() {
         SmbConfig config = SmbConfig.builder()
@@ -77,6 +108,30 @@ public class Smb {
     }
 
     public <T> T processShare(String hostname, String shareName, String domain, String username, String passwrod, String path, String searchPattern, ProcessShare<T> process) {
+        SMBClient client = getClient();
+
+        try (Connection connection = client.connect(hostname)) {
+            AuthenticationContext ac;
+            if (passwrod != null) {
+                ac = new AuthenticationContext(username, passwrod.toCharArray(), domain);
+            } else {
+                ac = AuthenticationContext.guest();
+            }
+            Session session = connection.authenticate(ac);
+
+            // Connect to Share
+            try (DiskShare share = (DiskShare) session.connectShare(shareName)) {
+                return process.process(share);
+            } catch (Exception e) {
+                Logger.e(ExceptionUtils.getStackTrace(e));
+            }
+        } catch (Exception e) {
+            Logger.e(ExceptionUtils.getStackTrace(e));
+        }
+        return null;
+    }
+
+    public <T> T processShare(ProcessShare<T> process) {
         SMBClient client = getClient();
 
         try (Connection connection = client.connect(hostname)) {
@@ -197,7 +252,7 @@ public class Smb {
 
     public static void listZip(final String filename, DiskShare share) throws SmbException {
         Logger.i("begin to list Zip 2");
-        Logger.i("filename is"+filename);
+        Logger.i("filename is" + filename);
         Logger.i("logger file name");
         // this is com.hierynomus.smbj.share.File !
         File f = null;
@@ -230,4 +285,122 @@ public class Smb {
             Logger.e(ExceptionUtils.getStackTrace(e));
         }
     }
+
+
+    private ConcurrentLinkedQueue<String> previewFileQueue = new ConcurrentLinkedQueue<>();
+
+
+    private HashMap<String, byte[]> getPreview(DiskShare share) throws SmbException {
+        HashMap<String, byte[]> res = new HashMap<String, byte[]>();
+        while (true) {
+            String filename = previewFileQueue.poll();
+            if (filename == null) {
+                return res;
+            }
+            Logger.i("previewFileQueue file name %s",filename);
+            File f = null;
+            boolean fileExists = share.fileExists(filename);
+            if (!fileExists) {
+                Logger.w("File {} not exist.", filename);
+                throw new SmbException("File " + filename + "not exist");
+            }
+            File smbFileRead = share.openFile(filename, EnumSet.of(AccessMask.GENERIC_READ), null, SMB2ShareAccess.ALL, SMB2CreateDisposition.FILE_OPEN, null);
+            FileStandardInformation info = smbFileRead.getFileInformation(FileStandardInformation.class);
+
+            InputStream in = smbFileRead.getInputStream();
+
+            RandomAccessFile randomAccessFile = null;
+            IInArchive inArchive = null;
+            try {
+                inArchive = SevenZip.openInArchive(null, // autodetect archive type
+                        new SmbRandomFile(smbFileRead));
+                try {
+                    // Getting simple interface of the archive inArchive
+                    ISimpleInArchive simpleInArchive = inArchive.getSimpleInterface();
+
+                    System.out.println("   Hash   |    Size    | Filename");
+                    System.out.println("----------+------------+---------");
+
+                    for (ISimpleInArchiveItem item : simpleInArchive.getArchiveItems()) {
+                        final int[] hash = new int[]{0};
+                        if (!item.isFolder()) {
+                            ExtractOperationResult result;
+
+                            final long[] sizeArray = new long[1];
+
+                            ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+                            result = item.extractSlow(new ISequentialOutStream() {
+                                public int write(byte[] data) throws SevenZipException {
+                                    hash[0] ^= Arrays.hashCode(data); // Consume data
+                                    sizeArray[0] += data.length;
+//                                    res.put(filename, data);
+                                    try {
+                                        outputStream.write(data);
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                    return data.length; // Return amount of consumed data
+                                }
+                            });
+                            res.put(filename,outputStream.toByteArray());
+                            if (result == ExtractOperationResult.OK) {
+                                System.out.println(String.format("%9X | %10s | %s",
+                                        hash[0], sizeArray[0], item.getPath()));
+                            } else {
+                                System.err.println("Error extracting item: " + result);
+                            }
+                            break;
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error occurs: " + e);
+                } finally {
+                    if (inArchive != null) {
+                        try {
+                            inArchive.close();
+                        } catch (SevenZipException e) {
+                            System.err.println("Error closing archive: " + e);
+                        }
+                    }
+                    if (randomAccessFile != null) {
+                        try {
+                            randomAccessFile.close();
+                        } catch (IOException e) {
+                            System.err.println("Error closing file: " + e);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Logger.e(ExceptionUtils.getStackTrace(e));
+            }
+        }
+    }
+
+    public HashMap<String, byte[]> previewFile(final List<String> filename, DiskShare share) throws SmbException {
+        Logger.i("finenames {}",filename);
+        previewFileQueue.addAll(filename);
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+        List<Future<HashMap<String, byte[]>>> futures = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            futures.add(executorService.submit(new Callable<HashMap<String, byte[]>>() {
+                @Override
+                public HashMap<String, byte[]> call() throws Exception {
+                    return getPreview(share);
+                }
+            }));
+        }
+        HashMap<String, byte[]> res = new HashMap<>();
+        for (Future<HashMap<String, byte[]>> future : futures) {
+            try {
+                HashMap<String, byte[]> m = future.get();
+                if (m != null) {
+                    res.putAll(m);
+                }
+            } catch (Exception e) {
+                Logger.e(ExceptionUtils.getStackTrace(e));
+            }
+        }
+        return res;
+    }
+
 }

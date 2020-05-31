@@ -89,9 +89,9 @@ class Smb {
     }
   }
 
-  void listZip(String filename) async {
+  Future<List<String>> listZip(String filename) async {
     try {
-      final Uint8List result = await methodChannel.invokeMethod('listZip', {
+      final List<String> res = await methodChannel.invokeMethod('listZip', {
         "hostname": hostname,
         "shareName": shareName,
         "domain": domain,
@@ -100,10 +100,32 @@ class Smb {
         "path":  filename,
         "searchPattern": searchPattern
       });
+      return res;
     } on PlatformException catch (e) {
       logger.e("PlatformException {}", e);
     } catch (e) {
       logger.e(e);
     }
   }
+
+  Future<Map<dynamic,dynamic>> previewFiles(List<String> finenames) async{
+    try {
+      final Map res = await methodChannel.invokeMethod('previewFiles', {
+        "hostname": hostname,
+        "shareName": shareName,
+        "domain": domain,
+        "username": username,
+        "password": password,
+        "path":  path,
+        "searchPattern": searchPattern,
+        "filenames":finenames
+      });
+      return res;
+    } on PlatformException catch (e) {
+      logger.e("PlatformException {}", e);
+    } catch (e) {
+      logger.e(e);
+    }
+  }
+
 }
