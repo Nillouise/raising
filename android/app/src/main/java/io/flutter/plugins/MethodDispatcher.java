@@ -4,6 +4,9 @@ package io.flutter.plugins;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.AsyncTask;
+import android.util.Log;
+
+import com.orhanobut.logger.Logger;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
@@ -16,9 +19,7 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
 import io.flutter.plugins.exception.SmbException;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class MethodDispatcher implements MethodCallHandler {
 
     /**
@@ -74,12 +75,10 @@ public class MethodDispatcher implements MethodCallHandler {
     public void onMethodCall(MethodCall call, @NotNull Result rawResult) {
 
         Result result = new MethodResultWrapper(rawResult);
-        System.out.println("cur method" + call.method);
-        log.info("method {} args {}", call.method, call.arguments);
+        Log.i("onMethodCall", call.method.toString() + call.arguments);
         if (call.method.equals("smbList")) {
             new Thread(
                     () -> {
-                        System.out.println("begin smbList");
                         try {
                             ArrayList<String> res = new Smb().listFile(call.argument("hostname"),
                                     call.argument("shareName"),
@@ -88,10 +87,9 @@ public class MethodDispatcher implements MethodCallHandler {
                                     call.argument("password"),
                                     call.argument("path"),
                                     call.argument("searchPattern"));
-//                            System.out.println(res);
                             result.success(res);
                         } catch (Exception e) {
-                            System.out.println(ExceptionUtils.getStackTrace(e));
+                            Log.i("SMB", ExceptionUtils.getStackTrace(e));
                             result.error("smbList", e.toString(), ExceptionUtils.getStackTrace(e));
                         }
                     }
@@ -110,7 +108,37 @@ public class MethodDispatcher implements MethodCallHandler {
                                     call.argument("searchPattern"));
                             result.success(res);
                         } catch (Exception e) {
-                            System.out.println(ExceptionUtils.getStackTrace(e));
+                            Log.i("SMB", ExceptionUtils.getStackTrace(e));
+                            result.error("getFile", e.toString(), ExceptionUtils.getStackTrace(e));
+                        }
+                    }
+            ).start();
+        } else if (call.method.equals("listZip")) {
+            new Thread(
+                    () -> {
+                        try {
+                            byte[] res = null;
+                            res = new Smb().processShare(
+                                    call.argument("hostname"),
+                                    call.argument("shareName"),
+                                    call.argument("domain"),
+                                    call.argument("username"),
+                                    call.argument("password"),
+                                    call.argument("path"),
+                                    call.argument("searchPattern")
+                                    , share -> {
+                                        try {
+                                            Smb.listZip(call.argument("path"), share);
+                                        } catch (SmbException e) {
+                                            Logger.e("{}",ExceptionUtils.getStackTrace(e));
+                                            throw new RuntimeException(e);
+                                        }
+                                        return null;
+                                    }
+                            );
+                            result.success(null);
+                        } catch (Exception e) {
+                            Logger.i("SMB", ExceptionUtils.getStackTrace(e));
                             result.error("getFile", e.toString(), ExceptionUtils.getStackTrace(e));
                         }
                     }

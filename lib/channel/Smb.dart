@@ -78,10 +78,28 @@ class Smb {
         "domain": domain,
         "username": username,
         "password": password,
-        "path": path + "/" + filename,
+        "path":  filename,
         "searchPattern": searchPattern
       });
       return result;
+    } on PlatformException catch (e) {
+      logger.e("PlatformException {}", e);
+    } catch (e) {
+      logger.e(e);
+    }
+  }
+
+  void listZip(String filename) async {
+    try {
+      final Uint8List result = await methodChannel.invokeMethod('listZip', {
+        "hostname": hostname,
+        "shareName": shareName,
+        "domain": domain,
+        "username": username,
+        "password": password,
+        "path":  filename,
+        "searchPattern": searchPattern
+      });
     } on PlatformException catch (e) {
       logger.e("PlatformException {}", e);
     } catch (e) {

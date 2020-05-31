@@ -16,6 +16,12 @@ import com.hierynomus.smbj.session.Session;
 import com.hierynomus.smbj.share.DiskShare;
 import com.hierynomus.smbj.share.File;
 import com.hierynomus.smbj.share.Share;
+import com.orhanobut.logger.Logger;
+
+import net.sf.sevenzipjbinding.IInArchive;
+import net.sf.sevenzipjbinding.PropID;
+import net.sf.sevenzipjbinding.SevenZip;
+import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -24,13 +30,11 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import io.flutter.plugins.exception.SmbException;
-import lombok.extern.slf4j.Slf4j;
 
 interface ProcessShare<T> {
     T process(DiskShare share);
 }
 
-@Slf4j
 public class Smb {
 
     private SMBClient getClient() {
@@ -44,7 +48,6 @@ public class Smb {
 
 
     public ArrayList<String> listFile(String hostname, String shareName, String domain, String username, String passwrod, String path, String searchPattern) {
-        System.out.println(hostname + shareName + domain + username + passwrod + path + searchPattern);
         ArrayList<String> res = new ArrayList<String>();
         SMBClient client = getClient();
 
@@ -64,11 +67,11 @@ public class Smb {
                 }
             } catch (Exception e) {
                 res.add("ErrorMessage: " + e.toString());
-                log.error(ExceptionUtils.getStackTrace(e));
+                Logger.e(ExceptionUtils.getStackTrace(e));
             }
         } catch (Exception e) {
             res.add("ErrorMessage: " + e.toString());
-            log.error(ExceptionUtils.getStackTrace(e));
+            Logger.e(ExceptionUtils.getStackTrace(e));
         }
         return res;
     }
@@ -89,10 +92,10 @@ public class Smb {
             try (DiskShare share = (DiskShare) session.connectShare(shareName)) {
                 return process.process(share);
             } catch (Exception e) {
-                log.error(ExceptionUtils.getStackTrace(e));
+                Logger.e(ExceptionUtils.getStackTrace(e));
             }
         } catch (Exception e) {
-            log.error(ExceptionUtils.getStackTrace(e));
+            Logger.e(ExceptionUtils.getStackTrace(e));
         }
         return null;
     }
@@ -119,7 +122,7 @@ public class Smb {
 
                 // I am creating file with flag FILE_CREATE, which will throw if file exists already
                 boolean b = share.fileExists(filename);
-                log.info("file statue {}", b);
+                Logger.i("file statue {}", b);
 //                if (!b) {
                 f = share.openFile(filename,
                         new HashSet<>(Arrays.asList(AccessMask.GENERIC_ALL)),
@@ -135,12 +138,13 @@ public class Smb {
                     os.write(bytes);
                     os.flush();
                 } catch (Exception e) {
-                    log.error(ExceptionUtils.getStackTrace(e));
+                    Logger.e(ExceptionUtils.getStackTrace(e));
                 }
                 return "ok";
             }
         };
     }
+
 
     public byte[] getFile(final String filename, DiskShare share) throws SmbException {
 
@@ -148,7 +152,7 @@ public class Smb {
         File f = null;
         boolean fileExists = share.fileExists(filename);
         if (!fileExists) {
-            log.warn("File {} not exist.", filename);
+            Logger.w("File {} not exist.", filename);
             throw new SmbException("File not exist");
         }
         File smbFileRead = share.openFile(filename, EnumSet.of(AccessMask.GENERIC_READ), null, SMB2ShareAccess.ALL, SMB2CreateDisposition.FILE_OPEN, null);
@@ -164,14 +168,14 @@ public class Smb {
             while ((len = in.read(res, total, 4096)) != -1) {
                 total += len;
                 if (System.currentTimeMillis() > logCtroller + 5000) {
-                    log.info("total {} m", total / 1024 / 1024);
+                    Logger.i("total {} m", total / 1024 / 1024);
                     logCtroller = System.currentTimeMillis();
                 }
             }
-            log.info("transferr {}m file cost {} ms", total / 1024 / 1024, System.currentTimeMillis() - begin);
+            Logger.i("transferr {}m file cost {} ms", total / 1024 / 1024, System.currentTimeMillis() - begin);
             return res;
         } catch (Exception e) {
-            log.error("{}", ExceptionUtils.getStackTrace(e));
+            Logger.e("{}", ExceptionUtils.getStackTrace(e));
             throw new SmbException("error when reading file");
         }
     }
@@ -183,7 +187,7 @@ public class Smb {
                     try {
                         return smb.getFile(path, share);
                     } catch (Exception e) {
-                        log.info(ExceptionUtils.getStackTrace(e));
+                        Logger.i(ExceptionUtils.getStackTrace(e));
                     }
                     return null;
                 }
@@ -191,5 +195,39 @@ public class Smb {
         );
     }
 
+    public static void listZip(final String filename, DiskShare share) throws SmbException {
+        Logger.i("begin to list Zip 2");
+        Logger.i("filename is"+filename);
+        Logger.i("logger file name");
+        // this is com.hierynomus.smbj.share.File !
+        File f = null;
+        boolean fileExists = share.fileExists(filename);
+        if (!fileExists) {
+            Logger.w("File {} not exist.", filename);
+            throw new SmbException("File not exist");
+        }
+        File smbFileRead = share.openFile(filename, EnumSet.of(AccessMask.GENERIC_READ), null, SMB2ShareAccess.ALL, SMB2CreateDisposition.FILE_OPEN, null);
+        FileStandardInformation info = smbFileRead.getFileInformation(FileStandardInformation.class);
+        long endOfFile = info.getEndOfFile();
+        InputStream in = smbFileRead.getInputStream();
 
+        RandomAccessFile randomAccessFile = null;
+        IInArchive inArchive = null;
+        try {
+            inArchive = SevenZip.openInArchive(null, // autodetect archive type
+                    new SmbRandomFile(smbFileRead));
+
+            System.out.println("   Size   | Compr.Sz. | Filename");
+            System.out.println("----------+-----------+---------");
+            int itemCount = inArchive.getNumberOfItems();
+            for (int i = 0; i < itemCount; i++) {
+                System.out.println(String.format("%9s | %9s | %s", //
+                        inArchive.getProperty(i, PropID.SIZE),
+                        inArchive.getProperty(i, PropID.PACKED_SIZE),
+                        inArchive.getProperty(i, PropID.PATH)));
+            }
+        } catch (Exception e) {
+            Logger.e(ExceptionUtils.getStackTrace(e));
+        }
+    }
 }

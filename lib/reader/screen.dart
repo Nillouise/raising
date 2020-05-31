@@ -8,6 +8,8 @@ import 'package:archive/archive.dart';
 import 'package:archive/archive_io.dart';
 
 Future<Uint8List> getImage(String filename) {
+  Smb.getConfig("[C]").listZip(filename);
+  return null;
 //  return Future.delayed(Duration(seconds: 1));
   return Smb.getConfig("[C]").getFile(filename).then((bytes) {
     // Decode the Zip file
