@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:raising/reader/screen.dart';
 
@@ -21,9 +23,24 @@ class ItemTile extends StatelessWidget {
       child: ListTile(
         leading: AspectRatio(
           aspectRatio: 1,
-          child: Container(
-            color: item.color,
-          ),
+          child: FutureBuilder<Uint8List>(
+            future: getImage(item.name),
+            builder: (BuildContext context, AsyncSnapshot snapshot) {
+              // 请求已结束
+              if (snapshot.connectionState == ConnectionState.done) {
+                if (snapshot.hasError) {
+                  // 请求失败，显示错误
+                  return Text("Error: ${snapshot.error}");
+                } else {
+                  // 请求成功，显示数据
+                  return Image.memory(snapshot.data);
+                }
+              } else {
+                // 请求未结束，显示loading
+                return CircularProgressIndicator();
+              }
+            },
+          )
         ),
         title: Text(item.name),
         trailing: Text('\$ ${(item.price / 100).toStringAsFixed(2)}'),

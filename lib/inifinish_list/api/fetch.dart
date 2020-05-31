@@ -21,8 +21,8 @@ const catalogLength = 200;
 ///
 /// It will fetch a page of items from [startingIndex].
 Future<ItemPage> fetchPage(int startingIndex) async {
-//  Smb.pushConfig("[C]","192.168.1.100", "wd", "", "maho", "maho", "[C]", "*");
-  Smb.pushConfig("[C]","DESKTOP-7MSGQCD", "share", "", "Nillouise", "maho", "", "*");
+  Smb.pushConfig("[C]","192.168.1.100", "wd", "", "maho", "maho", "[C]", "*");
+//  Smb.pushConfig("[C]","DESKTOP-7MSGQCD", "share", "", "Nillouise", "maho", "", "*");
 
   List list = await Smb.getConfig("[C]")
       .smbList();

@@ -161,12 +161,12 @@ public class MethodDispatcher implements MethodCallHandler {
                                         try {
                                             return smb.previewFile(call.argument("filenames"), share);
                                         } catch (SmbException e) {
-                                            Logger.e("{}", ExceptionUtils.getStackTrace(e));
+                                            Logger.e(ExceptionUtils.getStackTrace(e));
                                             throw new RuntimeException(e);
                                         }
                                     }
                             );
-                            Logger.i("previewFiles res {}",res);
+                            Logger.i("previewFiles res %s",res);
                             result.success(res);
                         } catch (Exception e) {
                             Logger.i("SMB", ExceptionUtils.getStackTrace(e));

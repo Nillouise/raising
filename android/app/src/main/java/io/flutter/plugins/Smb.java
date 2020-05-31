@@ -288,7 +288,7 @@ public class Smb {
 
 
     private ConcurrentLinkedQueue<String> previewFileQueue = new ConcurrentLinkedQueue<>();
-
+    private ExecutorService executorService = Executors.newFixedThreadPool(1);
 
     private HashMap<String, byte[]> getPreview(DiskShare share) throws SmbException {
         HashMap<String, byte[]> res = new HashMap<String, byte[]>();
@@ -301,7 +301,7 @@ public class Smb {
             File f = null;
             boolean fileExists = share.fileExists(filename);
             if (!fileExists) {
-                Logger.w("File {} not exist.", filename);
+                Logger.w("File %s not exist.", filename);
                 throw new SmbException("File " + filename + "not exist");
             }
             File smbFileRead = share.openFile(filename, EnumSet.of(AccessMask.GENERIC_READ), null, SMB2ShareAccess.ALL, SMB2CreateDisposition.FILE_OPEN, null);
@@ -377,9 +377,8 @@ public class Smb {
     }
 
     public HashMap<String, byte[]> previewFile(final List<String> filename, DiskShare share) throws SmbException {
-        Logger.i("finenames {}",filename);
+        Logger.i("finenames %s",filename);
         previewFileQueue.addAll(filename);
-        ExecutorService executorService = Executors.newFixedThreadPool(3);
         List<Future<HashMap<String, byte[]>>> futures = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
             futures.add(executorService.submit(new Callable<HashMap<String, byte[]>>() {

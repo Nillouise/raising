@@ -48,9 +48,9 @@ public class SmbRandomFile implements IInStream {
 
     @Override
     public int read(byte[] data) throws SevenZipException {
-        Logger.i("buffer %d byte",data.length);
+//        Logger.i("buffer %d byte",data.length);
         int read = file.read(data, offset);
-        Logger.i("read %d byte",read);
+//        Logger.i("read %d byte",read);
         offset += read;
         return read;
     }
