@@ -82,7 +82,7 @@ class Smb {
   }
 
   static Smb getConfig(String configName) {
-    return smbMap[configName];
+    return Smb();
   }
 
   Future<List> smbList() async {
@@ -107,17 +107,19 @@ class Smb {
   }
 
   Future<List> listFiles(String path, String searchPattern) async {
-    try {
-      final List result = await methodChannel.invokeMethod(
-          'listFiles', {"path": path, "searchPattern": searchPattern});
-      return result;
-    } on PlatformException catch (e) {
-      logger.e("PlatformException {}", e);
-      throw e;
-    } catch (e) {
-      logger.e(e);
-      throw e;
-    }
+    return Future.delayed(Duration(milliseconds: 300)).then((value) => List<String>.of(["ok","notok"]));
+//    List<String>.of(["ok","notok"]);
+//    try {
+//      final List result = await methodChannel.invokeMethod(
+//          'listFiles', {"path": path, "searchPattern": searchPattern});
+//      return result;
+//    } on PlatformException catch (e) {
+//      logger.e("PlatformException {}", e);
+//      throw e;
+//    } catch (e) {
+//      logger.e(e);
+//      throw e;
+//    }
   }
 
   Future<Uint8List> getFile(String filename) async {

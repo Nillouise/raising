@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:raising/page/drawer.dart';
+
 import 'catalog.dart';
 import 'item_tile.dart';
 import 'model/smb_list_model.dart';
@@ -34,6 +35,11 @@ void main() => runApp(MyApp());
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    return ChangeNotifierProvider<Catalog>(
+      create: (context) => Catalog(),
+      child: MaterialApp(
+        title: 'Infinite List Sample',
+        home: InfList(),
     return ChangeNotifierProvider<SmbListModel>(
       create: (context) => SmbListModel()..loadTodos(),
       child: MaterialApp(
