@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:raising/page/drawer.dart';
 import 'catalog.dart';
 import 'item_tile.dart';
+import 'model/smb_list_model.dart';
 
 void main() => runApp(MyApp());
 
@@ -27,15 +29,24 @@ void main() => runApp(MyApp());
 //    );
 //  }
 //}
+
+
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<Catalog>(
-      create: (context) => Catalog(),
+    return ChangeNotifierProvider<SmbListModel>(
+      create: (context) => SmbListModel()..loadTodos(),
       child: MaterialApp(
         title: 'Infinite List Sample',
-        home: InfList(),
+//        home: InfList(),
+        home: Scaffold(
+          appBar: AppBar(
+            title: Text('Infinite List Sample'),
+          ),
+          drawer: HomeDrawer(),
+        )
       ),
+
     );
   }
 }
@@ -86,6 +97,7 @@ class _MyHomePageState extends State<MyHomePage> {
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
+      drawer: HomeDrawer(),
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.

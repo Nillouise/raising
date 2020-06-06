@@ -10,7 +10,8 @@ var logger = Logger();
 
 class Smb {
   static const MethodChannel methodChannel = MethodChannel('nil/channel');
-  static Map<String, Smb> smbMap = Map<String, Smb>();
+  static Map<String, Smb> smbMap = Map<String, Smb>()..putIfAbsent("[C]", ()=> Smb()..id = "[C]");
+  String id;
   String hostname;
   String shareName;
   String domain;
@@ -20,13 +21,13 @@ class Smb {
   String searchPattern;
 
   Smb({
-    @required this.hostname,
-    @required this.shareName,
-    @required this.domain,
-    @required this.username,
-    @required this.password,
-    @required this.path,
-    @required this.searchPattern,
+    this.hostname,
+    this.shareName,
+    this.domain,
+    this.username,
+    this.password,
+    this.path,
+    this.searchPattern,
   });
 
   Future<Void> init() async {
