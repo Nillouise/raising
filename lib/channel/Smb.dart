@@ -5,9 +5,12 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
+import 'package:json_annotation/json_annotation.dart';
+part 'Smb.g.dart';
 
 var logger = Logger();
 
+@JsonSerializable()
 class Smb {
   static const MethodChannel methodChannel = MethodChannel('nil/channel');
   static Map<String, Smb> smbMap = Map<String, Smb>()..putIfAbsent("[C]", ()=> Smb()..id = "[C]");
@@ -29,6 +32,9 @@ class Smb {
     this.path,
     this.searchPattern,
   });
+
+  factory Smb.fromJson(Map<String, dynamic> json) => _$SmbFromJson(json);
+  Map<String, dynamic> toJson() => _$SmbToJson(this);
 
   Future<Void> init() async {
     try {

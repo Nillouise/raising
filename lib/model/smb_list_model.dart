@@ -4,12 +4,28 @@ import 'dart:collection';
 import 'package:flutter/widgets.dart';
 import 'package:raising/channel/Smb.dart';
 
+import 'package:sembast/sembast.dart';
+import 'package:sembast/sembast_io.dart';
+
+
 enum VisibilityFilter { all, active, completed }
 
 class SmbRepository {
   /// Loads todos first from File storage. If they don't exist or encounter an
   /// error, it attempts to load the Todos from a Web Client.
   Future<List<Smb>> loadTodos() async {
+    final db = await databaseFactoryIo
+        .openDatabase("sembast.db");
+    var store = intMapStoreFactory.store('smbManage');
+
+    var key = await store.add(db, {'name': 'ugly'});
+    var record = await store.record(key).getSnapshot(db);
+    record =
+        (await store.find(db, finder: Finder(filter: Filter.byKey(record.key))))
+            .first;
+    print(record);
+    var records = (await store.find(db,
+        finder: Finder(filter: Filter.matches('name', '^ugly'))));
     return Smb.smbMap.values.toList();
   }
 
