@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:raising/model/smb_navigation.dart';
 part 'Smb.g.dart';
 
 var logger = Logger();
@@ -37,6 +38,7 @@ class Smb {
   Map<String, dynamic> toJson() => _$SmbToJson(this);
 
   Future<Void> init() async {
+    return null;
     try {
       await methodChannel.invokeMethod('init', {
         "hostname": hostname,
@@ -106,8 +108,8 @@ class Smb {
     }
   }
 
-  Future<List> listFiles(String path, String searchPattern) async {
-    return Future.delayed(Duration(milliseconds: 300)).then((value) => List<String>.of(["ok","notok"]));
+  Future<List<FileInfo>> listFiles(String path, String searchPattern) async {
+    return Future.delayed(Duration(milliseconds: 1000)).then((value) => List<FileInfo>.of([FileInfo("ok"),FileInfo("notok")]));
 //    List<String>.of(["ok","notok"]);
 //    try {
 //      final List result = await methodChannel.invokeMethod(

@@ -2,39 +2,56 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/widgets.dart';
+import 'package:logger/logger.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:raising/channel/Smb.dart';
 
 import 'package:sembast/sembast.dart';
 import 'package:sembast/sembast_io.dart';
 
-
-enum VisibilityFilter { all, active, completed }
+var logger = Logger();
 
 class SmbRepository {
+  Database _db;
+
   /// Loads todos first from File storage. If they don't exist or encounter an
   /// error, it attempts to load the Todos from a Web Client.
   Future<List<Smb>> loadTodos() async {
-    final db = await databaseFactoryIo
-        .openDatabase("sembast.db");
+    _db = await databaseFactoryIo.openDatabase(
+        (await getApplicationDocumentsDirectory()).path + "/sembast.db");
     var store = intMapStoreFactory.store('smbManage');
+//    var key = await store.add(_db, {'name': 'ugly'});
+//    var record = await store.record(key).getSnapshot(_db);
+//    record =
+//        (await store.find(_db, finder: Finder(filter: Filter.byKey(record.key))))
+//            .first;
+//    print(record);
+    List<RecordSnapshot<int, Map<String, dynamic>>> records =
+        (await store.find(_db));
+//    print(records);
 
-    var key = await store.add(db, {'name': 'ugly'});
-    var record = await store.record(key).getSnapshot(db);
-    record =
-        (await store.find(db, finder: Finder(filter: Filter.byKey(record.key))))
-            .first;
-    print(record);
-    var records = (await store.find(db,
-        finder: Finder(filter: Filter.matches('name', '^ugly'))));
-    return Smb.smbMap.values.toList();
+    Iterable<Smb> map = records.map((element) {
+      return Smb.fromJson(element.value);
+    });
+    return map.toList();
+
+//    return Smb.smbMap.values.toList();
   }
 
   // Persists todos to local disk and the web
-  Future saveTodos(List<Smb> smbs) async {
-    Smb.smbMap.clear();
-    smbs.map((x) {
-      Smb.smbMap[x.id] = x;
+  Future save(List<Smb> smbs) async {
+    var store = intMapStoreFactory.store('smbManage');
+
+    await _db.transaction((txn) async {
+      var i = (await store.delete(txn));
+      logger.i("delete $i msg befor save successfule");
+      await store.addAll(txn, smbs.map((e) => e.toJson()).toList());
     });
+
+//    Smb.smbMap.clear();
+//    smbs.map((x) {
+//      Smb.smbMap[x.id] = x;
+//    });
   }
 }
 
@@ -98,10 +115,18 @@ class SmbListModel extends ChangeNotifier {
   }
 
   void _uploadItems() {
-    repository.saveTodos(_smbs);
+    repository.save(_smbs);
   }
 
   Smb smbById(String id) {
     return _smbs.firstWhere((it) => it.id == id, orElse: () => null);
+  }
+
+  bool checkDuplicate(String id) {
+    if (smbById(id) != null) {
+      return true;
+    } else {
+      return false;
+    }
   }
 }
