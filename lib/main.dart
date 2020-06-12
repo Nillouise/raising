@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:raising/page/FileList.dart';
 import 'package:raising/page/drawer.dart';
+import 'package:raising/page/home.dart';
 import 'catalog.dart';
 import 'item_tile.dart';
 import 'model/smb_list_model.dart';
@@ -46,11 +47,11 @@ class MyApp extends StatelessWidget {
             title: 'Infinite List Sample',
 //        home: InfList(),
             home: Scaffold(
-                appBar: AppBar(
-                  title: Text('Infinite List Sample'),
-                ),
+//                appBar: AppBar(
+//                  title: Text('Infinite List Sample'),
+//                ),
                 drawer: HomeDrawer(),
-                body: FileList())));
+                body: RaisingHome())));
   }
 }
 
