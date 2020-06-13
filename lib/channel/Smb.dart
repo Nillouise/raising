@@ -2,11 +2,13 @@ import 'dart:async';
 import 'dart:ffi';
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:logger/logger.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:raising/model/smb_navigation.dart';
+import 'package:logger/logger.dart';
+import 'package:raising/model/file_info.dart';
+
+import 'Work.dart';
+
 part 'Smb.g.dart';
 
 var logger = Logger();
@@ -14,7 +16,8 @@ var logger = Logger();
 @JsonSerializable()
 class Smb {
   static const MethodChannel methodChannel = MethodChannel('nil/channel');
-  static Map<String, Smb> smbMap = Map<String, Smb>()..putIfAbsent("[C]", ()=> Smb()..id = "[C]");
+  static Map<String, Smb> smbMap = Map<String, Smb>()
+    ..putIfAbsent("[C]", () => Smb()..id = "[C]");
   String id;
   String hostname;
   String shareName;
@@ -109,7 +112,8 @@ class Smb {
   }
 
   Future<List<FileInfo>> listFiles(String path, String searchPattern) async {
-    return Future.delayed(Duration(milliseconds: 1000)).then((value) => List<FileInfo>.of([FileInfo("ok"),FileInfo("notok")]));
+    return Future.delayed(Duration(milliseconds: 1000)).then(
+        (value) => List<FileInfo>.of([FileInfo("ok"), FileInfo("notok")]));
 //    List<String>.of(["ok","notok"]);
 //    try {
 //      final List result = await methodChannel.invokeMethod(
@@ -174,5 +178,20 @@ class Smb {
       logger.e(e);
       throw e;
     }
+  }
+
+  Future<Uint8List> loadImage(int index) async {
+    Uint8List picture = await loadPicture(index);
+    return picture;
+  }
+
+  Future<Uint8List> loadImageFromIndex(String path, int index) async {
+    Uint8List picture = await loadPicture(index);
+    return picture;
+  }
+
+  Future<Uint8List> loadImageFromFilename(String path, String name) async {
+//    Uint8List picture = await loadPicture(index);
+//    return picture;
   }
 }

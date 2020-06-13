@@ -9,14 +9,11 @@ import 'package:raising/channel/Smb.dart';
 import 'package:sembast/sembast.dart';
 import 'package:sembast/sembast_io.dart';
 
+import 'file_info.dart';
+
 var logger = Logger();
 
-class FileInfo {
-  String filename;
-  bool isDirectory;
 
-  FileInfo(this.filename);
-}
 
 class SmbNavigation extends ChangeNotifier {
   String _title;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:raising/page/FileList.dart';
 import 'package:raising/page/rank.dart';
 
+import 'category_page.dart';
 import 'drawer.dart';
 
 class RaisingHome extends StatelessWidget {
@@ -13,33 +14,25 @@ class RaisingHome extends StatelessWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          flexibleSpace: new Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              new TabBar(
-                tabs: [
-                  Tab(text: "浏览"),
-                  Tab(text: "排行榜"),
-                  Tab(text: "分类"),
-                ],
-              ),
-            ]
-          )
-        ),
-
+            flexibleSpace:
+                new Column(mainAxisAlignment: MainAxisAlignment.end, children: [
+          new TabBar(
+            tabs: [
+              Tab(text: "浏览"),
+              Tab(text: "排行榜"),
+              Tab(text: "分类"),
+            ],
+          ),
+        ])),
         drawer: HomeDrawer(),
         body: TabBarView(
           children: [
             Center(child: FileList()),
             Center(child: RankPage()),
-            Center(child: RankPage()),
+            Center(child: CategoryPage()),
           ],
         ),
       ),
     );
   }
 }
-
-
-
-
