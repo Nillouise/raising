@@ -64,7 +64,7 @@ class _ViewerState extends State<Viewer> {
   Widget showPage(BuildContext context, int index) {
     return FutureBuilder<Uint8List>(
       future: () {
-        return Smb.getCurrentSmb().loadImageFromIndex(widget.filename, [index]);
+        return Smb.getCurrentSmb().loadImageFromIndex(widget.filename, index);
       }(),
       builder: (BuildContext context, AsyncSnapshot<Uint8List> snapshot) {
         // 请求已结束

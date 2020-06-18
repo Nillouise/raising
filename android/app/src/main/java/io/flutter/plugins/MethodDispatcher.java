@@ -122,31 +122,19 @@ public class MethodDispatcher implements MethodCallHandler {
                     result.error("listContent", e.toString(), e);
                 }
             });
-        } else if (call.method.equals("previewFiles")) {
-            executorService.submit(() -> {
-                try {
-                    HashMap<String, byte[]> res = smb.processShare(share -> {
-                                return smb.previewFile(call.argument("filenames"), share);
-                            }
-                    );
-                    result.success(res);
-                } catch (Exception e) {
-                    result.error("previewFiles", e.toString(), e);
-                }
-            });
         } else if (call.method.equals("loadImageFromIndex")) {
             executorService.submit(() -> {
                 try {
-                    HashMap<String, byte[]> res = smb.processShare(share -> {
-                                return smb.previewFile(
-                                        call.argument("filename")
-
-                                        , share);
+                    Smb.SmbHalfResult res = smb.processShare(share -> {
+                                return smb.loadImageFromIndex(
+                                        call.argument("filename"),
+                                        call.argument("indexs"), share);
                             }
                     );
-                    result.success(res);
+                    result.success(res.getMap());
                 } catch (Exception e) {
-                    result.error("previewFiles", e.toString(), e);
+                    Logger.e(e,"loadImageFromIndex error");
+                    result.error("loadImageFromIndex", e.getMessage(), e);
                 }
             });
         } else {

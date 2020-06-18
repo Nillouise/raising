@@ -42,7 +42,7 @@ class Smb {
 
   Future<Void> init() async {
     //valid field;
-//    shareName = "flutter";
+    shareName = "flutter";
     domain = "CORP";
 //    path = "smbjar";
     searchPattern = searchPattern ?? "*";
@@ -206,11 +206,14 @@ class Smb {
     }
   }
 
-  Future<Uint8List> loadImageFromIndex(String filename, List<int> index) async {
+  Future<Uint8List> loadImageFromIndex(String filename, int index) async {
     try {
-      final Uint8List res = await methodChannel.invokeMethod(
-          'loadImageFromIndex', {"filename": filename, "index": index});
-      return res;
+      final Map<dynamic, dynamic> res =
+          await methodChannel.invokeMethod('loadImageFromIndex', {
+        "filename": filename,
+        "indexs": [index]
+      });
+      return res["result"][index]["content"];
     } on PlatformException catch (e) {
       logger.e("PlatformException {}", e);
       throw e;

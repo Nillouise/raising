@@ -368,6 +368,15 @@ public class Smb {
         String zipFilename;
         Integer index;
         byte[] content;
+
+        HashMap<String, Object> getMap() {
+            HashMap<String, Object> res = new HashMap<>();
+            res.put("filename", filename);
+            res.put("zipFilename", zipFilename);
+            res.put("index", index);
+            res.put("content", content);
+            return res;
+        }
     }
 
     @Data
@@ -395,6 +404,17 @@ public class Smb {
 
         public static SmbHalfResult ofUnknownError() {
             return new SmbHalfResult().setMsg("unknown error");
+        }
+
+        HashMap getMap() {
+            HashMap<String, Object> res = new HashMap<>();
+            res.put("msg", msg);
+            HashMap<Integer, HashMap<String, Object>> cvt = new HashMap<>();
+            for (Map.Entry<Integer, ZipFileContent> entry : result.entrySet()) {
+                cvt.put(entry.getKey(), entry.getValue().getMap());
+            }
+            res.put("result", cvt);
+            return res;
         }
     }
 
@@ -439,6 +459,10 @@ public class Smb {
         }
     }
 
+    private String getAbsFilename(String filename) {
+        return (path == null ? "" : path) + filename;
+    }
+
     //由于中断的存在，本函数不一定能返回全部图片
     private SmbHalfResult getFileWorker(String filename, DiskShare share) throws Exception {
         HashMap<Integer, ZipFileContent> res = new HashMap<Integer, ZipFileContent>();
@@ -446,15 +470,16 @@ public class Smb {
         if (indexlst == null || indexlst.isEmpty()) {
             return SmbHalfResult.ofEmptyIndex().setResult(res);
         }
+        String absFilename = getAbsFilename(filename);
 
-        Logger.i("previewFileQueue file name %s", filename);
+        Logger.i("previewFileQueue file name %s", absFilename);
         File f = null;
-        boolean fileExists = share.fileExists(filename);
+        boolean fileExists = share.fileExists(absFilename);
         if (!fileExists) {
-            Logger.w("File %s not exist.", filename);
-            throw new SmbException("File " + filename + "not exist");
+            Logger.w("File %s not exist.", absFilename);
+            throw new SmbException("File " + absFilename + "not exist");
         }
-        File smbFileRead = share.openFile(filename, EnumSet.of(AccessMask.GENERIC_READ), null, SMB2ShareAccess.ALL, SMB2CreateDisposition.FILE_OPEN, null);
+        File smbFileRead = share.openFile(absFilename, EnumSet.of(AccessMask.GENERIC_READ), null, SMB2ShareAccess.ALL, SMB2CreateDisposition.FILE_OPEN, null);
         FileStandardInformation info = smbFileRead.getFileInformation(FileStandardInformation.class);
 
         InputStream in = smbFileRead.getInputStream();
@@ -480,8 +505,8 @@ public class Smb {
                         indexlst.remove(curindex);
                         ZipFileContent zipFileContent = extractItem(item, hash).setIndex(curindex).setFilename(filename);
                         res.put(curindex, zipFileContent);
-                        curindex++;
                     }
+                    curindex++;
                 }
                 if (indexlst.isEmpty()) {
                     return SmbHalfResult.ofSuccessful().setResult(res);
@@ -490,6 +515,7 @@ public class Smb {
                     return SmbHalfResult.ofCancel().setResult(res);
                 }
             }
+            Logger.i("curindex %s %s", curindex, indexlst);
             return SmbHalfResult.ofContainNotExistIndex().setResult(res);
         } catch (SmbInterruptException e) {
             Logger.e("Error closing file: " + ExceptionUtils.getStackTrace(e));
@@ -515,8 +541,8 @@ public class Smb {
         }
     }
 
-    public SmbHalfResult loadImageFromIndex(final String filename, ArrayList<Integer> index, DiskShare share) throws SmbException {
-        fileIndexTask.put(filename, new ConcurrentSkipListSet<Integer>(index));
+    public SmbHalfResult loadImageFromIndex(final String filename, ArrayList<Integer> indexs, DiskShare share) throws SmbException {
+        fileIndexTask.put(filename, new ConcurrentSkipListSet<Integer>(indexs));
         Future<SmbHalfResult> task = executorService.submit(new Callable<SmbHalfResult>() {
             @Override
             public SmbHalfResult call() throws Exception {
@@ -527,17 +553,17 @@ public class Smb {
         try {
             return task.get();
         } catch (CancellationException e) {
-            Logger.e(e, "%s %s %s", filename, String.valueOf(index));
+            Logger.e(e, "%s %s %s", filename, String.valueOf(indexs));
             try {
                 //睡眠一小段时间，是为了传输完成正在传输中的图片
                 Thread.sleep(130);
                 return task.get();
             } catch (Exception ex) {
-                Logger.e(e, "double %s %s %s", filename, String.valueOf(index));
+                Logger.e(e, "double %s %s %s", filename, String.valueOf(indexs));
                 return SmbHalfResult.ofCancel();
             }
         } catch (Exception e) {
-            Logger.e(e, "%s %s %s", filename, String.valueOf(index));
+            Logger.e(e, "%s %s %s", filename, String.valueOf(indexs));
             return SmbHalfResult.ofUnknownError();
         }
     }
