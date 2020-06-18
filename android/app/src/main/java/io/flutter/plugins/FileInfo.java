@@ -16,11 +16,11 @@ public class FileInfo {
     static Gson gson = new Gson();
 
     private String filename;
-    private Long size;
     private Date updateTime;
-
-    private ArrayList<String> contentFiles;
-    private Integer contentFilesLength;
+    private boolean isDirectory;
+    private boolean isCompressFile;
+    int length; //里面有多少文件
+    private Long size;
 
     @Override
     public String toString() {

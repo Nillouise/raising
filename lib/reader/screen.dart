@@ -1,23 +1,21 @@
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:raising/channel/Smb.dart';
-import 'dart:io';
 import 'package:archive/archive.dart';
 import 'package:archive/archive_io.dart';
+import 'package:flutter/material.dart';
+import 'package:raising/channel/Smb.dart';
 
 Future<Uint8List> getImage(String filename) {
-  filename = "[C]//"+filename;
-  List<String> lst = List<String>();
-  lst.add(filename);
-  return Smb.getConfig("[C]").previewFiles(lst).then((res) {
-    Uint8List re = res[filename];
-    return re;
-  });
+//  filename = "[C]//"+filename;
+//  List<String> lst = List<String>();
+//  lst.add(filename);
+//  return Smb.getConfig("[C]").previewFiles(lst).then((res) {
+//    Uint8List re = res[filename];
+//    return re;
+//  });
 //  Smb.getConfig("[C]").listZip(filename);
 //  return Future.delayed(Duration(seconds: 1));
-  return Smb.getConfig("[C]").getFile("[C]//"+filename).then((bytes) {
+  return Smb.getConfig("[C]").getFile("[C]//" + filename).then((bytes) {
     // Decode the Zip file
     final archive = ZipDecoder().decodeBytes(bytes);
 

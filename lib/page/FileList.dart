@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
+import 'package:raising/channel/Smb.dart';
 import 'package:raising/model/file_info.dart';
 import 'package:raising/model/smb_list_model.dart';
 import 'package:raising/model/smb_navigation.dart';
 import 'package:raising/page/viewer.dart';
 
 import 'drawer.dart';
+
+var logger = Logger();
 
 class FileList extends StatefulWidget {
   FileList({Key key}) : super(key: key);
@@ -16,7 +20,17 @@ class FileList extends StatefulWidget {
   }
 }
 
+void test() async {
+  var smb = Smb();
+  await smb.test();
+}
+
 class FileListState extends State<FileList> {
+  void test() async {
+    var smb = Smb();
+    await smb.test();
+  }
+
   @override
   Widget build(BuildContext context) {
     SmbListModel listModel = Provider.of<SmbListModel>(context);
@@ -50,7 +64,7 @@ class FileListState extends State<FileList> {
               // 请求失败，显示错误
               return Text("Error: ${snapshot.error}");
             } else {
-              // 请求成功，显示数据s
+              // 请求成功，显示数据
               return Center(
                   child: ListView.builder(
                 itemCount: snapshot.data.files.length,
@@ -61,12 +75,12 @@ class FileListState extends State<FileList> {
 
                   List<FileInfo> files = catalog.files;
                   return ListTile(
-                    title: Text(files[index].filename + "1"),
+                    title: Text(files[index].filename),
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Viewer(),
+                          builder: (context) => Viewer(files[index].filename),
                         ),
                       );
                     },

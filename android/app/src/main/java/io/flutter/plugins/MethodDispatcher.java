@@ -4,6 +4,7 @@ package io.flutter.plugins;
 import android.os.Handler;
 import android.os.Looper;
 
+import com.google.gson.Gson;
 import com.orhanobut.logger.Logger;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -68,9 +69,24 @@ public class MethodDispatcher implements MethodCallHandler {
     //一次只会处理一个smb链接
     private Smb smb;
 
+    public Gson gson = new Gson();
+
     @Override
     public void onMethodCall(MethodCall call, @NotNull Result rawResult) {
         Result result = new MethodResultWrapper(rawResult);
+
+        if (call.method.equals("test")) {
+            executorService.submit(() -> {
+                try {
+                    new Smb().test();
+                    result.success(null);
+                } catch (Exception e) {
+                    result.error("test", e.toString(), ExceptionUtils.getStackTrace(e));
+                }
+            });
+            return;
+        }
+
         if (call.method.equals("init")) {
             smb = new Smb(
                     call.argument("hostname"),
@@ -85,33 +101,14 @@ public class MethodDispatcher implements MethodCallHandler {
         } else if (call.method.equals("listFiles")) {
             executorService.submit(() -> {
                 try {
-                    ArrayList<String> res = smb.listFiles(
+                    ArrayList res = smb.listFiles(
                             call.argument("path"),
                             call.argument("searchPattern"));
-                    result.success(res);
+                    result.success(gson.toJson(res));
                 } catch (Exception e) {
                     result.error("listFiles", e.toString(), ExceptionUtils.getStackTrace(e));
                 }
             });
-//        } else if (call.method.equals("getFile")) {
-//            new Thread(
-//                    () -> {
-//                        try {
-//                            byte[] res = null;
-//                            res = new Smb().getFile(call.argument("hostname"),
-//                                    call.argument("shareName"),
-//                                    call.argument("domain"),
-//                                    call.argument("username"),
-//                                    call.argument("password"),
-//                                    call.argument("path"),
-//                                    call.argument("searchPattern"));
-//                            result.success(res);
-//                        } catch (Exception e) {
-//                            Logger.e("SMB %s", ExceptionUtils.getStackTrace(e));
-//                            result.error("getFile", e.toString(), e);
-//                        }
-//                    }
-//            ).start();
         } else if (call.method.equals("listContent")) {
             executorService.submit(() -> {
                 try {
@@ -129,7 +126,22 @@ public class MethodDispatcher implements MethodCallHandler {
             executorService.submit(() -> {
                 try {
                     HashMap<String, byte[]> res = smb.processShare(share -> {
-                                return smb.previewFile(call.argument("absFilenames"), share);
+                                return smb.previewFile(call.argument("filenames"), share);
+                            }
+                    );
+                    result.success(res);
+                } catch (Exception e) {
+                    result.error("previewFiles", e.toString(), e);
+                }
+            });
+        } else if (call.method.equals("loadImageFromIndex")) {
+            executorService.submit(() -> {
+                try {
+                    HashMap<String, byte[]> res = smb.processShare(share -> {
+                                return smb.previewFile(
+                                        call.argument("filename")
+
+                                        , share);
                             }
                     );
                     result.success(res);

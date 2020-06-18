@@ -1,15 +1,15 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:logger/logger.dart';
 import 'package:raising/channel/Smb.dart';
-import 'package:raising/model/smb_list_model.dart';
-import 'package:raising/model/smb_navigation.dart';
 
-import 'drawer.dart';
+var logger = Logger();
 
 class Viewer extends StatefulWidget {
-  Viewer({Key key}) : super(key: key);
+  Viewer(this.filename, {Key key}) : super(key: key);
+
+  final String filename;
 
   @override
   _ViewerState createState() {
@@ -40,10 +40,9 @@ class _ViewerState extends State<Viewer> {
       onPanDown: (DragDownDetails e) {
         //打印手指按下的位置(相对于屏幕)
         Offset globalPosition = e.globalPosition;
-        print("用户手指按下：${globalPosition}");
+        logger.d("用户手指按下：${globalPosition}");
         RenderBox findRenderObject = context.findRenderObject();
         Size size = findRenderObject.size;
-        print(size);
         Area area = getArea(globalPosition, size);
         if (area == Area.lef) {
           setState(() {
@@ -65,7 +64,7 @@ class _ViewerState extends State<Viewer> {
   Widget showPage(BuildContext context, int index) {
     return FutureBuilder<Uint8List>(
       future: () {
-        return Smb.getConfig(null).loadImage(index);
+        return Smb.getCurrentSmb().loadImageFromIndex(widget.filename, [index]);
       }(),
       builder: (BuildContext context, AsyncSnapshot<Uint8List> snapshot) {
         // 请求已结束

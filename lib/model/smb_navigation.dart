@@ -1,19 +1,12 @@
 import 'dart:async';
-import 'dart:collection';
 
 import 'package:flutter/widgets.dart';
 import 'package:logger/logger.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:raising/channel/Smb.dart';
-
-import 'package:sembast/sembast.dart';
-import 'package:sembast/sembast_io.dart';
 
 import 'file_info.dart';
 
 var logger = Logger();
-
-
 
 class SmbNavigation extends ChangeNotifier {
   String _title;
@@ -47,7 +40,7 @@ class SmbNavigation extends ChangeNotifier {
   }
 
   Future<SmbNavigation> awaitSelf() async {
-    var smb = Smb.getConfig(null);
+    var smb = Smb.getCurrentSmb();
     return smb.listFiles(path, "*").then((value) {
       _files = value;
       return this;
