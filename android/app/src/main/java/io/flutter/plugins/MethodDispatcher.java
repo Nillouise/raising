@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.orhanobut.logger.Logger;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -69,7 +70,8 @@ public class MethodDispatcher implements MethodCallHandler {
     //一次只会处理一个smb链接
     private Smb smb;
 
-    public Gson gson = new Gson();
+    public Gson gson = new GsonBuilder()
+            .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").create();
 
     @Override
     public void onMethodCall(MethodCall call, @NotNull Result rawResult) {
@@ -128,7 +130,9 @@ public class MethodDispatcher implements MethodCallHandler {
                     Smb.SmbHalfResult res = smb.processShare(share -> {
                                 return smb.loadImageFromIndex(
                                         call.argument("filename"),
-                                        call.argument("indexs"), share);
+                                        call.argument("indexs"),
+                                        call.argument("needFileDetailInfo"),
+                                        share);
                             }
                     );
                     result.success(res.getMap());

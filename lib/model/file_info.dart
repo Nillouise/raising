@@ -34,7 +34,38 @@ class FileKey {
 
   factory FileKey.fromJson(Map<String, dynamic> json) =>
       _$FileKeyFromJson(json);
+
   Map<String, dynamic> toJson() => _$FileKeyToJson(this);
+}
+
+@JsonSerializable()
+class ZipFileContent {
+  String filename;
+  String zipFilename;
+  int index;
+  int length;
+  dynamic content;
+
+  ZipFileContent(
+      this.filename, this.zipFilename, this.index, this.length, this.content);
+
+  factory ZipFileContent.fromJson(Map<String, dynamic> json) =>
+      _$ZipFileContentFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ZipFileContentToJson(this);
+}
+
+@JsonSerializable()
+class SmbHalfResult {
+  String msg;
+  Map<int, ZipFileContent> result;
+
+  SmbHalfResult(this.msg, this.result);
+
+  factory SmbHalfResult.fromJson(Map<String, dynamic> json) =>
+      _$SmbHalfResultFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SmbHalfResultToJson(this);
 }
 
 @JsonSerializable()
@@ -58,6 +89,7 @@ class FileInfo {
 
   factory FileInfo.fromJson(Map<String, dynamic> json) =>
       _$FileInfoFromJson(json);
+
   Map<String, dynamic> toJson() => _$FileInfoToJson(this);
 }
 

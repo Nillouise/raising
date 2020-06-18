@@ -38,12 +38,53 @@ Map<String, dynamic> _$FileKeyToJson(FileKey instance) => <String, dynamic>{
       'yearScore': instance.yearScore,
     };
 
+ZipFileContent _$ZipFileContentFromJson(Map<String, dynamic> json) {
+  return ZipFileContent(
+    json['filename'] as String,
+    json['zipFilename'] as String,
+    json['index'] as int,
+    json['length'] as int,
+    json['content'],
+  );
+}
+
+Map<String, dynamic> _$ZipFileContentToJson(ZipFileContent instance) =>
+    <String, dynamic>{
+      'filename': instance.filename,
+      'zipFilename': instance.zipFilename,
+      'index': instance.index,
+      'length': instance.length,
+      'content': instance.content,
+    };
+
+SmbHalfResult _$SmbHalfResultFromJson(Map<String, dynamic> json) {
+  return SmbHalfResult(
+    json['msg'] as String,
+    (json['result'] as Map<String, dynamic>)?.map(
+      (k, e) => MapEntry(
+          int.parse(k),
+          e == null
+              ? null
+              : ZipFileContent.fromJson(e as Map<String, dynamic>)),
+    ),
+  );
+}
+
+Map<String, dynamic> _$SmbHalfResultToJson(SmbHalfResult instance) =>
+    <String, dynamic>{
+      'msg': instance.msg,
+      'result': instance.result?.map((k, e) => MapEntry(k.toString(), e)),
+    };
+
 FileInfo _$FileInfoFromJson(Map<String, dynamic> json) {
   return FileInfo(
     json['filename'] as String,
   )
     ..smbId = json['smbId'] as String
     ..absPath = json['absPath'] as String
+    ..updateTime = json['updateTime'] == null
+        ? null
+        : DateTime.parse(json['updateTime'] as String)
     ..isDirectory = json['isDirectory'] as bool
     ..isCompressFile = json['isCompressFile'] as bool
     ..fileKey = json['fileKey'] == null
@@ -59,6 +100,7 @@ Map<String, dynamic> _$FileInfoToJson(FileInfo instance) => <String, dynamic>{
       'smbId': instance.smbId,
       'absPath': instance.absPath,
       'filename': instance.filename,
+      'updateTime': instance.updateTime?.toIso8601String(),
       'isDirectory': instance.isDirectory,
       'isCompressFile': instance.isCompressFile,
       'fileKey': instance.fileKey,

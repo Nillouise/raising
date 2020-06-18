@@ -43,7 +43,10 @@ import java.util.concurrent.TimeUnit;
 import io.flutter.plugins.exception.SmbException;
 import io.flutter.plugins.exception.SmbInterruptException;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.With;
 import lombok.experimental.Accessors;
 
 interface ProcessShare<T> {
@@ -362,11 +365,15 @@ public class Smb {
 
     @Data
     @Accessors(chain = true)
+    @With
+    @AllArgsConstructor
+    @NoArgsConstructor
     static
     class ZipFileContent {
         String filename;
         String zipFilename;
         Integer index;
+        Integer length;
         byte[] content;
 
         HashMap<String, Object> getMap() {
@@ -375,7 +382,13 @@ public class Smb {
             res.put("zipFilename", zipFilename);
             res.put("index", index);
             res.put("content", content);
+            res.put("length", length);
             return res;
+        }
+
+        @Override
+        public Object clone() throws CloneNotSupportedException {
+            return super.clone();
         }
     }
 
@@ -425,11 +438,10 @@ public class Smb {
      * 原子化：但由于顺序访问应该更快，所以同一个smb连接还是要处理同一个压缩文件下的子文件。
      * 中断文件传输，就需要shutdown 线程池，处理好中断信号Thread.currentThread().isInterrupted()
      */
-
     private ConcurrentHashMap<String, ConcurrentSkipListSet<Integer>> fileIndexTask = new ConcurrentHashMap<String, ConcurrentSkipListSet<Integer>>();
     private ExecutorService executorService = Executors.newFixedThreadPool(3);
 
-    private ZipFileContent extractItem(ISimpleInArchiveItem item, int[] hash) throws SevenZipException, SmbException {
+    private ZipFileContent extractItem(ISimpleInArchiveItem item, int[] hash, ZipFileContent proto) throws SevenZipException, SmbException {
         ExtractOperationResult result;
         final long[] sizeArray = new long[1];
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -452,7 +464,7 @@ public class Smb {
         if (result == ExtractOperationResult.OK) {
             System.out.println(String.format("%9X | %10s | %s",
                     hash[0], sizeArray[0], item.getPath()));
-            return new ZipFileContent().setZipFilename(item.getPath()).setContent(outputStream.toByteArray());
+            return proto.withZipFilename(item.getPath()).withContent(outputStream.toByteArray());
         } else {
             Logger.e("Error extracting item: " + result);
             throw new SmbException("extract eror" + result.toString());
@@ -464,7 +476,7 @@ public class Smb {
     }
 
     //由于中断的存在，本函数不一定能返回全部图片
-    private SmbHalfResult getFileWorker(String filename, DiskShare share) throws Exception {
+    private SmbHalfResult getFileWorker(String filename, Boolean needFileDetailInfo, DiskShare share) throws Exception {
         HashMap<Integer, ZipFileContent> res = new HashMap<Integer, ZipFileContent>();
         ConcurrentSkipListSet<Integer> indexlst = fileIndexTask.get(filename);
         if (indexlst == null || indexlst.isEmpty()) {
@@ -494,16 +506,23 @@ public class Smb {
             // Getting simple interface of the archive inArchive
             ISimpleInArchive simpleInArchive = inArchive.getSimpleInterface();
 
-//                System.out.println("   Hash   |    Size    | Filename");
-//                System.out.println("----------+------------+---------");
+//          System.out.println("   Hash   |    Size    | Filename");
+//          System.out.println("----------+------------+---------");
 
             int curindex = 0;
+            ZipFileContent proto = new ZipFileContent();
+            if (Boolean.TRUE.equals(needFileDetailInfo)) {
+                proto.setLength(simpleInArchive.getArchiveItems().length);
+                proto.setFilename(filename);
+            }
+
             for (ISimpleInArchiveItem item : simpleInArchive.getArchiveItems()) {
                 final int[] hash = new int[]{0};
                 if (!item.isFolder()) {
                     if (indexlst.contains(curindex)) {
                         indexlst.remove(curindex);
-                        ZipFileContent zipFileContent = extractItem(item, hash).setIndex(curindex).setFilename(filename);
+                        ZipFileContent zipFileContent =
+                                extractItem(item, hash, proto).setIndex(curindex);
                         res.put(curindex, zipFileContent);
                     }
                     curindex++;
@@ -541,12 +560,12 @@ public class Smb {
         }
     }
 
-    public SmbHalfResult loadImageFromIndex(final String filename, ArrayList<Integer> indexs, DiskShare share) throws SmbException {
+    public SmbHalfResult loadImageFromIndex(final String filename, ArrayList<Integer> indexs, Boolean needFileDetailInfo, DiskShare share) throws SmbException {
         fileIndexTask.put(filename, new ConcurrentSkipListSet<Integer>(indexs));
         Future<SmbHalfResult> task = executorService.submit(new Callable<SmbHalfResult>() {
             @Override
             public SmbHalfResult call() throws Exception {
-                return getFileWorker(filename, share);
+                return getFileWorker(filename, needFileDetailInfo, share);
             }
         });
 

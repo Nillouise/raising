@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:logger/logger.dart';
+import 'package:raising/exception/SmbException.dart';
 import 'package:raising/model/file_info.dart';
 
 part 'Smb.g.dart';
@@ -44,7 +45,7 @@ class Smb {
     //valid field;
     shareName = "flutter";
     domain = "CORP";
-//    path = "smbjar";
+    path = path ?? "";
     searchPattern = searchPattern ?? "*";
 
     try {
@@ -135,9 +136,6 @@ class Smb {
   }
 
   Future<List<FileInfo>> listFiles(String path, String searchPattern) async {
-//    return Future.delayed(Duration(milliseconds: 1000)).then(
-//        (value) => List<FileInfo>.of([FileInfo("ok"), FileInfo("notok")]));
-//    List<String>.of(["ok","notok"]);
     try {
       final String result = await methodChannel.invokeMethod(
           'listFiles', {"path": path, "searchPattern": searchPattern});
@@ -206,19 +204,39 @@ class Smb {
     }
   }
 
-  Future<Uint8List> loadImageFromIndex(String filename, int index) async {
+  Future<SmbHalfResult> loadImageFromIndex(String filename, int index) async {
     try {
-      final Map<dynamic, dynamic> res =
+      final Map<dynamic, dynamic> loadImageFromIndex =
           await methodChannel.invokeMethod('loadImageFromIndex', {
         "filename": filename,
         "indexs": [index]
       });
-      return res["result"][index]["content"];
+      SmbHalfResult res = SmbHalfResult.fromJson(loadImageFromIndex);
+
+      if (res.msg == "successful") {
+        if (res.result.containsKey(index)) {
+          return res;
+        } else {
+          throw SmbException("loadImageFromIndex failed");
+        }
+      } else {
+        throw SmbException("loadImageFromIndex failed");
+      }
     } on PlatformException catch (e) {
       logger.e("PlatformException {}", e);
       throw e;
-    } catch (e) {
-      logger.e(e);
+    }
+  }
+
+  Future<Uint8List> loadFilesFromIndexs(
+      String filename, List<int> indexs) async {
+    try {
+      final Map<dynamic, dynamic> res = await methodChannel.invokeMethod(
+          'loadImageFromIndex', {"filename": filename, "indexs": indexs});
+      //TODO:
+
+    } on PlatformException catch (e) {
+      logger.e("PlatformException {}", e);
       throw e;
     }
   }

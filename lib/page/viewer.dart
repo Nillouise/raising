@@ -1,10 +1,11 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:raising/channel/Smb.dart';
+import 'package:raising/model/file_info.dart';
 
 var logger = Logger();
+
+class ViewerNavigator extends ChangeNotifier {}
 
 class Viewer extends StatefulWidget {
   Viewer(this.filename, {Key key}) : super(key: key);
@@ -62,11 +63,11 @@ class _ViewerState extends State<Viewer> {
   }
 
   Widget showPage(BuildContext context, int index) {
-    return FutureBuilder<Uint8List>(
+    return FutureBuilder<SmbHalfResult>(
       future: () {
         return Smb.getCurrentSmb().loadImageFromIndex(widget.filename, index);
       }(),
-      builder: (BuildContext context, AsyncSnapshot<Uint8List> snapshot) {
+      builder: (BuildContext context, AsyncSnapshot<SmbHalfResult> snapshot) {
         // 请求已结束
         if (snapshot.connectionState == ConnectionState.done) {
           if (snapshot.hasError) {
@@ -74,7 +75,7 @@ class _ViewerState extends State<Viewer> {
             return Text("Error: ${snapshot.error}");
           } else {
             // 请求成功，显示数据s
-            return Image.memory(snapshot.data);
+            return Image.memory(snapshot.data.result[index].content);
           }
         } else {
           // 请求未结束，显示loading
