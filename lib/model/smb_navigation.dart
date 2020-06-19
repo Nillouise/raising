@@ -11,10 +11,16 @@ var logger = Logger();
 class SmbNavigation extends ChangeNotifier {
   String _title;
   String _path;
+  String _smbId;
   List<FileInfo> _files;
 
   set title(value) {
     _title = value;
+    notifyListeners();
+  }
+
+  set smbId(value) {
+    _smbId = value;
     notifyListeners();
   }
 
@@ -30,11 +36,12 @@ class SmbNavigation extends ChangeNotifier {
 
   String get title => _title;
 
-  void refresh(BuildContext context, String path) async {
+  void refresh(BuildContext context, String path, String smbId) async {
 //    var smb = Smb.getConfig(null);
 //    List<FileInfo> list = await smb.listFiles(path, "*");
     _title = path;
     _path = path;
+    _smbId = smbId;
 //    _files = list;
     notifyListeners();
   }
@@ -50,4 +57,6 @@ class SmbNavigation extends ChangeNotifier {
   String get path => _path;
 
   List<FileInfo> get files => _files;
+
+  String get smbId => _smbId;
 }

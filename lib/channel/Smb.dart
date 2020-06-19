@@ -204,14 +204,17 @@ class Smb {
     }
   }
 
-  Future<SmbHalfResult> loadImageFromIndex(String filename, int index) async {
+  Future<SmbHalfResult> loadImageFromIndex(String filename, int index,
+      {bool needFileDetailInfo = false}) async {
     try {
       final Map<dynamic, dynamic> loadImageFromIndex =
           await methodChannel.invokeMethod('loadImageFromIndex', {
         "filename": filename,
-        "indexs": [index]
+        "indexs": [index],
+        "needFileDetailInfo": needFileDetailInfo
       });
-      SmbHalfResult res = SmbHalfResult.fromJson(loadImageFromIndex);
+      SmbHalfResult res = SmbHalfResult.fromJson(
+          new Map<String, dynamic>.from(loadImageFromIndex));
 
       if (res.msg == "successful") {
         if (res.result.containsKey(index)) {

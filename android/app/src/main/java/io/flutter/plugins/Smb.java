@@ -397,7 +397,7 @@ public class Smb {
     static
     class SmbHalfResult {
         String msg;
-        HashMap<Integer, ZipFileContent> result;
+        HashMap<String, ZipFileContent> result;
 
         public static SmbHalfResult ofEmptyIndex() {
             return new SmbHalfResult().setMsg("empty indexs");
@@ -422,9 +422,9 @@ public class Smb {
         HashMap getMap() {
             HashMap<String, Object> res = new HashMap<>();
             res.put("msg", msg);
-            HashMap<Integer, HashMap<String, Object>> cvt = new HashMap<>();
-            for (Map.Entry<Integer, ZipFileContent> entry : result.entrySet()) {
-                cvt.put(entry.getKey(), entry.getValue().getMap());
+            HashMap<String, HashMap<String, Object>> cvt = new HashMap<>();
+            for (Map.Entry<String, ZipFileContent> entry : result.entrySet()) {
+                cvt.put(String.valueOf(entry.getKey()), entry.getValue().getMap());
             }
             res.put("result", cvt);
             return res;
@@ -477,7 +477,7 @@ public class Smb {
 
     //由于中断的存在，本函数不一定能返回全部图片
     private SmbHalfResult getFileWorker(String filename, Boolean needFileDetailInfo, DiskShare share) throws Exception {
-        HashMap<Integer, ZipFileContent> res = new HashMap<Integer, ZipFileContent>();
+        HashMap<String, ZipFileContent> res = new HashMap<String, ZipFileContent>();
         ConcurrentSkipListSet<Integer> indexlst = fileIndexTask.get(filename);
         if (indexlst == null || indexlst.isEmpty()) {
             return SmbHalfResult.ofEmptyIndex().setResult(res);
@@ -523,7 +523,7 @@ public class Smb {
                         indexlst.remove(curindex);
                         ZipFileContent zipFileContent =
                                 extractItem(item, hash, proto).setIndex(curindex);
-                        res.put(curindex, zipFileContent);
+                        res.put(String.valueOf(curindex), zipFileContent);
                     }
                     curindex++;
                 }

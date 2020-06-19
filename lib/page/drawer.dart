@@ -1,7 +1,5 @@
-import 'dart:developer';
-
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:raising/channel/Smb.dart';
 import 'package:raising/model/smb_list_model.dart';
@@ -269,11 +267,13 @@ class _SmbDrawerState extends State<SmbDrawer> {
             child: ListTile(
               title: Text('${item.id}'),
               onTap: () {
-                SmbListModel smbListModel = Provider.of<SmbListModel>(context,listen: false);
+                SmbListModel smbListModel =
+                    Provider.of<SmbListModel>(context, listen: false);
                 var smb = smbListModel.smbById(item.id);
                 smb.init();
-                SmbNavigation smbNavigation = Provider.of<SmbNavigation>(context,listen: false);
-                smbNavigation.refresh(context,"");
+                SmbNavigation smbNavigation =
+                    Provider.of<SmbNavigation>(context, listen: false);
+                smbNavigation.refresh(context, "", item.id);
                 Navigator.of(context).pop();
 //                smbListModel.
 //                Smb.pushConfig(item.id, hostname, shareName, domain, username, password, path, searchPattern)

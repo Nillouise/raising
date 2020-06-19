@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:raising/page/FileList.dart';
+import 'package:raising/model/file_info.dart';
 import 'package:raising/page/drawer.dart';
 import 'package:raising/page/home.dart';
+
 import 'catalog.dart';
 import 'item_tile.dart';
 import 'model/smb_list_model.dart';
@@ -39,19 +40,18 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
         providers: [
           ChangeNotifierProvider<SmbListModel>(
-              create: (context) => SmbListModel()..loadTodos(),lazy: false,),
+            create: (context) => SmbListModel()..loadTodos(),
+            lazy: false,
+          ),
           ChangeNotifierProvider<SmbNavigation>(
-              create: (context) => SmbNavigation(),lazy: false),
+              create: (context) => SmbNavigation(), lazy: false),
+          ChangeNotifierProvider<FileRepository>(
+              create: (context) => FileRepository()..init(), lazy: false),
         ],
         child: MaterialApp(
             title: 'Infinite List Sample',
 //        home: InfList(),
-            home: Scaffold(
-//                appBar: AppBar(
-//                  title: Text('Infinite List Sample'),
-//                ),
-                drawer: HomeDrawer(),
-                body: RaisingHome())));
+            home: Scaffold(drawer: HomeDrawer(), body: RaisingHome())));
   }
 }
 
