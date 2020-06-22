@@ -3,8 +3,10 @@ import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 import 'package:raising/channel/Smb.dart';
+import 'package:raising/image/cache.dart';
 import 'package:raising/model/file_info.dart';
 import 'package:raising/model/smb_navigation.dart';
+import 'package:raising/reader/screen.dart';
 
 var logger = Logger();
 
@@ -87,8 +89,20 @@ class _ViewerState extends State<Viewer> {
             fileInfo.length == null ||
             fileInfo.length == 0);
 
-        return Smb.getCurrentSmb().loadImageFromIndex(widget.filename, index,
-            needFileDetailInfo: needFileDetailInfo);
+        if (false) {
+          SmbHalfResult smbHalfResult = await Smb.getCurrentSmb()
+              .loadImageFromIndex(widget.filename, index,
+                  needFileDetailInfo: needFileDetailInfo);
+          if (smbHalfResult.msg == "successful") {
+            await putImageToCache(
+                absPath, index, smbHalfResult.result[index].content);
+          }
+          return smbHalfResult;
+        } else {
+          var smbHalfResult = await getImage(index, absPath, needFileDetailInfo);
+          getImage(index+1, absPath, needFileDetailInfo);
+          return smbHalfResult;
+        }
       }(),
       builder: (BuildContext context, AsyncSnapshot<SmbHalfResult> snapshot) {
         // 请求已结束
@@ -97,6 +111,8 @@ class _ViewerState extends State<Viewer> {
             // 请求失败，显示错误
             return Text("Error: ${snapshot.error}");
           } else {
+            //cahce iamge;
+
             // 请求成功，显示数据
             return Image.memory(snapshot.data.result[index].content);
           }
@@ -106,5 +122,24 @@ class _ViewerState extends State<Viewer> {
         }
       },
     );
+  }
+
+  Future<SmbHalfResult> getImage(int index, String absPath, bool needFileDetailInfo) async {
+    var result = await getImageFromCache(absPath, index);
+    if (result != null) {
+      return SmbHalfResult(
+          "successful", {index: ZipFileContent.content(result)});
+    } else {
+      SmbHalfResult smbHalfResult = await Smb.getCurrentSmb()
+          .loadImageFromIndex(widget.filename, index,
+              needFileDetailInfo: needFileDetailInfo);
+      if (smbHalfResult.msg == "successful") {
+        putImageToCache(
+            absPath, index, smbHalfResult.result[index].content);
+      }
+
+
+      return smbHalfResult;
+    }
   }
 }

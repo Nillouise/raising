@@ -50,7 +50,10 @@ class ZipFileContent {
   dynamic content;
 
   ZipFileContent(
-      this.filename, this.zipFilename, this.index, this.length, this.content);
+  this.filename, this.zipFilename, this.index, this.length, this.content);
+
+  ZipFileContent.content(this.content);
+
 
   factory ZipFileContent.fromJson(Map<String, dynamic> json) =>
       _$ZipFileContentFromJson(json);
