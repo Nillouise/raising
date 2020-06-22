@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 import 'package:raising/channel/Smb.dart';
+import 'package:raising/exception/SmbException.dart';
 import 'package:raising/model/file_info.dart';
 import 'package:raising/model/smb_list_model.dart';
 import 'package:raising/model/smb_navigation.dart';
 import 'package:raising/page/viewer.dart';
 
 import 'drawer.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 var logger = Logger();
 
@@ -33,6 +35,7 @@ class FileListState extends State<FileList> {
 
   @override
   Widget build(BuildContext context) {
+
     SmbListModel listModel = Provider.of<SmbListModel>(context);
     if (listModel.smbs.length == 0) {
       return Center(
