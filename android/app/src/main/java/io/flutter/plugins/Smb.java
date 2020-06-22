@@ -29,6 +29,7 @@ import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.io.*;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -472,7 +473,7 @@ public class Smb {
     }
 
     private String getAbsFilename(String filename) {
-        return (path == null ? "" : path) + filename;
+        return Paths.get((path == null ? "" : path), filename).toString() ;
     }
 
     //由于中断的存在，本函数不一定能返回全部图片
@@ -489,7 +490,7 @@ public class Smb {
         boolean fileExists = share.fileExists(absFilename);
         if (!fileExists) {
             Logger.w("File %s not exist.", absFilename);
-            throw new SmbException("File " + absFilename + "not exist");
+            throw new SmbException("File " + absFilename + " not exist");
         }
         File smbFileRead = share.openFile(absFilename, EnumSet.of(AccessMask.GENERIC_READ), null, SMB2ShareAccess.ALL, SMB2CreateDisposition.FILE_OPEN, null);
         FileStandardInformation info = smbFileRead.getFileInformation(FileStandardInformation.class);
@@ -572,17 +573,17 @@ public class Smb {
         try {
             return task.get();
         } catch (CancellationException e) {
-            Logger.e(e, "%s %s %s", filename, String.valueOf(indexs));
+            Logger.e(e, "%s %s", filename, String.valueOf(indexs));
             try {
                 //睡眠一小段时间，是为了传输完成正在传输中的图片
                 Thread.sleep(130);
                 return task.get();
             } catch (Exception ex) {
-                Logger.e(e, "double %s %s %s", filename, String.valueOf(indexs));
+                Logger.e(e, "double %s %s", filename, String.valueOf(indexs));
                 return SmbHalfResult.ofCancel();
             }
         } catch (Exception e) {
-            Logger.e(e, "%s %s %s", filename, String.valueOf(indexs));
+            Logger.e(e, "%s %s", filename, String.valueOf(indexs));
             return SmbHalfResult.ofUnknownError();
         }
     }

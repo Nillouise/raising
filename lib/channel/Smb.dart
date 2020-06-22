@@ -8,6 +8,8 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:logger/logger.dart';
 import 'package:raising/exception/SmbException.dart';
 import 'package:raising/model/file_info.dart';
+import 'package:path/path.dart' as p;
+
 
 part 'Smb.g.dart';
 
@@ -43,14 +45,18 @@ class Smb {
 
   Future<Void> init() async {
     //valid field;
-    shareName = "flutter";
-    domain = "CORP";
-    path = path ?? "";
+    shareName = "wd";
+    domain = "";
+    if(p.split(hostname).length>1){
+      path = p.joinAll(p.split(hostname).sublist(1));
+    }else{
+      path = "[C]";
+    }
     searchPattern = searchPattern ?? "*";
 
     try {
       await methodChannel.invokeMethod('init', {
-        "hostname": hostname,
+        "hostname": p.split(hostname)[0],
         "shareName": shareName,
         "domain": domain,
         "username": username,
