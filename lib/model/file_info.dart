@@ -43,17 +43,16 @@ class FileKey {
 
 @JsonSerializable()
 class ZipFileContent {
-  String filename;
+  String absFilename;
   String zipFilename;
   int index;
   int length;
   dynamic content;
 
-  ZipFileContent(
-  this.filename, this.zipFilename, this.index, this.length, this.content);
+  ZipFileContent(this.absFilename, this.zipFilename, this.index, this.length,
+      this.content);
 
   ZipFileContent.content(this.content);
-
 
   factory ZipFileContent.fromJson(Map<String, dynamic> json) =>
       _$ZipFileContentFromJson(json);

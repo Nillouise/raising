@@ -111,25 +111,12 @@ public class MethodDispatcher implements MethodCallHandler {
                     result.error("listFiles", e.toString(), ExceptionUtils.getStackTrace(e));
                 }
             });
-        } else if (call.method.equals("listContent")) {
-            executorService.submit(() -> {
-                try {
-                    String res = smb.processShare(
-                            share -> {
-                                return smb.listContent(call.argument("absoluteFilename"), share);
-                            }
-                    );
-                    result.success(res);
-                } catch (Exception e) {
-                    result.error("listContent", e.toString(), e);
-                }
-            });
         } else if (call.method.equals("loadImageFromIndex")) {
             executorService.submit(() -> {
                 try {
                     Smb.SmbHalfResult res = smb.processShare(share -> {
                                 return smb.loadImageFromIndex(
-                                        call.argument("filename"),
+                                        call.argument("absFilename"),
                                         call.argument("indexs"),
                                         call.argument("needFileDetailInfo"),
                                         share);
@@ -137,7 +124,17 @@ public class MethodDispatcher implements MethodCallHandler {
                     );
                     result.success(res.getMap());
                 } catch (Exception e) {
-                    Logger.e(e,"loadImageFromIndex error");
+                    Logger.e(e, "loadImageFromIndex error");
+                    result.error("loadImageFromIndex", e.getMessage(), e);
+                }
+            });
+        } else if (call.method.equals("stopSmbRequest")) {
+            executorService.submit(() -> {
+                try {
+                    smb.stopSmbRequest();
+                    result.success(null);
+                } catch (Exception e) {
+                    Logger.e(e, "loadImageFromIndex error");
                     result.error("loadImageFromIndex", e.getMessage(), e);
                 }
             });

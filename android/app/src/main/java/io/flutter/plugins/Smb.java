@@ -29,12 +29,10 @@ import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.io.*;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,17 +42,20 @@ import java.util.concurrent.TimeUnit;
 import io.flutter.plugins.exception.SmbException;
 import io.flutter.plugins.exception.SmbInterruptException;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.With;
 import lombok.experimental.Accessors;
+
 
 interface ProcessShare<T> {
     T process(DiskShare share) throws Exception;
 }
 
 public class Smb {
+
+    private static final String TAG = "Smb";
+
     private String hostname;
     private String shareName;
     private String domain;
@@ -129,8 +130,7 @@ public class Smb {
         ArrayList<FileInfo> res = new ArrayList<FileInfo>();
         SMBClient client = getClient();
 
-        System.out.println("curren smb setting" + this.toString());
-
+        Logger.d("listFiles: curren smb setting %s", this.toString());
         try (Connection connection = client.connect(hostname)) {
             AuthenticationContext ac;
             if (passwrod != null) {
@@ -148,14 +148,17 @@ public class Smb {
                     res.add(fi);
                 }
             } catch (Exception e) {
+                Logger.e(e, "path %s searchPattern %s", path, searchPattern);
                 throw e;
             }
             return res;
         } catch (Exception e) {
+            Logger.e(e, "path %s searchPattern %s", path, searchPattern);
             throw e;
         }
     }
 
+    @Deprecated
     public <T> T processShare(String hostname, String shareName, String domain, String username, String passwrod, String path, String searchPattern, ProcessShare<T> process) {
         SMBClient client = getClient();
 
@@ -204,6 +207,7 @@ public class Smb {
     }
 
 
+    @Deprecated
     public ProcessShare<String> uploadFile(final String filename, final byte[] bytes) {
         return new ProcessShare<String>() {
             @Override
@@ -249,6 +253,7 @@ public class Smb {
     }
 
 
+    @Deprecated
     public byte[] getFile(final String filename, DiskShare share) throws SmbException {
 
         // this is com.hierynomus.smbj.share.File !
@@ -283,6 +288,7 @@ public class Smb {
         }
     }
 
+    @Deprecated
     public static void listZip(final String filename, DiskShare share) throws SmbException {
         Logger.i("begin to list Zip 2");
         Logger.i("filename is" + filename);
@@ -319,6 +325,7 @@ public class Smb {
         }
     }
 
+    @Deprecated
     public String listContent(final String filename, DiskShare share) throws Exception {
         // this is com.hierynomus.smbj.share.File !
         File f = null;
@@ -371,7 +378,7 @@ public class Smb {
     @NoArgsConstructor
     static
     class ZipFileContent {
-        String filename;
+        String absFilename;
         String zipFilename;
         Integer index;
         Integer length;
@@ -379,7 +386,7 @@ public class Smb {
 
         HashMap<String, Object> getMap() {
             HashMap<String, Object> res = new HashMap<>();
-            res.put("filename", filename);
+            res.put("absFilename", absFilename);
             res.put("zipFilename", zipFilename);
             res.put("index", index);
             res.put("content", content);
@@ -442,48 +449,47 @@ public class Smb {
     private ConcurrentHashMap<String, ConcurrentSkipListSet<Integer>> fileIndexTask = new ConcurrentHashMap<String, ConcurrentSkipListSet<Integer>>();
     private ExecutorService executorService = Executors.newFixedThreadPool(3);
 
+    private final int interrupttime = 100;
+
     private ZipFileContent extractItem(ISimpleInArchiveItem item, int[] hash, ZipFileContent proto) throws SevenZipException, SmbException {
+        long begin = System.currentTimeMillis();
         ExtractOperationResult result;
         final long[] sizeArray = new long[1];
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         result = item.extractSlow(new ISequentialOutStream() {
             public int write(byte[] data) throws SevenZipException {
-                //处理线程中断，这里不处理中断，因为一个文件传输很快
-//                if (Thread.currentThread().isInterrupted()) {
-//                    throw new SmbInterruptException("thread interrupt");
-//                }
+//                处理线程中断，这里不会马上处理中断，因为假设一个文件传输很快
+                if (Thread.currentThread().isInterrupted() && System.currentTimeMillis() - begin > interrupttime) {
+                    throw new SmbInterruptException("thread interrupt");
+                }
+
                 hash[0] ^= Arrays.hashCode(data); // Consume data
                 sizeArray[0] += data.length;
                 try {
                     outputStream.write(data);
                 } catch (IOException e) {
-                    Logger.e(ExceptionUtils.getStackTrace(e));
+                    Logger.e(e, "extractItem error");
                 }
                 return data.length; // Return amount of consumed data
             }
         });
         if (result == ExtractOperationResult.OK) {
-            System.out.println(String.format("%9X | %10s | %s",
-                    hash[0], sizeArray[0], item.getPath()));
+            Logger.i("extreactItem path %s size %d use %d ms.", item.getPath(), sizeArray[0], System.currentTimeMillis() - begin);
             return proto.withZipFilename(item.getPath()).withContent(outputStream.toByteArray());
         } else {
             Logger.e("Error extracting item: " + result);
-            throw new SmbException("extract eror" + result.toString());
+            throw new SmbException("Error extracting item:" + result.toString());
         }
     }
 
-    private String getAbsFilename(String filename) {
-        return Paths.get((path == null ? "" : path), filename).toString() ;
-    }
 
     //由于中断的存在，本函数不一定能返回全部图片
-    private SmbHalfResult getFileWorker(String filename, Boolean needFileDetailInfo, DiskShare share) throws Exception {
+    private SmbHalfResult getFileWorker(String absFilename, Boolean needFileDetailInfo, DiskShare share) throws Exception {
         HashMap<String, ZipFileContent> res = new HashMap<String, ZipFileContent>();
-        ConcurrentSkipListSet<Integer> indexlst = fileIndexTask.get(filename);
+        ConcurrentSkipListSet<Integer> indexlst = fileIndexTask.get(absFilename);
         if (indexlst == null || indexlst.isEmpty()) {
             return SmbHalfResult.ofEmptyIndex().setResult(res);
         }
-        String absFilename = getAbsFilename(filename);
 
         Logger.i("previewFileQueue file name %s", absFilename);
         File f = null;
@@ -504,17 +510,13 @@ public class Smb {
             inArchive = SevenZip.openInArchive(null, // autodetect archive type
                     new SmbRandomFile(smbFileRead));
 
-            // Getting simple interface of the archive inArchive
             ISimpleInArchive simpleInArchive = inArchive.getSimpleInterface();
-
-//          System.out.println("   Hash   |    Size    | Filename");
-//          System.out.println("----------+------------+---------");
 
             int curindex = 0;
             ZipFileContent proto = new ZipFileContent();
             if (Boolean.TRUE.equals(needFileDetailInfo)) {
                 proto.setLength(simpleInArchive.getArchiveItems().length);
-                proto.setFilename(filename);
+                proto.setAbsFilename(absFilename);
             }
 
             for (ISimpleInArchiveItem item : simpleInArchive.getArchiveItems()) {
@@ -541,7 +543,7 @@ public class Smb {
             Logger.e("Error closing file: " + ExceptionUtils.getStackTrace(e));
             return SmbHalfResult.ofCancel().setResult(res);
         } catch (Exception e) {
-            Logger.e("Error closing file: " + e);
+            Logger.e(e, absFilename);
             return SmbHalfResult.ofUnknownError().setResult(res);
         } finally {
             if (inArchive != null) {
@@ -561,34 +563,34 @@ public class Smb {
         }
     }
 
-    public SmbHalfResult loadImageFromIndex(final String filename, ArrayList<Integer> indexs, Boolean needFileDetailInfo, DiskShare share) throws SmbException {
-        fileIndexTask.put(filename, new ConcurrentSkipListSet<Integer>(indexs));
+    public SmbHalfResult loadImageFromIndex(final String absFilename, ArrayList<Integer> indexs, Boolean needFileDetailInfo, DiskShare share) throws SmbException {
+        fileIndexTask.put(absFilename, new ConcurrentSkipListSet<Integer>(indexs));
         Future<SmbHalfResult> task = executorService.submit(new Callable<SmbHalfResult>() {
             @Override
             public SmbHalfResult call() throws Exception {
-                return getFileWorker(filename, needFileDetailInfo, share);
+                return getFileWorker(absFilename, needFileDetailInfo, share);
             }
         });
 
         try {
             return task.get();
         } catch (CancellationException e) {
-            Logger.e(e, "%s %s", filename, String.valueOf(indexs));
+            Logger.e(e, "%s %s", absFilename, String.valueOf(indexs));
             try {
                 //睡眠一小段时间，是为了传输完成正在传输中的图片
                 Thread.sleep(130);
                 return task.get();
             } catch (Exception ex) {
-                Logger.e(e, "double %s %s", filename, String.valueOf(indexs));
+                Logger.e(e, "double %s %s", absFilename, String.valueOf(indexs));
                 return SmbHalfResult.ofCancel();
             }
         } catch (Exception e) {
-            Logger.e(e, "%s %s", filename, String.valueOf(indexs));
+            Logger.e(e, "%s %s", absFilename, String.valueOf(indexs));
             return SmbHalfResult.ofUnknownError();
         }
     }
 
-    public void stopRequest() {
+    public void stopSmbRequest() {
         fileIndexTask.clear();
         List<Runnable> runnables = executorService.shutdownNow();
     }

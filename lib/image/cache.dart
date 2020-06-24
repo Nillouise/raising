@@ -7,8 +7,8 @@ import 'package:raising/channel/Smb.dart';
 Future<Uint8List> compressImage(Uint8List list) async {
   var result = await FlutterImageCompress.compressWithList(
     list,
-    minHeight: 1920,
-    minWidth: 1080,
+    minHeight: 2560,
+    minWidth: 1440,
     quality: 70,
   );
   return Uint8List.fromList(result);

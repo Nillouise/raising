@@ -6,10 +6,9 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:logger/logger.dart';
+import 'package:path/path.dart' as p;
 import 'package:raising/exception/SmbException.dart';
 import 'package:raising/model/file_info.dart';
-import 'package:path/path.dart' as p;
-
 
 part 'Smb.g.dart';
 
@@ -45,12 +44,12 @@ class Smb {
 
   Future<Void> init() async {
     //valid field;
-    shareName = "wd";
-    domain = "";
-    if(p.split(hostname).length>1){
+    shareName = "flutter";
+    domain = "CORP";
+    if (p.split(hostname).length > 1) {
       path = p.joinAll(p.split(hostname).sublist(1));
-    }else{
-      path = "[C]";
+    } else {
+      path = "";
     }
     searchPattern = searchPattern ?? "*";
 
@@ -210,12 +209,12 @@ class Smb {
     }
   }
 
-  Future<SmbHalfResult> loadImageFromIndex(String filename, int index,
+  Future<SmbHalfResult> loadImageFromIndex(String absFilename, int index,
       {bool needFileDetailInfo = false}) async {
     try {
       final Map<dynamic, dynamic> loadImageFromIndex =
           await methodChannel.invokeMethod('loadImageFromIndex', {
-        "filename": filename,
+        "absFilename": absFilename,
         "indexs": [index],
         "needFileDetailInfo": needFileDetailInfo
       });
@@ -237,8 +236,9 @@ class Smb {
     }
   }
 
-  Future<Uint8List> loadFilesFromIndexs(
-      String filename, List<int> indexs) async {
+  //此方法尽量不用
+  Future<Uint8List> loadFilesFromIndexs(String filename, List<int> indexs,
+      {bool needFileDetailInfo = false}) async {
     try {
       final Map<dynamic, dynamic> res = await methodChannel.invokeMethod(
           'loadImageFromIndex', {"filename": filename, "indexs": indexs});
@@ -248,10 +248,5 @@ class Smb {
       logger.e("PlatformException {}", e);
       throw e;
     }
-  }
-
-  Future<Uint8List> loadImageFromFilename(String path, String name) async {
-//    Uint8List picture = await loadPicture(index);
-//    return picture;
   }
 }

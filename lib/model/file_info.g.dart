@@ -52,7 +52,7 @@ ZipFileContent _$ZipFileContentFromJson(Map<String, dynamic> json) {
 
 Map<String, dynamic> _$ZipFileContentToJson(ZipFileContent instance) =>
     <String, dynamic>{
-      'filename': instance.filename,
+      'filename': instance.absFilename,
       'zipFilename': instance.zipFilename,
       'index': instance.index,
       'length': instance.length,

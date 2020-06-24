@@ -6,7 +6,6 @@ import 'package:raising/channel/Smb.dart';
 import 'package:raising/image/cache.dart';
 import 'package:raising/model/file_info.dart';
 import 'package:raising/model/smb_navigation.dart';
-import 'package:raising/reader/screen.dart';
 
 var logger = Logger();
 
@@ -28,6 +27,8 @@ enum Area { lef, right, middle }
 class _ViewerState extends State<Viewer> {
   int _index = 0;
 
+  Widget oldFutureImageWidget;
+
   Area getArea(Offset offset, Size size) {
     double pecentage = offset.dx / size.width;
     if (pecentage < 0.3) return Area.lef;
@@ -48,7 +49,7 @@ class _ViewerState extends State<Viewer> {
         ],
         child: GestureDetector(
           child: Container(
-            child: showPage(context, _index),
+            child: FutureImage(_index, widget.filename),
           ),
           onPanDown: (DragDownDetails e) {
             //打印手指按下的位置(相对于屏幕)
@@ -74,14 +75,20 @@ class _ViewerState extends State<Viewer> {
 
 //    return showPage(context,0);
   }
+}
 
-  Widget showPage(BuildContext context, int index) {
+class FutureImage extends StatelessWidget {
+  final int index;
+  final String filename;
+
+  @override
+  Widget build(BuildContext context) {
     return FutureBuilder<SmbHalfResult>(
       future: () async {
         SmbNavigation catalog = Provider.of<SmbNavigation>(context);
         FileRepository fileRepository =
             Provider.of<FileRepository>(context, listen: false);
-        var absPath = path.join(catalog.path, widget.filename);
+        var absPath = path.join(catalog.path, filename);
 
         FileInfo fileInfo =
             await fileRepository.findByabsPath(absPath, catalog.smbId);
@@ -91,7 +98,7 @@ class _ViewerState extends State<Viewer> {
 
         if (false) {
           SmbHalfResult smbHalfResult = await Smb.getCurrentSmb()
-              .loadImageFromIndex(widget.filename, index,
+              .loadImageFromIndex(absPath, index,
                   needFileDetailInfo: needFileDetailInfo);
           if (smbHalfResult.msg == "successful") {
             await putImageToCache(
@@ -99,8 +106,9 @@ class _ViewerState extends State<Viewer> {
           }
           return smbHalfResult;
         } else {
-          var smbHalfResult = await getImage(index, absPath, needFileDetailInfo);
-          getImage(index+1, absPath, needFileDetailInfo);
+          var smbHalfResult =
+              await getImage(index, absPath, needFileDetailInfo);
+          getImage(index + 1, absPath, needFileDetailInfo);
           return smbHalfResult;
         }
       }(),
@@ -124,22 +132,23 @@ class _ViewerState extends State<Viewer> {
     );
   }
 
-  Future<SmbHalfResult> getImage(int index, String absPath, bool needFileDetailInfo) async {
+  Future<SmbHalfResult> getImage(
+      int index, String absPath, bool needFileDetailInfo) async {
     var result = await getImageFromCache(absPath, index);
     if (result != null) {
       return SmbHalfResult(
           "successful", {index: ZipFileContent.content(result)});
     } else {
       SmbHalfResult smbHalfResult = await Smb.getCurrentSmb()
-          .loadImageFromIndex(widget.filename, index,
+          .loadImageFromIndex(absPath, index,
               needFileDetailInfo: needFileDetailInfo);
       if (smbHalfResult.msg == "successful") {
-        putImageToCache(
-            absPath, index, smbHalfResult.result[index].content);
+        putImageToCache(absPath, index, smbHalfResult.result[index].content);
       }
-
 
       return smbHalfResult;
     }
   }
+
+  FutureImage(this.index, this.filename);
 }
