@@ -44,12 +44,12 @@ class Smb {
 
   Future<Void> init() async {
     //valid field;
-    shareName = "flutter";
-    domain = "CORP";
+    shareName = "wd";
+    domain = "";
     if (p.split(hostname).length > 1) {
       path = p.joinAll(p.split(hostname).sublist(1));
     } else {
-      path = "";
+      path = "[C]";
     }
     searchPattern = searchPattern ?? "*";
 
