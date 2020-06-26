@@ -383,6 +383,7 @@ public class Smb {
         Integer index;
         Integer length;
         byte[] content;
+        boolean isCompressFile = true;
 
         HashMap<String, Object> getMap() {
             HashMap<String, Object> res = new HashMap<>();
@@ -391,6 +392,7 @@ public class Smb {
             res.put("index", index);
             res.put("content", content);
             res.put("length", length);
+            res.put("isCompressFile", isCompressFile);
             return res;
         }
 
@@ -484,9 +486,10 @@ public class Smb {
 
 
     //由于中断的存在，本函数不一定能返回全部图片
-    private SmbHalfResult getFileWorker(String absFilename, Boolean needFileDetailInfo, DiskShare share) throws Exception {
+    private SmbHalfResult getFileWorker(String absFilename, Boolean needFileDetailInfo, List<Integer> indexs, DiskShare share) throws Exception {
         HashMap<String, ZipFileContent> res = new HashMap<String, ZipFileContent>();
-        ConcurrentSkipListSet<Integer> indexlst = fileIndexTask.get(absFilename);
+//        ConcurrentSkipListSet<Integer> indexlst = fileIndexTask.get(absFilename);
+        Set<Integer> indexlst = new HashSet<>(indexs);
         if (indexlst == null || indexlst.isEmpty()) {
             return SmbHalfResult.ofEmptyIndex().setResult(res);
         }
@@ -512,33 +515,58 @@ public class Smb {
 
             ISimpleInArchive simpleInArchive = inArchive.getSimpleInterface();
 
-            int curindex = 0;
             ZipFileContent proto = new ZipFileContent();
-            if (Boolean.TRUE.equals(needFileDetailInfo)) {
-                proto.setLength(simpleInArchive.getArchiveItems().length);
-                proto.setAbsFilename(absFilename);
-            }
+            proto.setLength(simpleInArchive.getArchiveItems().length);
+            proto.setAbsFilename(absFilename);
 
+            ArrayList<String> paths = new ArrayList<>();
+            HashMap<String, Integer> mapPath = new HashMap<>();
+            int archiIndex = 0;
+            long getAchiveItemTime = System.currentTimeMillis();
             for (ISimpleInArchiveItem item : simpleInArchive.getArchiveItems()) {
-                final int[] hash = new int[]{0};
                 if (!item.isFolder()) {
-                    if (indexlst.contains(curindex)) {
-                        indexlst.remove(curindex);
-                        ZipFileContent zipFileContent =
-                                extractItem(item, hash, proto).setIndex(curindex);
-                        res.put(String.valueOf(curindex), zipFileContent);
-                    }
-                    curindex++;
-                }
-                if (indexlst.isEmpty()) {
-                    return SmbHalfResult.ofSuccessful().setResult(res);
-                } else if (Thread.currentThread().isInterrupted()) {
-                    //处理线程中断
-                    return SmbHalfResult.ofCancel().setResult(res);
+                    paths.add(item.getPath());
+                    mapPath.put(item.getPath(), archiIndex++);
                 }
             }
-            Logger.i("curindex %s %s", curindex, indexlst);
-            return SmbHalfResult.ofContainNotExistIndex().setResult(res);
+            Logger.d("iterate archiveItems name use %d ms", System.currentTimeMillis() - getAchiveItemTime);
+            paths.sort(String::compareTo);
+
+            for (Integer integer : indexlst) {
+                final int[] hash = new int[]{0};
+                if (Thread.currentThread().isInterrupted()) {
+                    return SmbHalfResult.ofCancel().setResult(res);
+                } else if (integer >= 0 && integer < paths.size()) {
+                    res.put(String.valueOf(integer), extractItem(simpleInArchive.getArchiveItem(mapPath.get(paths.get(integer))), hash, proto).setIndex(integer));
+                } else {
+                    Logger.d("SmbHalfResult.ofContainNotExistIndex page %d ", integer);
+                    return SmbHalfResult.ofContainNotExistIndex().setResult(res);
+                }
+            }
+            return SmbHalfResult.ofSuccessful().setResult(res);
+
+
+//            for (ISimpleInArchiveItem item : simpleInArchive.getArchiveItems()) {
+//                Logger.d("iterate path %s %s", curindex, item.getPath());
+//                final int[] hash = new int[]{0};
+//                if (!item.isFolder()) {
+//                    if (indexlst.contains(curindex)) {
+//                        indexlst.remove(curindex);
+//                        ZipFileContent zipFileContent =
+//                                extractItem(item, hash, proto).setIndex(curindex);
+//                        res.put(String.valueOf(curindex), zipFileContent);
+//                    }
+//                    curindex++;
+//                }
+//                if (indexlst.isEmpty()) {
+//                    return SmbHalfResult.ofSuccessful().setResult(res);
+//                } else if (Thread.currentThread().isInterrupted()) {
+//                    //处理线程中断
+//                    return SmbHalfResult.ofCancel().setResult(res);
+//                }
+//            }
+//            Logger.i("curindex %s %s", curindex, indexlst);
+//            return SmbHalfResult.ofContainNotExistIndex().setResult(res);
         } catch (SmbInterruptException e) {
             Logger.e("Error closing file: " + ExceptionUtils.getStackTrace(e));
             return SmbHalfResult.ofCancel().setResult(res);
@@ -564,12 +592,13 @@ public class Smb {
     }
 
     public SmbHalfResult loadImageFromIndex(final String absFilename, ArrayList<Integer> indexs, Boolean needFileDetailInfo, DiskShare share) throws SmbException {
-        fileIndexTask.put(absFilename, new ConcurrentSkipListSet<Integer>(indexs));
+//        fileIndexTask.put(absFilename, new ConcurrentSkipListSet<Integer>(indexs));
         Future<SmbHalfResult> task = executorService.submit(new Callable<SmbHalfResult>() {
             @Override
             public SmbHalfResult call() throws Exception {
-                return getFileWorker(absFilename, needFileDetailInfo, share);
+                return getFileWorker(absFilename, needFileDetailInfo, indexs, share);
             }
+
         });
 
         try {

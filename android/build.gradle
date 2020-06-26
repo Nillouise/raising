@@ -11,8 +11,18 @@ buildscript {
     }
 }
 
+apply plugin: 'idea'
+
+idea {
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+    }
+}
+
 allprojects {
     repositories {
+        mavenLocal()
         google()
         jcenter()
         flatDir {

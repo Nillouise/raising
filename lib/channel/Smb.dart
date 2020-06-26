@@ -145,9 +145,15 @@ class Smb {
       final String result = await methodChannel.invokeMethod(
           'listFiles', {"path": path, "searchPattern": searchPattern});
       List decode = json.decode(result);
-      return decode.map((element) {
+      List<FileInfo> list = decode.map((element) {
         return FileInfo.fromJson(element);
       }).toList();
+      return list
+        ..map((x) {
+          x.absPath = p.join(path, x.filename);
+          return x;
+        }).toList()
+        ..sort((a, b) => b.updateTime.compareTo(a.updateTime));
     } on PlatformException catch (e) {
       logger.e("PlatformException {}", e);
       throw e;
@@ -228,7 +234,7 @@ class Smb {
           throw SmbException("loadImageFromIndex failed");
         }
       } else {
-        throw SmbException("loadImageFromIndex failed");
+        throw SmbException("loadImageFromIndex failed"+res.msg);
       }
     } on PlatformException catch (e) {
       logger.e("PlatformException {}", e);

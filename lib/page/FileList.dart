@@ -35,23 +35,22 @@ class FileListState extends State<FileList> {
 
   @override
   Widget build(BuildContext context) {
-
     SmbListModel listModel = Provider.of<SmbListModel>(context);
     if (listModel.smbs.length == 0) {
       return Center(
           child: GestureDetector(
-        child: Row(
+            child: Row(
 //          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Icon(Icons.settings),
-            const Text('添加Smb链接'),
-          ],
-        ),
-        onTap: () {
-          showDialog(context: context, child: SmbManage());
-        },
-      ));
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                const Icon(Icons.settings),
+                const Text('添加Smb链接'),
+              ],
+            ),
+            onTap: () {
+              showDialog(context: context, child: SmbManage());
+            },
+          ));
 
       return Center();
     } else {
@@ -70,26 +69,29 @@ class FileListState extends State<FileList> {
               // 请求成功，显示数据
               return Center(
                   child: ListView.builder(
-                itemCount: snapshot.data.files.length,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                itemBuilder: (context, index) {
-                  SmbListModel b = Provider.of<SmbListModel>(context);
-                  SmbNavigation catalog = Provider.of<SmbNavigation>(context);
+                    itemCount: snapshot.data.files.length,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    itemBuilder: (context, index) {
+                      SmbListModel b = Provider.of<SmbListModel>(context);
+                      SmbNavigation catalog = Provider.of<SmbNavigation>(
+                          context);
 
-                  List<FileInfo> files = catalog.files;
-                  return ListTile(
-                    title: Text(files[index].filename),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => Viewer(files[index].filename),
-                        ),
+                      List<FileInfo> files = catalog.files;
+                      return ListTile(
+                        title: Text(files[index].filename),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+//                              Viewer(files[index].absPath,0,index: 0,),
+                                FutureViewerChecker(0, files[index].absPath)
+                            ),
+                          );
+                        },
                       );
                     },
-                  );
-                },
-              ));
+                  ));
             }
           } else {
             // 请求未结束，显示loading
