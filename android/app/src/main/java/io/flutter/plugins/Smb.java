@@ -8,6 +8,7 @@ import com.hierynomus.mssmb2.SMB2CreateDisposition;
 import com.hierynomus.mssmb2.SMB2CreateOptions;
 import com.hierynomus.mssmb2.SMB2ShareAccess;
 import com.hierynomus.mssmb2.SMBApiException;
+import com.hierynomus.protocol.commons.EnumWithValue;
 import com.hierynomus.smbj.SMBClient;
 import com.hierynomus.smbj.SmbConfig;
 import com.hierynomus.smbj.auth.AuthenticationContext;
@@ -46,6 +47,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.With;
 import lombok.experimental.Accessors;
+
+import static com.hierynomus.msfscc.FileAttributes.FILE_ATTRIBUTE_DIRECTORY;
 
 
 interface ProcessShare<T> {
@@ -143,8 +146,11 @@ public class Smb {
             // Connect to Share
             try (DiskShare share = (DiskShare) session.connectShare(shareName)) {
                 for (FileIdBothDirectoryInformation f : share.list(path, searchPattern)) {
-                    FileInfo fi = new FileInfo().setFilename(f.getFileName())
-                            .setSize(f.getEndOfFile()).setUpdateTime(f.getLastWriteTime().toDate());
+                    FileInfo fi = new FileInfo()
+                            .setFilename(f.getFileName())
+                            .setSize(f.getEndOfFile())
+                            .setUpdateTime(f.getLastWriteTime().toDate())
+                            .setDirectory(EnumWithValue.EnumUtils.isSet(f.getFileAttributes(), FILE_ATTRIBUTE_DIRECTORY));
                     res.add(fi);
                 }
             } catch (Exception e) {
@@ -433,8 +439,10 @@ public class Smb {
             HashMap<String, Object> res = new HashMap<>();
             res.put("msg", msg);
             HashMap<String, HashMap<String, Object>> cvt = new HashMap<>();
-            for (Map.Entry<String, ZipFileContent> entry : result.entrySet()) {
-                cvt.put(String.valueOf(entry.getKey()), entry.getValue().getMap());
+            if (result != null) {
+                for (Map.Entry<String, ZipFileContent> entry : result.entrySet()) {
+                    cvt.put(String.valueOf(entry.getKey()), entry.getValue().getMap());
+                }
             }
             res.put("result", cvt);
             return res;

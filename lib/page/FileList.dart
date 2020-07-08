@@ -1,17 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 import 'package:raising/channel/Smb.dart';
-import 'package:raising/exception/SmbException.dart';
 import 'package:raising/model/file_info.dart';
 import 'package:raising/model/smb_list_model.dart';
 import 'package:raising/model/smb_navigation.dart';
 import 'package:raising/page/viewer.dart';
 
 import 'drawer.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 var logger = Logger();
+
+class Explorer extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() {
+    return ExplorerState();
+  }
+}
+
+class ExplorerState extends State<Explorer> {
+  String _dirname(String path) {
+    var dirname = p.dirname(path);
+    return dirname == '.' ? "" : dirname;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    SmbNavigation catalog = Provider.of<SmbNavigation>(context);
+//    return FileList();
+    return new WillPopScope(
+        child: Column(
+          children: <Widget>[
+            Row(
+              children: <Widget>[Text("path:" + catalog.path)],
+            ),
+            Expanded(
+              child: FileList(),
+            )
+          ],
+        ),
+        onWillPop: () async {
+          SmbNavigation catalog =
+              Provider.of<SmbNavigation>(context, listen: false);
+          if (p.rootPrefix(catalog.path) == catalog.path) {
+            return true;
+          } else {
+            var smb = Smb.getCurrentSmb();
+            catalog.refresh(context, _dirname(catalog.path), smb.id);
+            return false;
+          }
+        });
+  }
+}
 
 class FileList extends StatefulWidget {
   FileList({Key key}) : super(key: key);
@@ -39,18 +80,18 @@ class FileListState extends State<FileList> {
     if (listModel.smbs.length == 0) {
       return Center(
           child: GestureDetector(
-            child: Row(
+        child: Row(
 //          crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const Icon(Icons.settings),
-                const Text('添加Smb链接'),
-              ],
-            ),
-            onTap: () {
-              showDialog(context: context, child: SmbManage());
-            },
-          ));
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            const Icon(Icons.settings),
+            const Text('添加Smb链接'),
+          ],
+        ),
+        onTap: () {
+          showDialog(context: context, child: SmbManage());
+        },
+      ));
 
       return Center();
     } else {
@@ -69,29 +110,37 @@ class FileListState extends State<FileList> {
               // 请求成功，显示数据
               return Center(
                   child: ListView.builder(
-                    itemCount: snapshot.data.files.length,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    itemBuilder: (context, index) {
-                      SmbListModel b = Provider.of<SmbListModel>(context);
-                      SmbNavigation catalog = Provider.of<SmbNavigation>(
-                          context);
+                itemCount: snapshot.data.files.length,
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                itemBuilder: (context, index) {
+                  SmbListModel b = Provider.of<SmbListModel>(context);
+                  SmbNavigation catalog = Provider.of<SmbNavigation>(context);
 
-                      List<FileInfo> files = catalog.files;
-                      return ListTile(
-                        title: Text(files[index].filename),
-                        onTap: () {
-                          Navigator.push(
+                  List<FileInfo> files = catalog.files;
+                  return ListTile(
+                    title: Text(files[index].filename),
+                    onTap: () {
+                      if (files[index].isDirectory) {
+                        var smb = Smb.getCurrentSmb();
+                        SmbNavigation smbNavigation =
+                            Provider.of<SmbNavigation>(context, listen: false);
+                        smbNavigation.refresh(
                             context,
-                            MaterialPageRoute(
-                                builder: (context) =>
+                            p.join(smbNavigation.path, files[index].filename),
+                            smb.id);
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
 //                              Viewer(files[index].absPath,0,index: 0,),
-                                FutureViewerChecker(0, files[index].absPath)
-                            ),
-                          );
-                        },
-                      );
+                                  FutureViewerChecker(0, files[index].absPath)),
+                        );
+                      }
                     },
-                  ));
+                  );
+                },
+              ));
             }
           } else {
             // 请求未结束，显示loading

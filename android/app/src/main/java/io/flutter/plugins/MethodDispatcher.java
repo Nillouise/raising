@@ -108,6 +108,7 @@ public class MethodDispatcher implements MethodCallHandler {
                             call.argument("searchPattern"));
                     result.success(gson.toJson(res));
                 } catch (Exception e) {
+                    Logger.e(e, "listFiles error");
                     result.error("listFiles", e.toString(), ExceptionUtils.getStackTrace(e));
                 }
             });
@@ -124,8 +125,10 @@ public class MethodDispatcher implements MethodCallHandler {
                     );
                     result.success(res.getMap());
                 } catch (Exception e) {
+
                     Logger.e(e, "loadImageFromIndex error");
-                    result.error("loadImageFromIndex", e.getMessage(), e);
+                    //由于发现加入e到errorDetails会导致应用崩溃，所以不加了
+                    result.error("loadImageFromIndex", e.toString(), ExceptionUtils.getStackTrace(e));
                 }
             });
         } else if (call.method.equals("stopSmbRequest")) {
@@ -134,8 +137,8 @@ public class MethodDispatcher implements MethodCallHandler {
                     smb.stopSmbRequest();
                     result.success(null);
                 } catch (Exception e) {
-                    Logger.e(e, "loadImageFromIndex error");
-                    result.error("loadImageFromIndex", e.getMessage(), e);
+                    Logger.e(e, "stopSmbRequest error");
+                    result.error("stopSmbRequest", e.toString(), ExceptionUtils.getStackTrace(e));
                 }
             });
         } else {

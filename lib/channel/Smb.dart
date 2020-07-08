@@ -44,12 +44,12 @@ class Smb {
 
   Future<Void> init() async {
     //valid field;
-    shareName = "wd";
+    shareName = "flutter";
     domain = "";
     if (p.split(hostname).length > 1) {
       path = p.joinAll(p.split(hostname).sublist(1));
     } else {
-      path = "[C]";
+      path = "";
     }
     searchPattern = searchPattern ?? "*";
 
@@ -145,15 +145,18 @@ class Smb {
       final String result = await methodChannel.invokeMethod(
           'listFiles', {"path": path, "searchPattern": searchPattern});
       List decode = json.decode(result);
-      List<FileInfo> list = decode.map((element) {
-        return FileInfo.fromJson(element);
-      }).toList();
+      List<FileInfo> list =
+          decode.map((element) => FileInfo.fromJson(element)).toList();
       return list
+        ..removeWhere(
+            (element) => element.filename == '..' || element.filename == '.')
         ..map((x) {
           x.absPath = p.join(path, x.filename);
           return x;
         }).toList()
-        ..sort((a, b) => b.updateTime.compareTo(a.updateTime));
+        ..sort((a, b) {
+          return b.updateTime.compareTo(a.updateTime);
+        });
     } on PlatformException catch (e) {
       logger.e("PlatformException {}", e);
       throw e;
@@ -234,7 +237,7 @@ class Smb {
           throw SmbException("loadImageFromIndex failed");
         }
       } else {
-        throw SmbException("loadImageFromIndex failed"+res.msg);
+        throw SmbException("loadImageFromIndex failed" + res.msg);
       }
     } on PlatformException catch (e) {
       logger.e("PlatformException {}", e);
