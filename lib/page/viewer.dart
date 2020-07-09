@@ -1,15 +1,11 @@
-import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
-import 'package:path/path.dart' as path;
+import 'package:preload_page_view/preload_page_view.dart';
 import 'package:provider/provider.dart';
-import 'package:raising/channel/Smb.dart';
-import 'package:raising/image/cache.dart';
 import 'package:raising/model/file_info.dart';
 import 'package:raising/model/smb_navigation.dart';
-import 'package:preload_page_view/preload_page_view.dart';
+
+import '../util.dart';
 
 var logger = Logger();
 
@@ -97,7 +93,7 @@ class FutureViewerChecker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<SmbHalfResult>(
+    return FutureBuilder<Widget>(
       future: () async {
         SmbNavigation catalog = Provider.of<SmbNavigation>(context);
         FileRepository fileRepository =
@@ -106,22 +102,31 @@ class FutureViewerChecker extends StatelessWidget {
         FileInfo fileInfo =
             await fileRepository.findByabsPath(absFilename, catalog.smbId);
 
-        var smbHalfResult = await _getImage(index, absFilename, true);
-
-        return smbHalfResult;
+        if (Utils.isImageFile(absFilename)) {
+          SmbHalfResult halfResult = await Utils.getPreviewFile(0, absFilename);
+          return Image.memory(halfResult.result[0].content, errorBuilder:
+              (BuildContext context, Object exception, StackTrace stackTrace) {
+            return Icon(Icons.error);
+          });
+        } else if (Utils.isCompressFile(absFilename)) {
+          var smbHalfResult = await Utils.getImage(index, absFilename, true);
+          return Viewer(
+            absFilename,
+            smbHalfResult.result.values.first.length,
+            index: index,
+          );
+        } else {
+          return Text("invalid file");
+        }
       }(),
-      builder: (BuildContext context, AsyncSnapshot<SmbHalfResult> snapshot) {
+      builder: (BuildContext context, AsyncSnapshot<Widget> snapshot) {
         // 请求已结束
         if (snapshot.connectionState == ConnectionState.done) {
           if (snapshot.hasError) {
             // 请求失败，显示错误
             return Text("Error: ${snapshot.error}");
           } else {
-            return Viewer(
-              absFilename,
-              snapshot.data.result.values.first.length,
-              index: index,
-            );
+            return snapshot.data;
           }
         } else {
           return Center(child: CircularProgressIndicator());
@@ -147,7 +152,7 @@ class FutureImage extends StatelessWidget {
 
         FileInfo fileInfo =
             await fileRepository.findByabsPath(absFilename, catalog.smbId);
-        return await _getImage(index, absFilename, true);
+        return await Utils.getImage(index, absFilename, true);
       }(),
       builder: (BuildContext context, AsyncSnapshot<SmbHalfResult> snapshot) {
         // 请求已结束
@@ -166,22 +171,4 @@ class FutureImage extends StatelessWidget {
   }
 
   FutureImage(this.index, this.absFilename);
-}
-
-Future<SmbHalfResult> _getImage(
-    int index, String absPath, bool needFileDetailInfo) async {
-  if (needFileDetailInfo || await getImageFromCache(absPath, index) == null) {
-    SmbHalfResult smbHalfResult = await Smb.getCurrentSmb().loadImageFromIndex(
-        absPath, index,
-        needFileDetailInfo: needFileDetailInfo);
-    if (smbHalfResult.msg == "successful") {
-      putImageToCache(absPath, index, smbHalfResult.result[index].content);
-    }
-
-    return smbHalfResult;
-  } else {
-    return SmbHalfResult("successful", {
-      index: ZipFileContent.content(await getImageFromCache(absPath, index))
-    });
-  }
 }

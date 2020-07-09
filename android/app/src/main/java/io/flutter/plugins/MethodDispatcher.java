@@ -125,10 +125,24 @@ public class MethodDispatcher implements MethodCallHandler {
                     );
                     result.success(res.getMap());
                 } catch (Exception e) {
-
                     Logger.e(e, "loadImageFromIndex error");
                     //由于发现加入e到errorDetails会导致应用崩溃，所以不加了
                     result.error("loadImageFromIndex", e.toString(), ExceptionUtils.getStackTrace(e));
+                }
+            });
+        } else if (call.method.equals("loadImageFile")) {
+            executorService.submit(() -> {
+                try {
+                    Smb.SmbHalfResult res = smb.processShare(share -> {
+                                return smb.loadImageFile(
+                                        call.argument("absFilename"),
+                                        share);
+                            }
+                    );
+                    result.success(res.getMap());
+                } catch (Exception e) {
+                    Logger.e(e, "loadImageFile error");
+                    result.error("loadImageFile", e.toString(), ExceptionUtils.getStackTrace(e));
                 }
             });
         } else if (call.method.equals("stopSmbRequest")) {
@@ -145,7 +159,6 @@ public class MethodDispatcher implements MethodCallHandler {
             result.notImplemented();
         }
     }
-
 
 }
 

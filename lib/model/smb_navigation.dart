@@ -13,6 +13,7 @@ class SmbNavigation extends ChangeNotifier {
   String _path;
   String _smbId;
   List<FileInfo> _files;
+  double scroll_speed;
 
   set title(value) {
     _title = value;

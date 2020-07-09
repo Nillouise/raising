@@ -1,13 +1,16 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 import 'package:raising/channel/Smb.dart';
+import 'package:raising/constant/Constant.dart';
 import 'package:raising/model/file_info.dart';
 import 'package:raising/model/smb_list_model.dart';
 import 'package:raising/model/smb_navigation.dart';
 import 'package:raising/page/viewer.dart';
 
+import '../util.dart';
 import 'drawer.dart';
 
 var logger = Logger();
@@ -74,6 +77,9 @@ class FileListState extends State<FileList> {
     await smb.test();
   }
 
+  double _pixels;
+  int _timestamp = 0;
+
   @override
   Widget build(BuildContext context) {
     SmbListModel listModel = Provider.of<SmbListModel>(context);
@@ -133,8 +139,6 @@ class FileListState extends State<FileList> {
                   SmbNavigation smbNavigation =
                       Provider.of<SmbNavigation>(context, listen: false);
                   smbNavigation.refresh(context, smb.path, item.id);
-//                smbListModel.
-//                Smb.pushConfig(item.id, hostname, shareName, domain, username, password, path, searchPattern)
                 },
               ),
             );
@@ -154,38 +158,63 @@ class FileListState extends State<FileList> {
             } else {
               // 请求成功，显示数据
               return Center(
-                  child: ListView.builder(
-                itemCount: snapshot.data.files.length,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                itemBuilder: (context, index) {
-                  SmbListModel b = Provider.of<SmbListModel>(context);
-                  SmbNavigation catalog = Provider.of<SmbNavigation>(context);
-
-                  List<FileInfo> files = catalog.files;
-                  return ListTile(
-                    title: Text(files[index].filename),
-                    onTap: () {
-                      if (files[index].isDirectory) {
-                        var smb = Smb.getCurrentSmb();
+                  child: NotificationListener<ScrollNotification>(
+                      onNotification: (scrollNotification) {
                         SmbNavigation smbNavigation =
                             Provider.of<SmbNavigation>(context, listen: false);
-                        smbNavigation.refresh(
-                            context,
-                            p.join(smbNavigation.path, files[index].filename),
-                            smb.id);
-                      } else {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
+                        double pixels = scrollNotification.metrics.pixels;
+                        int timestamp = DateTime.now().millisecondsSinceEpoch;
+                        if (timestamp - this._timestamp == 0) {
+                          smbNavigation.scroll_speed = 0;
+                        } else if (this._pixels != null) {
+                          final double velocity = (pixels - this._pixels) /
+                              (timestamp - this._timestamp);
+                          smbNavigation.scroll_speed = velocity;
+                        }
+                        this._pixels = pixels;
+                        this._timestamp = timestamp;
+                        return false;
+                      },
+                      child: ListView.builder(
+                        itemCount: snapshot.data.files.length,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        itemBuilder: (context, index) {
+                          SmbListModel b = Provider.of<SmbListModel>(context);
+                          SmbNavigation catalog =
+                              Provider.of<SmbNavigation>(context);
+                          List<FileInfo> files = catalog.files;
+                          return ListTile(
+                            leading: AspectRatio(
+                                aspectRatio: 1,
+                                child: PreviewFile(files[index])),
+                            title: Text(files[index].filename),
+                            onTap: () {
+                              if (files[index].isDirectory) {
+                                var smb = Smb.getCurrentSmb();
+                                SmbNavigation smbNavigation =
+                                    Provider.of<SmbNavigation>(context,
+                                        listen: false);
+                                smbNavigation.refresh(
+                                    context,
+                                    p.join(smbNavigation.path,
+                                        files[index].filename),
+                                    smb.id);
+                              } else if (Constants.COMPRESS_AND_IMAGE_FILE
+                                  .contains(
+                                      p.extension(files[index].absPath))) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
 //                              Viewer(files[index].absPath,0,index: 0,),
-                                  FutureViewerChecker(0, files[index].absPath)),
-                        );
-                      }
-                    },
-                  );
-                },
-              ));
+                                          FutureViewerChecker(
+                                              0, files[index].absPath)),
+                                );
+                              }
+                            },
+                          );
+                        },
+                      )));
             }
           } else {
             // 请求未结束，显示loading
@@ -194,5 +223,39 @@ class FileListState extends State<FileList> {
         },
       );
     }
+  }
+}
+
+class PreviewFile extends StatelessWidget {
+  final FileInfo fileinfo;
+
+  PreviewFile(this.fileinfo);
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Widget>(future: () async {
+      if (fileinfo.isDirectory) {
+        return Icon(Icons.folder);
+      } else if ((Constants.COMPRESS_AND_IMAGE_FILE)
+          .contains((p.extension(fileinfo.absPath)))) {
+        var smbHalfResult = (await Utils.getPreviewFile(0, fileinfo.absPath));
+        return Image.memory(smbHalfResult.result[0].content, errorBuilder:
+            (BuildContext context, Object exception, StackTrace stackTrace) {
+          return Icon(Icons.error);
+        });
+      } else {
+        return Icon(Icons.folder_open);
+      }
+    }(), builder: (BuildContext context, AsyncSnapshot<Widget> snapshot) {
+      if (snapshot.connectionState == ConnectionState.done) {
+        if (snapshot.hasError) {
+          return Icon(Icons.error);
+        } else {
+          return snapshot.data;
+        }
+      } else {
+        return Center(child: CircularProgressIndicator());
+      }
+    });
   }
 }

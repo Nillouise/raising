@@ -627,6 +627,58 @@ public class Smb {
         }
     }
 
+
+    public SmbHalfResult loadImageFile(final String absFilename, DiskShare share) throws SmbException {
+        Future<SmbHalfResult> task = executorService.submit(new Callable<SmbHalfResult>() {
+            @Override
+            public SmbHalfResult call() throws Exception {
+                File f = null;
+                boolean fileExists = share.fileExists(absFilename);
+                if (!fileExists) {
+                    Logger.w("File %s not exist.", absFilename);
+                    throw new SmbException("File " + absFilename + " not exist");
+                }
+                try {
+                    File smbFileRead = share.openFile(absFilename, EnumSet.of(AccessMask.GENERIC_READ), null, SMB2ShareAccess.ALL, SMB2CreateDisposition.FILE_OPEN, null);
+                    FileStandardInformation info = smbFileRead.getFileInformation(FileStandardInformation.class);
+                    InputStream in = smbFileRead.getInputStream();
+                    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                    int nRead;
+                    byte[] data = new byte[16384];
+                    int total = 0;
+                    while ((nRead = in.read(data, 0, data.length)) != -1) {
+                        buffer.write(data, 0, nRead);
+                        total += nRead;
+                    }
+                    byte[] imagebyte = buffer.toByteArray();
+                    HashMap<String, ZipFileContent> res = new HashMap<>();
+                    res.put("0", new ZipFileContent().setAbsFilename(absFilename).setCompressFile(false).setContent(imagebyte).setIndex(0).setLength(total));
+                    return SmbHalfResult.ofSuccessful().setResult(res);
+                } catch (Exception e) {
+                    Logger.e(e, "cannot load image file");
+                    throw new SmbException(e.getMessage());
+                }
+            }
+        });
+
+        try {
+            return task.get();
+        } catch (CancellationException e) {
+            Logger.e(e, "%s", absFilename);
+            try {
+                //睡眠一小段时间，是为了传输完成正在传输中的图片
+                Thread.sleep(130);
+                return task.get();
+            } catch (Exception ex) {
+                Logger.e(e, "double %s", absFilename);
+                return SmbHalfResult.ofCancel();
+            }
+        } catch (Exception e) {
+            Logger.e(e, "%s", absFilename);
+            return SmbHalfResult.ofUnknownError();
+        }
+    }
+
     public void stopSmbRequest() {
         fileIndexTask.clear();
         List<Runnable> runnables = executorService.shutdownNow();

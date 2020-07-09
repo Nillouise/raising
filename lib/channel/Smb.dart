@@ -166,25 +166,6 @@ class Smb {
     }
   }
 
-  Future<Uint8List> getFile(String filename) async {
-    try {
-      final Uint8List result = await methodChannel.invokeMethod('getFile', {
-        "hostname": hostname,
-        "shareName": shareName,
-        "domain": domain,
-        "username": username,
-        "password": password,
-        "path": filename,
-        "searchPattern": searchPattern
-      });
-      return result;
-    } on PlatformException catch (e) {
-      logger.e("PlatformException {}", e);
-    } catch (e) {
-      logger.e(e);
-    }
-  }
-
   Future<List<String>> listZip(String filename) async {
     try {
       final List<String> res = await methodChannel.invokeMethod('listZip', {
@@ -234,9 +215,35 @@ class Smb {
         if (res.result.containsKey(index)) {
           return res;
         } else {
+          logger.e("loadImageFromIndex not contain key {}", res);
           throw SmbException("loadImageFromIndex failed");
         }
       } else {
+        logger.e("loadImageFromIndex error {}", res);
+        throw SmbException("loadImageFromIndex failed" + res.msg);
+      }
+    } on PlatformException catch (e) {
+      logger.e("PlatformException {}", e);
+      throw e;
+    }
+  }
+
+  Future<SmbHalfResult> loadImageFile(String absFilename) async {
+    try {
+      final Map<dynamic, dynamic> loadImageFromIndex = await methodChannel
+          .invokeMethod('loadImageFile', {"absFilename": absFilename});
+      SmbHalfResult res = SmbHalfResult.fromJson(
+          new Map<String, dynamic>.from(loadImageFromIndex));
+
+      if (res.msg == "successful") {
+        if (res.result.containsKey(0)) {
+          return res;
+        } else {
+          logger.e("loadImageFile not contain key {}", res);
+          throw SmbException("loadImageFile failed");
+        }
+      } else {
+        logger.e("loadImageFile error {}", res);
         throw SmbException("loadImageFromIndex failed" + res.msg);
       }
     } on PlatformException catch (e) {
