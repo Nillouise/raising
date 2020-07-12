@@ -152,7 +152,7 @@ class FutureImage extends StatelessWidget {
 
         FileInfo fileInfo =
             await fileRepository.findByabsPath(absFilename, catalog.smbId);
-        return await Utils.getImage(index, absFilename, true);
+        return await Utils.getImage(index, absFilename, true,catalog.share);
       }(),
       builder: (BuildContext context, AsyncSnapshot<SmbHalfResult> snapshot) {
         // 请求已结束

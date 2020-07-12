@@ -133,16 +133,23 @@ class FileListState extends State<FileList> {
                 title: Text('${item.id}'),
                 onTap: () {
                   SmbListModel smbListModel =
-                      Provider.of<SmbListModel>(context, listen: false);
+                  Provider.of<SmbListModel>(context, listen: false);
                   var smb = smbListModel.smbById(item.id);
                   smb.init();
                   SmbNavigation smbNavigation =
-                      Provider.of<SmbNavigation>(context, listen: false);
+                  Provider.of<SmbNavigation>(context, listen: false);
                   smbNavigation.refresh(context, smb.path, item.id);
                 },
               ),
             );
           });
+    }
+    else if(catalog.share?.isEmpty??true){
+      //处理没选share 的情况
+      catalog.listShare(hostIp, username, password);
+
+
+
     } else {
       return FutureBuilder<SmbNavigation>(
         future: () {

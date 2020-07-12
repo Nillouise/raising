@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:libdsm/libdsm.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as p;
 import 'package:raising/exception/SmbException.dart';
@@ -21,12 +22,14 @@ class Smb {
   static Smb currentSmb;
   String id;
   String hostname;
+  //deprecated
   String shareName;
   String domain;
   String username;
   String password;
   String path;
   String searchPattern;
+  Dsm _dsm;
 
   Smb({
     this.hostname,
@@ -36,7 +39,9 @@ class Smb {
     this.password,
     this.path,
     this.searchPattern,
-  });
+  }){
+    _dsm.init();
+  }
 
   factory Smb.fromJson(Map<String, dynamic> json) => _$SmbFromJson(json);
 
@@ -44,7 +49,7 @@ class Smb {
 
   Future<Void> init() async {
     //valid field;
-    shareName = "flutter";
+    shareName = "";
     domain = "";
     if (p.split(hostname).length > 1) {
       path = p.joinAll(p.split(hostname).sublist(1));
@@ -119,25 +124,12 @@ class Smb {
     return currentSmb;
   }
 
-  Future<List> smbList() async {
-    try {
-      final List result = await methodChannel.invokeMethod('smbList', {
-        "hostname": hostname,
-        "shareName": shareName,
-        "domain": domain,
-        "username": username,
-        "password": password,
-        "path": path,
-        "searchPattern": searchPattern
-      });
-      return result;
-    } on PlatformException catch (e) {
-      logger.e("PlatformException {}", e);
-      throw e;
-    } catch (e) {
-      logger.e(e);
-      throw e;
-    }
+  Future<List<String>> listShare() async{
+
+    String host = await _dsm.inverse(hostname);
+    await _dsm.login(host, username, password);
+    List<String> decode = json.decode(await _dsm.getShareList());
+    return decode;
   }
 
   Future<List<FileInfo>> listFiles(String path, String searchPattern) async {
@@ -166,40 +158,8 @@ class Smb {
     }
   }
 
-  Future<List<String>> listZip(String filename) async {
-    try {
-      final List<String> res = await methodChannel.invokeMethod('listZip', {
-        "hostname": hostname,
-        "shareName": shareName,
-        "domain": domain,
-        "username": username,
-        "password": password,
-        "path": filename,
-        "searchPattern": searchPattern
-      });
-      return res;
-    } on PlatformException catch (e) {
-      logger.e("PlatformException {}", e);
-    } catch (e) {
-      logger.e(e);
-    }
-  }
 
-  Future<Map<dynamic, dynamic>> previewFiles(List<String> filenames) async {
-    try {
-      final Map res = await methodChannel
-          .invokeMethod('previewFiles', {"filenames": filenames});
-      return res;
-    } on PlatformException catch (e) {
-      logger.e("PlatformException {}", e);
-      throw e;
-    } catch (e) {
-      logger.e(e);
-      throw e;
-    }
-  }
-
-  Future<SmbHalfResult> loadImageFromIndex(String absFilename, int index,
+  Future<SmbHalfResult> loadImageFromIndex(String absFilename, int index,String share,
       {bool needFileDetailInfo = false}) async {
     try {
       final Map<dynamic, dynamic> loadImageFromIndex =

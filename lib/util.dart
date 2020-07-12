@@ -23,10 +23,10 @@ class Utils {
   }
 
   static Future<SmbHalfResult> getImage(
-      int index, String absPath, bool needFileDetailInfo) async {
+      int index, String absPath, bool needFileDetailInfo,String share) async {
     if (needFileDetailInfo || await getImageFromCache(absPath, index) == null) {
       SmbHalfResult smbHalfResult = await Smb.getCurrentSmb()
-          .loadImageFromIndex(absPath, index,
+          .loadImageFromIndex(absPath, index,share,
               needFileDetailInfo: needFileDetailInfo);
       if (smbHalfResult.msg == "successful") {
         putImageToCache(absPath, index, smbHalfResult.result[index].content);

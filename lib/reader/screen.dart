@@ -15,20 +15,20 @@ Future<Uint8List> getImage(String filename) {
 //  });
 //  Smb.getConfig("[C]").listZip(filename);
 //  return Future.delayed(Duration(seconds: 1));
-  return Smb.getConfig("[C]").getFile("[C]//" + filename).then((bytes) {
-    // Decode the Zip file
-    final archive = ZipDecoder().decodeBytes(bytes);
-
-    // Extract the contents of the Zip archive to disk.
-    for (final file in archive) {
-      final filename = file.name;
-      if (file.isFile) {
-        final data = file.content as Uint8List;
-        return data;
-      }
-    }
-    return null;
-  });
+//  return Smb.getConfig("[C]").getFile("[C]//" + filename).then((bytes) {
+//    // Decode the Zip file
+//    final archive = ZipDecoder().decodeBytes(bytes);
+//
+//    // Extract the contents of the Zip archive to disk.
+//    for (final file in archive) {
+//      final filename = file.name;
+//      if (file.isFile) {
+//        final data = file.content as Uint8List;
+//        return data;
+//      }
+//    }
+//    return null;
+//  });
 }
 
 class ReaderScreen extends StatefulWidget {
