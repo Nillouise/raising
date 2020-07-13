@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
-import 'package:libdsm/libdsm.dart';
 import 'package:logger/logger.dart';
 import 'package:raising/channel/Smb.dart';
 
@@ -17,10 +15,6 @@ class SmbNavigation extends ChangeNotifier {
   String _smbId;
   List<FileInfo> _files;
   double scroll_speed;
-
-
-
-
 
   set title(value) {
     _title = value;
@@ -44,9 +38,11 @@ class SmbNavigation extends ChangeNotifier {
 
   String get title => _title;
 
-  void refresh(BuildContext context, String path, String smbId) async {
+  void refresh(
+      BuildContext context, String share, String path, String smbId) async {
 //    var smb = Smb.getConfig(null);
 //    List<FileInfo> list = await smb.listFiles(path, "*");
+    _share = share;
     _title = path;
     _path = path;
     _smbId = smbId;
@@ -56,7 +52,7 @@ class SmbNavigation extends ChangeNotifier {
 
   Future<SmbNavigation> awaitSelf() async {
     var smb = Smb.getCurrentSmb();
-    return smb.listFiles(path, "*").then((value) {
+    return smb.listFiles(_share, path, "*").then((value) {
       _files = value;
       return this;
     });

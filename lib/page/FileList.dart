@@ -36,7 +36,12 @@ class ExplorerState extends State<Explorer> {
         child: Column(
           children: <Widget>[
             Row(
-              children: <Widget>[Text("path:" + (catalog.path ?? ""))],
+              children: <Widget>[
+                Text("path:" +
+                    (catalog.share ?? "") +
+                    "/" +
+                    (catalog.path ?? ""))
+              ],
             ),
             Expanded(
               child: FileList(),
@@ -44,13 +49,21 @@ class ExplorerState extends State<Explorer> {
           ],
         ),
         onWillPop: () async {
+          //退出应用
           SmbNavigation catalog =
               Provider.of<SmbNavigation>(context, listen: false);
-          if (p.rootPrefix(catalog.path) == catalog.path) {
+          if (p.rootPrefix(catalog.path) == catalog.path &&
+              (catalog.share?.isEmpty ?? true)) {
             return true;
           } else {
+            //返回上一级目录或share
             var smb = Smb.getCurrentSmb();
-            catalog.refresh(context, _dirname(catalog.path), smb.id);
+            if (p.rootPrefix(catalog.path) == catalog.path) {
+              catalog.refresh(
+                  context, catalog.share, _dirname(catalog.path), smb.id);
+            } else {
+              catalog.refresh(context, "", "", smb.id);
+            }
             return false;
           }
         });
@@ -100,8 +113,6 @@ class FileListState extends State<FileList> {
           showDialog(context: context, child: SmbManage());
         },
       ));
-
-      return Center();
     } else if (catalog.smbId?.isEmpty ?? true) {
       //处理没选SMB的情况
       SmbListModel smbListModel = Provider.of<SmbListModel>(context);
@@ -133,23 +144,58 @@ class FileListState extends State<FileList> {
                 title: Text('${item.id}'),
                 onTap: () {
                   SmbListModel smbListModel =
-                  Provider.of<SmbListModel>(context, listen: false);
+                      Provider.of<SmbListModel>(context, listen: false);
                   var smb = smbListModel.smbById(item.id);
                   smb.init();
                   SmbNavigation smbNavigation =
-                  Provider.of<SmbNavigation>(context, listen: false);
-                  smbNavigation.refresh(context, smb.path, item.id);
+                      Provider.of<SmbNavigation>(context, listen: false);
+                  smbNavigation.refresh(
+                      context, smb.shareName, smb.path, item.id);
                 },
               ),
             );
           });
-    }
-    else if(catalog.share?.isEmpty??true){
+    } else if (catalog.share?.isEmpty ?? true) {
       //处理没选share 的情况
-      catalog.listShare(hostIp, username, password);
-
-
-
+//      catalog.listShare(hostIp, username, password);
+      return FutureBuilder<List<String>>(
+        future: () {
+          return Smb.getCurrentSmb().listShare();
+        }(),
+        builder: (BuildContext context, AsyncSnapshot<List<String>> snapshot) {
+          // 请求已结束
+          if (snapshot.connectionState == ConnectionState.done) {
+            if (snapshot.hasError) {
+              // 请求失败，显示错误
+              return Text("Error: ${snapshot.error}");
+            } else {
+              // 请求成功，显示数据
+              return Center(
+                  child: ListView.builder(
+                itemCount: snapshot.data.length,
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    leading:
+                        AspectRatio(aspectRatio: 1, child: Icon(Icons.folder)),
+                    title: Text(snapshot.data[index]),
+                    onTap: () {
+                      var smb = Smb.getCurrentSmb();
+                      SmbNavigation smbNavigation =
+                          Provider.of<SmbNavigation>(context, listen: false);
+                      smbNavigation.refresh(
+                          context, snapshot.data[index], "", smb.id);
+                    },
+                  );
+                },
+              ));
+            }
+          } else {
+            // 请求未结束，显示loading
+            return Center(child: CircularProgressIndicator());
+          }
+        },
+      );
     } else {
       return FutureBuilder<SmbNavigation>(
         future: () {
@@ -203,6 +249,7 @@ class FileListState extends State<FileList> {
                                         listen: false);
                                 smbNavigation.refresh(
                                     context,
+                                    smbNavigation.share,
                                     p.join(smbNavigation.path,
                                         files[index].filename),
                                     smb.id);
@@ -245,7 +292,10 @@ class PreviewFile extends StatelessWidget {
         return Icon(Icons.folder);
       } else if ((Constants.COMPRESS_AND_IMAGE_FILE)
           .contains((p.extension(fileinfo.absPath)))) {
-        var smbHalfResult = (await Utils.getPreviewFile(0, fileinfo.absPath));
+        SmbNavigation catalog =
+            Provider.of<SmbNavigation>(context, listen: false);
+        var smbHalfResult =
+            (await Utils.getPreviewFile(0, fileinfo.absPath, catalog.share));
         return Image.memory(smbHalfResult.result[0].content, errorBuilder:
             (BuildContext context, Object exception, StackTrace stackTrace) {
           return Icon(Icons.error);

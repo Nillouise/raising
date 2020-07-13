@@ -23,10 +23,10 @@ class Utils {
   }
 
   static Future<SmbHalfResult> getImage(
-      int index, String absPath, bool needFileDetailInfo,String share) async {
+      int index, String absPath, bool needFileDetailInfo, String share) async {
     if (needFileDetailInfo || await getImageFromCache(absPath, index) == null) {
       SmbHalfResult smbHalfResult = await Smb.getCurrentSmb()
-          .loadImageFromIndex(absPath, index,share,
+          .loadImageFromIndex(absPath, index, share,
               needFileDetailInfo: needFileDetailInfo);
       if (smbHalfResult.msg == "successful") {
         putImageToCache(absPath, index, smbHalfResult.result[index].content);
@@ -39,16 +39,18 @@ class Utils {
     }
   }
 
-  static Future<SmbHalfResult> getPreviewFile(int index, String absPath) async {
+  static Future<SmbHalfResult> getPreviewFile(
+      int index, String absPath, String share) async {
     var content = await getImageFromCache(absPath, index);
     if (content == null) {
       var currentSmb = Smb.getCurrentSmb();
       SmbHalfResult smbHalfResult;
       if (Constants.COMPRESS_FILE.contains(p.extension(absPath))) {
-        smbHalfResult = await currentSmb.loadImageFromIndex(absPath, index,
+        smbHalfResult = await currentSmb.loadImageFromIndex(
+            absPath, index, share,
             needFileDetailInfo: true);
       } else if (Constants.IMAGE_FILE.contains(p.extension(absPath))) {
-        smbHalfResult = await currentSmb.loadImageFile(absPath);
+        smbHalfResult = await currentSmb.loadImageFile(absPath, share);
       }
       if (smbHalfResult.msg == "successful") {
         putImageToCache(absPath, index, smbHalfResult.result[index].content);

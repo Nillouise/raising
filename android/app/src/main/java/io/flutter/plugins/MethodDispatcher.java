@@ -105,7 +105,9 @@ public class MethodDispatcher implements MethodCallHandler {
                 try {
                     ArrayList res = smb.listFiles(
                             call.argument("path"),
-                            call.argument("searchPattern"));
+                            call.argument("searchPattern"),
+                            call.argument("share")
+                    );
                     result.success(gson.toJson(res));
                 } catch (Exception e) {
                     Logger.e(e, "listFiles error");
@@ -121,7 +123,7 @@ public class MethodDispatcher implements MethodCallHandler {
                                         call.argument("indexs"),
                                         call.argument("needFileDetailInfo"),
                                         share);
-                            }
+                            }, call.argument("share")
                     );
                     result.success(res.getMap());
                 } catch (Exception e) {
@@ -137,7 +139,7 @@ public class MethodDispatcher implements MethodCallHandler {
                                 return smb.loadImageFile(
                                         call.argument("absFilename"),
                                         share);
-                            }
+                            }, call.argument("share")
                     );
                     result.success(res.getMap());
                 } catch (Exception e) {

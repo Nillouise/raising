@@ -273,7 +273,8 @@ class _SmbDrawerState extends State<SmbDrawer> {
                 smb.init();
                 SmbNavigation smbNavigation =
                     Provider.of<SmbNavigation>(context, listen: false);
-                smbNavigation.refresh(context, smb.path, item.id);
+                smbNavigation.refresh(
+                    context, smb.shareName, smb.path, item.id);
                 Navigator.of(context).pop();
 //                smbListModel.
 //                Smb.pushConfig(item.id, hostname, shareName, domain, username, password, path, searchPattern)

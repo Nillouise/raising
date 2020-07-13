@@ -103,13 +103,15 @@ class FutureViewerChecker extends StatelessWidget {
             await fileRepository.findByabsPath(absFilename, catalog.smbId);
 
         if (Utils.isImageFile(absFilename)) {
-          SmbHalfResult halfResult = await Utils.getPreviewFile(0, absFilename);
+          SmbHalfResult halfResult =
+              await Utils.getPreviewFile(0, absFilename, catalog.share);
           return Image.memory(halfResult.result[0].content, errorBuilder:
               (BuildContext context, Object exception, StackTrace stackTrace) {
             return Icon(Icons.error);
           });
         } else if (Utils.isCompressFile(absFilename)) {
-          var smbHalfResult = await Utils.getImage(index, absFilename, true);
+          var smbHalfResult =
+              await Utils.getImage(index, absFilename, true, catalog.share);
           return Viewer(
             absFilename,
             smbHalfResult.result.values.first.length,
@@ -152,7 +154,7 @@ class FutureImage extends StatelessWidget {
 
         FileInfo fileInfo =
             await fileRepository.findByabsPath(absFilename, catalog.smbId);
-        return await Utils.getImage(index, absFilename, true,catalog.share);
+        return await Utils.getImage(index, absFilename, true, catalog.share);
       }(),
       builder: (BuildContext context, AsyncSnapshot<SmbHalfResult> snapshot) {
         // 请求已结束

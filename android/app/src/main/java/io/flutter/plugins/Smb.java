@@ -129,7 +129,7 @@ public class Smb {
     }
 
 
-    public ArrayList<FileInfo> listFiles(String path, String searchPattern) throws Exception {
+    public ArrayList<FileInfo> listFiles(String path, String searchPattern,String shareName) throws Exception {
         ArrayList<FileInfo> res = new ArrayList<FileInfo>();
         SMBClient client = getClient();
 
@@ -189,7 +189,7 @@ public class Smb {
         return null;
     }
 
-    public <T> T processShare(ProcessShare<T> process) throws Exception {
+    public <T> T processShare(ProcessShare<T> process,String shareName) throws Exception {
         SMBClient client = getClient();
 
         try (Connection connection = client.connect(hostname)) {

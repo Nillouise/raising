@@ -22,6 +22,7 @@ class Smb {
   static Smb currentSmb;
   String id;
   String hostname;
+
   //deprecated
   String shareName;
   String domain;
@@ -39,8 +40,9 @@ class Smb {
     this.password,
     this.path,
     this.searchPattern,
-  }){
-    _dsm.init();
+  }) {
+//    _dsm = Dsm();
+//    _dsm.init();
   }
 
   factory Smb.fromJson(Map<String, dynamic> json) => _$SmbFromJson(json);
@@ -124,18 +126,19 @@ class Smb {
     return currentSmb;
   }
 
-  Future<List<String>> listShare() async{
-
-    String host = await _dsm.inverse(hostname);
-    await _dsm.login(host, username, password);
-    List<String> decode = json.decode(await _dsm.getShareList());
-    return decode;
+  Future<List<String>> listShare() async {
+//    String host = await _dsm.inverse(hostname);
+//    await _dsm.login(host, username, password);
+//    List<String> decode = json.decode(await _dsm.getShareList());
+//    return decode;
+    return ["flutter"];
   }
 
-  Future<List<FileInfo>> listFiles(String path, String searchPattern) async {
+  Future<List<FileInfo>> listFiles(
+      String share, String path, String searchPattern) async {
     try {
-      final String result = await methodChannel.invokeMethod(
-          'listFiles', {"path": path, "searchPattern": searchPattern});
+      final String result = await methodChannel.invokeMethod('listFiles',
+          {"path": path, "searchPattern": searchPattern, "share": share});
       List decode = json.decode(result);
       List<FileInfo> list =
           decode.map((element) => FileInfo.fromJson(element)).toList();
@@ -158,15 +161,16 @@ class Smb {
     }
   }
 
-
-  Future<SmbHalfResult> loadImageFromIndex(String absFilename, int index,String share,
+  Future<SmbHalfResult> loadImageFromIndex(
+      String absFilename, int index, String share,
       {bool needFileDetailInfo = false}) async {
     try {
       final Map<dynamic, dynamic> loadImageFromIndex =
           await methodChannel.invokeMethod('loadImageFromIndex', {
         "absFilename": absFilename,
         "indexs": [index],
-        "needFileDetailInfo": needFileDetailInfo
+        "needFileDetailInfo": needFileDetailInfo,
+        "share": share
       });
       SmbHalfResult res = SmbHalfResult.fromJson(
           new Map<String, dynamic>.from(loadImageFromIndex));
@@ -188,10 +192,11 @@ class Smb {
     }
   }
 
-  Future<SmbHalfResult> loadImageFile(String absFilename) async {
+  Future<SmbHalfResult> loadImageFile(String absFilename, String share) async {
     try {
       final Map<dynamic, dynamic> loadImageFromIndex = await methodChannel
-          .invokeMethod('loadImageFile', {"absFilename": absFilename});
+          .invokeMethod(
+              'loadImageFile', {"absFilename": absFilename, "share": share});
       SmbHalfResult res = SmbHalfResult.fromJson(
           new Map<String, dynamic>.from(loadImageFromIndex));
 
