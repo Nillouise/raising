@@ -141,7 +141,7 @@ class FileListState extends State<FileList> {
               // Show a red background as the item is swiped away.
               background: Container(color: Colors.red),
               child: ListTile(
-                title: Text('${item.id}'),
+                title: Text('${item.nickName}'),
                 onTap: () {
                   SmbListModel smbListModel =
                       Provider.of<SmbListModel>(context, listen: false);

@@ -5,7 +5,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:libdsm/libdsm.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as p;
 import 'package:raising/exception/SmbException.dart';
@@ -21,7 +20,23 @@ class Smb {
   static Map<String, Smb> smbMap = Map<String, Smb>();
   static Smb currentSmb;
   String id;
+  String _nickName;
   String hostname;
+
+  String get nickName {
+    if (_nickName == null) {
+      if (id == null) {
+        return "error id";
+      } else {
+        _nickName = id.split("##~##")[0];
+      }
+    }
+    return _nickName;
+  }
+
+  set nickName(String x) {
+    _nickName = x;
+  }
 
   //deprecated
   String shareName;
@@ -30,7 +45,6 @@ class Smb {
   String password;
   String path;
   String searchPattern;
-  Dsm _dsm;
 
   Smb({
     this.hostname,
@@ -40,10 +54,7 @@ class Smb {
     this.password,
     this.path,
     this.searchPattern,
-  }) {
-//    _dsm = Dsm();
-//    _dsm.init();
-  }
+  }) {}
 
   factory Smb.fromJson(Map<String, dynamic> json) => _$SmbFromJson(json);
 

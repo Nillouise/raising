@@ -6,13 +6,17 @@ import 'package:raising/model/smb_list_model.dart';
 import 'package:raising/model/smb_navigation.dart';
 
 class SmbManage extends StatefulWidget {
+  final String smbId;
+
   @override
   _SmbManageState createState() => _SmbManageState();
+
+  SmbManage({this.smbId});
 }
 
 class _SmbManageState extends State<SmbManage> {
-  TextEditingController _smbIpController = new TextEditingController();
   TextEditingController _smbnameController = new TextEditingController();
+  TextEditingController _smbIpController = new TextEditingController();
   TextEditingController _usernameController = new TextEditingController();
   TextEditingController _pwdController = new TextEditingController();
   bool pwdShow = false; //密码是否显示明文
@@ -26,6 +30,16 @@ class _SmbManageState extends State<SmbManage> {
 //    String initSmbName = "SMB#" + (smbListModel.smbs.length + 1).toString();
 //    _smbnameController.text = initSmbName;
 //    var gm = GmLocalizations.of(context);
+    if (widget.smbId != null) {
+      SmbListModel smbListModel =
+          Provider.of<SmbListModel>(context, listen: false);
+      Smb smbById = smbListModel.smbById(widget.smbId);
+      _smbnameController.text = smbById.nickName;
+      _smbIpController.text = smbById.hostname;
+      _usernameController.text = smbById.username;
+      _pwdController.text = smbById.password;
+    }
+
     return Scaffold(
         appBar: AppBar(title: Text("添加Smb")),
         body: Padding(
@@ -127,16 +141,33 @@ class _SmbManageState extends State<SmbManage> {
     if ((_formKey.currentState as FormState).validate()) {
 //      showLoading(context);
 
-      SmbListModel smbListModel =
-          Provider.of<SmbListModel>(context, listen: false);
+      if (widget.smbId != null) {
+        //修改smb
+        SmbListModel smbListModel =
+            Provider.of<SmbListModel>(context, listen: false);
 
-      smbListModel.addSmb(Smb()
-        ..id = _smbnameController.text
-        ..hostname = _smbIpController.text
-        ..username = _usernameController.text
-        ..password = _pwdController.text);
-      Navigator.of(context).pop();
+        smbListModel.replaceSmb(Smb()
+          ..id = widget.smbId
+          ..nickName = _smbnameController.text
+          ..hostname = _smbIpController.text
+          ..username = _usernameController.text
+          ..password = _pwdController.text);
+        Navigator.of(context).pop();
+      } else {
+        SmbListModel smbListModel =
+            Provider.of<SmbListModel>(context, listen: false);
+
+        smbListModel.addSmb(Smb()
+          ..id = _smbnameController.text +
+              "##~##" +
+              (new DateTime.now().millisecondsSinceEpoch).toString()
+          ..nickName = _smbnameController.text
+          ..hostname = _smbIpController.text
+          ..username = _usernameController.text
+          ..password = _pwdController.text);
+        Navigator.of(context).pop();
 //      }
+      }
     }
   }
 }
@@ -265,7 +296,16 @@ class _SmbDrawerState extends State<SmbDrawer> {
             // Show a red background as the item is swiped away.
             background: Container(color: Colors.red),
             child: ListTile(
-              title: Text('${item.id}'),
+              title: Text('${item.nickName}'),
+              trailing: IconButton(
+                  icon: Icon(Icons.settings),
+                  onPressed: () {
+                    showDialog(
+                        context: context,
+                        child: SmbManage(
+                          smbId: item.id,
+                        ));
+                  }),
               onTap: () {
                 SmbListModel smbListModel =
                     Provider.of<SmbListModel>(context, listen: false);

@@ -5,7 +5,6 @@ import 'package:flutter/widgets.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:raising/channel/Smb.dart';
-
 import 'package:sembast/sembast.dart';
 import 'package:sembast/sembast_io.dart';
 
@@ -86,20 +85,12 @@ class SmbListModel extends ChangeNotifier {
   }
 
   /// updates a [Todo] by replacing the item with the same id by the parameter [todo]
-  void updateTodo(Smb todo) {
-    assert(todo != null);
-    assert(todo.id != null);
-    var oldTodo = _smbs.firstWhere((it) => it.id == todo.id);
+  void replaceSmb(Smb smb) {
+    var oldTodo = _smbs.firstWhere((it) => it.id == smb.id);
     var replaceIndex = _smbs.indexOf(oldTodo);
-    _smbs.replaceRange(replaceIndex, replaceIndex + 1, [todo]);
-    notifyListeners();
+    _smbs.replaceRange(replaceIndex, replaceIndex + 1, [smb]);
     _uploadItems();
-  }
-
-  void removeTodo(Smb todo) {
-    _smbs.removeWhere((it) => it.id == todo.id);
     notifyListeners();
-    _uploadItems();
   }
 
   void removeSmb(String smbId) {
