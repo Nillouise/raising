@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -155,6 +156,16 @@ public class MethodDispatcher implements MethodCallHandler {
                 } catch (Exception e) {
                     Logger.e(e, "stopSmbRequest error");
                     result.error("stopSmbRequest", e.toString(), ExceptionUtils.getStackTrace(e));
+                }
+            });
+        } else if (call.method.equals("listShares")) {
+            executorService.submit(() -> {
+                try {
+                    List<String> strings = smb.listShares();
+                    result.success(strings);
+                } catch (Exception e) {
+                    Logger.e(e, "listShare error");
+                    result.error("listShare", e.toString(), ExceptionUtils.getStackTrace(e));
                 }
             });
         } else {

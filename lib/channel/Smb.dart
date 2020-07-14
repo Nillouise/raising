@@ -137,12 +137,17 @@ class Smb {
     return currentSmb;
   }
 
-  Future<List<String>> listShare() async {
-//    String host = await _dsm.inverse(hostname);
-//    await _dsm.login(host, username, password);
-//    List<String> decode = json.decode(await _dsm.getShareList());
-//    return decode;
-    return ["flutter"];
+  Future<List<String>> listShares() async {
+    try {
+      List<dynamic> list = await methodChannel.invokeMethod('listShares');
+      return List<String>.from(list);
+    } on PlatformException catch (e) {
+      logger.e("PlatformException {}", e);
+      throw e;
+    } catch (e) {
+      logger.e(e);
+      throw e;
+    }
   }
 
   Future<List<FileInfo>> listFiles(

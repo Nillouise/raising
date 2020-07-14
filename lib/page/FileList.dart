@@ -160,7 +160,7 @@ class FileListState extends State<FileList> {
 //      catalog.listShare(hostIp, username, password);
       return FutureBuilder<List<String>>(
         future: () {
-          return Smb.getCurrentSmb().listShare();
+          return Smb.getCurrentSmb().listShares();
         }(),
         builder: (BuildContext context, AsyncSnapshot<List<String>> snapshot) {
           // 请求已结束

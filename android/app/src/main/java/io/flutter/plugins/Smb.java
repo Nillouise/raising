@@ -17,6 +17,10 @@ import com.hierynomus.smbj.session.Session;
 import com.hierynomus.smbj.share.DiskShare;
 import com.hierynomus.smbj.share.File;
 import com.orhanobut.logger.Logger;
+import com.rapid7.client.dcerpc.mssrvs.ServerService;
+import com.rapid7.client.dcerpc.mssrvs.dto.NetShareInfo0;
+import com.rapid7.client.dcerpc.transport.RPCTransport;
+import com.rapid7.client.dcerpc.transport.SMBTransportFactories;
 
 import net.sf.sevenzipjbinding.ExtractOperationResult;
 import net.sf.sevenzipjbinding.IInArchive;
@@ -126,6 +130,26 @@ public class Smb {
                 .build();
         SMBClient client = new SMBClient(config);
         return client;
+    }
+
+    public List<String> listShares() throws Exception{
+        final SMBClient smbClient = new SMBClient();
+        try (final Connection smbConnection = smbClient.connect(hostname)) {
+            final AuthenticationContext smbAuthenticationContext = new AuthenticationContext(username, passwrod.toCharArray(), domain);
+            final Session session = smbConnection.authenticate(smbAuthenticationContext);
+
+            final RPCTransport transport = SMBTransportFactories.SRVSVC.getTransport(session);
+            final ServerService serverService = new ServerService(transport);
+            final List<NetShareInfo0> shares = serverService.getShares0();
+            List<String> res = new ArrayList<>();
+            for (final NetShareInfo0 share : shares) {
+                res.add(share.getNetName());
+            }
+            return res;
+        } catch (Exception e) {
+            Logger.e(e, "path %s searchPattern %s", path, searchPattern);
+            throw e;
+        }
     }
 
 
