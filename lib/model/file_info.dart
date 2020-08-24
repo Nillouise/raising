@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ffi';
 
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -16,27 +17,15 @@ class FileKey {
   Map<String, String> tags;
   int star;
 
-  DateTime preOpenTime; //最近一次点击
-  DateTime preMonthOpenTime; //一个月前的最近点击
-  DateTime preSeasonOpenTime; //一个季度前的最近点击
-  //应该根据阅读时间进行加成
-  int monthScore;
-  int seasonScore;
-  int yearScore;
+  //什么时候点击了
+  List<DateTime> clickTimes = new List<DateTime>();
 
-  FileKey(
-      this.filename,
-      this.tags,
-      this.star,
-      this.preOpenTime,
-      this.preMonthOpenTime,
-      this.preSeasonOpenTime,
-      this.monthScore,
-      this.seasonScore,
-      this.yearScore);
+  //按秒算，这次看了多少时间，应当跟clickTimes一起保存
+  List<int> readTimes;
 
-  factory FileKey.fromJson(Map<String, dynamic> json) =>
-      _$FileKeyFromJson(json);
+  FileKey(this.filename, this.tags, this.star, this.clickTimes, this.readTimes);
+
+  factory FileKey.fromJson(Map<String, dynamic> json) => _$FileKeyFromJson(json);
 
   Map<String, dynamic> toJson() => _$FileKeyToJson(this);
 }
@@ -49,13 +38,11 @@ class ZipFileContent {
   int length;
   dynamic content;
 
-  ZipFileContent(this.absFilename, this.zipFilename, this.index, this.length,
-      this.content);
+  ZipFileContent(this.absFilename, this.zipFilename, this.index, this.length, this.content);
 
   ZipFileContent.content(this.content);
 
-  factory ZipFileContent.fromJson(Map<String, dynamic> json) =>
-      _$ZipFileContentFromJson(json);
+  factory ZipFileContent.fromJson(Map<String, dynamic> json) => _$ZipFileContentFromJson(json);
 
   Map<String, dynamic> toJson() => _$ZipFileContentToJson(this);
 }
@@ -67,8 +54,7 @@ class SmbHalfResult {
 
   SmbHalfResult(this.msg, this.result);
 
-  factory SmbHalfResult.fromJson(Map<String, dynamic> json) =>
-      _$SmbHalfResultFromJson(json);
+  factory SmbHalfResult.fromJson(Map<String, dynamic> json) => _$SmbHalfResultFromJson(json);
 
   Map<String, dynamic> toJson() => _$SmbHalfResultToJson(this);
 }
@@ -77,7 +63,8 @@ class SmbHalfResult {
 class FileInfo {
   //smbId跟absPath组成一个唯一主键
   String smbId;
-  String absPath; //path 包括文件名
+  String smbNickName; //只用smbId可能无法恢复删除的smb链接
+  String absPath; //path 包括文件名合smbNickName
   String filename;
   DateTime updateTime;
   bool isDirectory;
@@ -92,8 +79,7 @@ class FileInfo {
 
   FileInfo();
 
-  factory FileInfo.fromJson(Map<String, dynamic> json) =>
-      _$FileInfoFromJson(json);
+  factory FileInfo.fromJson(Map<String, dynamic> json) => _$FileInfoFromJson(json);
 
   Map<String, dynamic> toJson() => _$FileInfoToJson(this);
 }
@@ -138,50 +124,38 @@ class FileKeyQuery {
 }
 
 class FileRepository extends ChangeNotifier {
+  static Database _cache_db;
+
   Database _db;
 
   void init() async {
-    _db = await databaseFactoryIo.openDatabase(
-        (await getApplicationDocumentsDirectory()).path + "/sembast.db");
+    _db = await databaseFactoryIo.openDatabase((await getApplicationDocumentsDirectory()).path + "/sembast.db");
+    _cache_db = _db;
     print(_db);
   }
 
   Future<List<FileInfo>> findFileKey(FileKey fileKey) async {
     var store = intMapStoreFactory.store('fileInfo');
-    var finder = Finder(
-        filter: Filter.equals('filename', fileKey.filename),
-        sortOrders: [SortOrder('smbId')]);
-    List<RecordSnapshot<int, Map<String, dynamic>>> records =
-        (await store.find(_db, finder: finder));
+    var finder = Finder(filter: Filter.equals('filename', fileKey.filename), sortOrders: [SortOrder('smbId')]);
+    List<RecordSnapshot<int, Map<String, dynamic>>> records = (await store.find(_db, finder: finder));
   }
 
   Future<List<FileKey>> findFileKeyQuery(FileKeyQuery query) async {
     var store = intMapStoreFactory.store('fileInfo');
-    var finder = Finder(
-        filter: Filter.and(query.getFinders()),
-        sortOrders: [SortOrder('smbId')]);
-    List<RecordSnapshot<int, Map<String, dynamic>>> records =
-        (await store.find(_db, finder: finder));
+    var finder = Finder(filter: Filter.and(query.getFinders()), sortOrders: [SortOrder('smbId')]);
+    List<RecordSnapshot<int, Map<String, dynamic>>> records = (await store.find(_db, finder: finder));
   }
 
   Future<List<FileInfo>> findByFilename(String filename) async {
     var store = intMapStoreFactory.store('fileInfo');
-    var finder = Finder(
-        filter: Filter.equals('filename', filename),
-        sortOrders: [SortOrder('smbId')]);
-    List<RecordSnapshot<int, Map<String, dynamic>>> records =
-        (await store.find(_db, finder: finder));
+    var finder = Finder(filter: Filter.equals('filename', filename), sortOrders: [SortOrder('smbId')]);
+    List<RecordSnapshot<int, Map<String, dynamic>>> records = (await store.find(_db, finder: finder));
   }
 
   Future<FileInfo> findByabsPath(String absPath, String smbId) async {
     var store = intMapStoreFactory.store('fileInfo');
-    var finder = Finder(
-        filter: Filter.and([
-      Filter.equals('absPath', absPath),
-      Filter.equals('smbId', smbId)
-    ]));
-    RecordSnapshot<int, Map<String, dynamic>> records =
-        (await store.findFirst(_db, finder: finder));
+    var finder = Finder(filter: Filter.and([Filter.equals('absPath', absPath), Filter.equals('smbId', smbId)]));
+    RecordSnapshot<int, Map<String, dynamic>> records = (await store.findFirst(_db, finder: finder));
 
     if (records != null) {
       return FileInfo.fromJson(records.value);
@@ -190,7 +164,7 @@ class FileRepository extends ChangeNotifier {
     }
   }
 
-  Future<bool> upsertFileInfo(String absPath, String smbId,
+  Future<bool> upsertFileInfo(String absPath, String smbId, String smbNickName,
       {String filename,
       DateTime updateTime,
       bool isDirectory,
@@ -200,13 +174,10 @@ class FileRepository extends ChangeNotifier {
       int length, //里面有多少文件
       int size //文件大小
       }) async {
-    var finder = Finder(
-        filter: Filter.and([
-      Filter.equals("absPath", absPath),
-      Filter.equals("smbId", smbId)
-    ]));
+    var finder = Finder(filter: Filter.and([Filter.equals("absPath", absPath), Filter.equals("smbId", smbId)]));
 
     Map<String, dynamic> updater = Map();
+    updater["smbNickName"] = smbNickName;
     filename != null ? updater["filename"] = filename : null;
     updateTime != null ? updater["updateTime"] = updateTime : null;
     isDirectory != null ? updater["filename"] = isDirectory : null;
@@ -225,8 +196,7 @@ class FileRepository extends ChangeNotifier {
           int updateCount = await store.update(txn, updater, finder: finder);
           if (updateCount == 0) {
             store.add(txn, {"absPath": absPath, "smbId": smbId});
-            int doubelUpdateCount =
-                await store.update(txn, updater, finder: finder);
+            int doubelUpdateCount = await store.update(txn, updater, finder: finder);
             if (doubelUpdateCount != 1) {
               throw DbException("update conflict ${smbId} ${absPath}");
             }
@@ -244,31 +214,27 @@ class FileRepository extends ChangeNotifier {
     String filename, {
     Map<String, String> tags,
     int star,
-    DateTime preOpenTime, //最近一次点击
-    DateTime preMonthOpenTime, //一个月前的最近点击
-    DateTime preSeasonOpenTime, //一个季度前的最近点击
+    DateTime clickTime,
     //应该根据阅读时间进行加成
-    int monthScore,
-    int seasonScore,
-    int yearScore,
+    int increReadTime,
   }) async {
     Map<String, dynamic> updater = Map();
     tags != null ? updater["tags"] = tags : null;
     star != null ? updater["star"] = star : null;
-    preOpenTime != null ? updater["preOpenTime"] = preOpenTime : null;
-    preMonthOpenTime != null
-        ? updater["preMonthOpenTime"] = preMonthOpenTime
-        : null;
-    preSeasonOpenTime != null
-        ? updater["preSeasonOpenTime"] = preSeasonOpenTime
-        : null;
-    monthScore != null ? updater["monthScore"] = monthScore : null;
-    seasonScore != null ? updater["seasonScore"] = seasonScore : null;
-    yearScore != null ? updater["yearScore"] = yearScore : null;
+
+    if ((clickTime == null && increReadTime != null) || (clickTime != null && increReadTime == null)) {
+      throw DbException("clickTime and increReadTime should be together insert");
+    }
+    clickTime != null ? updater["clickTimes"] = List.of([clickTime]) : null;
+    increReadTime != null ? updater["readTimes"] = List.of([increReadTime]) : null;
 
     var store = stringMapStoreFactory.store('fileKey');
     var put = await store.record(filename).put(_db, updater, merge: true);
     return FileKey.fromJson(put);
+  }
+
+  Future<bool> deleteFileKeyTag(String filename, String tag) {
+    //TODO:
   }
 
   Future<FileKey> getFileKey(String filename) async {
@@ -279,5 +245,13 @@ class FileRepository extends ChangeNotifier {
     } else {
       return null;
     }
+  }
+
+  static Future<Void> getAllInfo() async {
+//    var store = stringMapStoreFactory.store('fileKey');
+    List<RecordSnapshot<String, Map<String, dynamic>>> list = await stringMapStoreFactory.store('fileKey').find(_cache_db);
+    List<RecordSnapshot<int, Map<String, dynamic>>> list2 = await intMapStoreFactory.store('fileInfo').find(_cache_db);
+//    logger.d(list);
+    logger.d("db info $list $list2");
   }
 }

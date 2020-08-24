@@ -10,6 +10,8 @@ import 'package:path/path.dart' as p;
 import 'package:raising/exception/SmbException.dart';
 import 'package:raising/model/file_info.dart';
 
+import '../util.dart';
+
 part 'Smb.g.dart';
 
 var logger = Logger();
@@ -72,15 +74,8 @@ class Smb {
     searchPattern = searchPattern ?? "*";
 
     try {
-      await methodChannel.invokeMethod('init', {
-        "hostname": p.split(hostname)[0],
-        "shareName": shareName,
-        "domain": domain,
-        "username": username,
-        "password": password,
-        "path": path,
-        "searchPattern": searchPattern
-      });
+      await methodChannel.invokeMethod('init',
+          {"hostname": p.split(hostname)[0], "shareName": shareName, "domain": domain, "username": username, "password": password, "path": path, "searchPattern": searchPattern});
       currentSmb = this;
       return null;
     } on PlatformException catch (e) {
@@ -94,35 +89,13 @@ class Smb {
 
   void test() async {
     print("dart test");
-    await methodChannel.invokeMethod('test', {
-      "hostname": hostname,
-      "shareName": shareName,
-      "domain": domain,
-      "username": username,
-      "password": password,
-      "path": path,
-      "searchPattern": searchPattern
-    });
+    await methodChannel.invokeMethod(
+        \'test\', {"hostname": hostname, "shareName": shareName, "domain": domain, "username": username, "password": password, "path": path, "searchPattern": searchPattern});
   }
 
-  static Future<Void> pushConfig(
-      String configName,
-      String hostname,
-      String shareName,
-      String domain,
-      String username,
-      String password,
-      String path,
-      String searchPattern) async {
+  static Future<Void> pushConfig(String configName, String hostname, String shareName, String domain, String username, String password, String path, String searchPattern) async {
     if (!smbMap.containsKey(configName)) {
-      var smb = Smb(
-          hostname: hostname,
-          shareName: shareName,
-          domain: domain,
-          username: username,
-          password: password,
-          path: path,
-          searchPattern: searchPattern);
+      var smb = Smb(hostname: hostname, shareName: shareName, domain: domain, username: username, password: password, path: path, searchPattern: searchPattern);
       smb.init();
       smbMap[configName] = smb;
       return null;
@@ -140,7 +113,7 @@ class Smb {
   Future<List<String>> listShares() async {
     try {
       List<dynamic> list = await methodChannel.invokeMethod('listShares');
-      return List<String>.from(list);
+      return List<String>.from(list)..removeWhere((element) => Utils.invalidFilename(element));
     } on PlatformException catch (e) {
       logger.e("PlatformException {}", e);
       throw e;
@@ -150,23 +123,23 @@ class Smb {
     }
   }
 
-  Future<List<FileInfo>> listFiles(
-      String share, String path, String searchPattern) async {
+  Future<List<FileInfo>> listFiles(String share, String path, String searchPattern) async {
     try {
-      final String result = await methodChannel.invokeMethod('listFiles',
-          {"path": path, "searchPattern": searchPattern, "share": share});
+      final String result = await methodChannel.invokeMethod(\'listFiles\', {"path": path, "searchPattern": searchPattern, "share": share});
       List decode = json.decode(result);
-      List<FileInfo> list =
-          decode.map((element) => FileInfo.fromJson(element)).toList();
+      List<FileInfo> list = decode.map((element) => FileInfo.fromJson(element)).toList();
       return list
-        ..removeWhere(
-            (element) => element.filename == '..' || element.filename == '.')
+        ..removeWhere((element) => element.filename == '..' || element.filename == '.')
         ..map((x) {
           x.absPath = p.join(path, x.filename);
           return x;
         }).toList()
         ..sort((a, b) {
-          return b.updateTime.compareTo(a.updateTime);
+          if (b.updateTime == null || a.updateTime == null) {
+            return b.filename.compareTo(a.filename);
+          } else {
+            return b.updateTime.compareTo(a.updateTime);
+          }
         });
     } on PlatformException catch (e) {
       logger.e("PlatformException {}", e);
@@ -177,19 +150,15 @@ class Smb {
     }
   }
 
-  Future<SmbHalfResult> loadImageFromIndex(
-      String absFilename, int index, String share,
-      {bool needFileDetailInfo = false}) async {
+  Future<SmbHalfResult> loadImageFromIndex(String absFilename, int index, String share, {bool needFileDetailInfo = false}) async {
     try {
-      final Map<dynamic, dynamic> loadImageFromIndex =
-          await methodChannel.invokeMethod('loadImageFromIndex', {
+      final Map<dynamic, dynamic> loadImageFromIndex = await methodChannel.invokeMethod('loadImageFromIndex', {
         "absFilename": absFilename,
         "indexs": [index],
         "needFileDetailInfo": needFileDetailInfo,
         "share": share
       });
-      SmbHalfResult res = SmbHalfResult.fromJson(
-          new Map<String, dynamic>.from(loadImageFromIndex));
+      SmbHalfResult res = SmbHalfResult.fromJson(new Map<String, dynamic>.from(loadImageFromIndex));
 
       if (res.msg == "successful") {
         if (res.result.containsKey(index)) {
@@ -210,11 +179,8 @@ class Smb {
 
   Future<SmbHalfResult> loadImageFile(String absFilename, String share) async {
     try {
-      final Map<dynamic, dynamic> loadImageFromIndex = await methodChannel
-          .invokeMethod(
-              'loadImageFile', {"absFilename": absFilename, "share": share});
-      SmbHalfResult res = SmbHalfResult.fromJson(
-          new Map<String, dynamic>.from(loadImageFromIndex));
+      final Map<dynamic, dynamic> loadImageFromIndex = await methodChannel.invokeMethod('loadImageFile', {"absFilename": absFilename, "share": share});
+      SmbHalfResult res = SmbHalfResult.fromJson(new Map<String, dynamic>.from(loadImageFromIndex));
 
       if (res.msg == "successful") {
         if (res.result.containsKey(0)) {
@@ -234,11 +200,9 @@ class Smb {
   }
 
   //此方法尽量不用
-  Future<Uint8List> loadFilesFromIndexs(String filename, List<int> indexs,
-      {bool needFileDetailInfo = false}) async {
+  Future<Uint8List> loadFilesFromIndexs(String filename, List<int> indexs, {bool needFileDetailInfo = false}) async {
     try {
-      final Map<dynamic, dynamic> res = await methodChannel.invokeMethod(
-          'loadImageFromIndex', {"filename": filename, "indexs": indexs});
+      final Map<dynamic, dynamic> res = await methodChannel.invokeMethod('loadImageFromIndex', {"filename": filename, "indexs": indexs});
       //TODO:
 
     } on PlatformException catch (e) {

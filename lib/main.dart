@@ -1,14 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:raising/model/file_info.dart';
 import 'package:raising/page/drawer.dart';
 import 'package:raising/page/home.dart';
 
+import 'model/file_info.dart';
 import 'model/smb_list_model.dart';
 import 'model/smb_navigation.dart';
-
-
-
 
 void main() => runApp(MyApp());
 
@@ -38,22 +37,33 @@ void main() => runApp(MyApp());
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-        providers: [
-          ChangeNotifierProvider<SmbListModel>(
-            create: (context) => SmbListModel()..loadTodos(),
-            lazy: false,
-          ),
-          ChangeNotifierProvider<SmbNavigation>(
-              create: (context) => SmbNavigation(), lazy: false),
-          ChangeNotifierProvider<FileRepository>(
-              create: (context) => FileRepository()..init(), lazy: false),
-        ],
-        child: MaterialApp(
-            title: 'Infinite List Sample',
-//        home: InfList(),
-            home: Scaffold(drawer: HomeDrawer(), body: RaisingHome())));
+    return init();
+//    return Scaffold(body: Container(child: TestSlider()));
   }
+}
+
+Widget init() {
+  // 方法二
+  Timer.periodic(Duration(milliseconds: 20000), (timer) async {
+    await FileRepository.getAllInfo();
+
+//    print('一秒钟后输出');
+    // 每隔 1 秒钟会调用一次，如果要结束调用
+//    timer.cancel();
+  });
+  return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<SmbListModel>(
+          create: (context) => SmbListModel()..loadTodos(),
+          lazy: false,
+        ),
+        ChangeNotifierProvider<SmbNavigation>(create: (context) => SmbNavigation(), lazy: false),
+        ChangeNotifierProvider<FileRepository>(create: (context) => FileRepository()..init(), lazy: false),
+      ],
+      child: MaterialApp(
+          title: 'Infinite List Sample',
+//        home: InfList(),
+          home: Scaffold(drawer: HomeDrawer(), body: RaisingHome())));
 }
 
 class MyHomePage extends StatefulWidget {
@@ -141,4 +151,3 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
-

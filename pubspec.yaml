@@ -14,7 +14,7 @@ description: LAN comic reader app
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.1.0 <3.0.0"
+  sdk: ">=2.2.0 <3.0.0"
 
 dependencies:
   flutter:
@@ -33,6 +33,7 @@ dependencies:
   flutter_image_compress: ^0.6.8
   permission_handler: ^5.0.1
   preload_page_view: ^0.1.4
+  gallery_saver: ^2.0.1
 
 dev_dependencies:
   build_runner: ^1.10.0
