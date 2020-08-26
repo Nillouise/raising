@@ -13,18 +13,8 @@ FileKey _$FileKeyFromJson(Map<String, dynamic> json) {
       (k, e) => MapEntry(k, e as String),
     ),
     json['star'] as int,
-    json['preOpenTime'] == null
-        ? null
-        : DateTime.parse(json['preOpenTime'] as String),
-    json['preMonthOpenTime'] == null
-        ? null
-        : DateTime.parse(json['preMonthOpenTime'] as String),
-    json['preSeasonOpenTime'] == null
-        ? null
-        : DateTime.parse(json['preSeasonOpenTime'] as String),
-    json['monthScore'] as int,
-    json['seasonScore'] as int,
-    json['yearScore'] as int,
+    (json['clickTimes'] as List)?.map((e) => e == null ? null : (e as Timestamp).toDateTime())?.toList(),
+    (json['readTimes'] as List)?.map((e) => e as int)?.toList(),
   );
 }
 
@@ -32,17 +22,13 @@ Map<String, dynamic> _$FileKeyToJson(FileKey instance) => <String, dynamic>{
       'filename': instance.filename,
       'tags': instance.tags,
       'star': instance.star,
-      'preOpenTime': instance.preOpenTime?.toIso8601String(),
-      'preMonthOpenTime': instance.preMonthOpenTime?.toIso8601String(),
-      'preSeasonOpenTime': instance.preSeasonOpenTime?.toIso8601String(),
-      'monthScore': instance.monthScore,
-      'seasonScore': instance.seasonScore,
-      'yearScore': instance.yearScore,
+      'clickTimes': instance.clickTimes?.map((e) => e?.toIso8601String())?.toList(),
+      'readTimes': instance.readTimes,
     };
 
 ZipFileContent _$ZipFileContentFromJson(Map<String, dynamic> json) {
   return ZipFileContent(
-    json['filename'] as String,
+    json['absFilename'] as String,
     json['zipFilename'] as String,
     json['index'] as int,
     json['length'] as int,
@@ -50,9 +36,8 @@ ZipFileContent _$ZipFileContentFromJson(Map<String, dynamic> json) {
   );
 }
 
-Map<String, dynamic> _$ZipFileContentToJson(ZipFileContent instance) =>
-    <String, dynamic>{
-      'filename': instance.absFilename,
+Map<String, dynamic> _$ZipFileContentToJson(ZipFileContent instance) => <String, dynamic>{
+      'absFilename': instance.absFilename,
       'zipFilename': instance.zipFilename,
       'index': instance.index,
       'length': instance.length,
@@ -63,17 +48,12 @@ SmbHalfResult _$SmbHalfResultFromJson(Map<String, dynamic> json) {
   return SmbHalfResult(
     json['msg'] as String,
     (Map<String, dynamic>.from(json['result']))?.map(
-      (k, e) => MapEntry(
-          int.parse(k),
-          e == null
-              ? null
-              : ZipFileContent.fromJson(Map<String, dynamic>.from(e))),
+      (k, e) => MapEntry(int.parse(k), e == null ? null : ZipFileContent.fromJson(Map<String, dynamic>.from(e))),
     ),
   );
 }
 
-Map<String, dynamic> _$SmbHalfResultToJson(SmbHalfResult instance) =>
-    <String, dynamic>{
+Map<String, dynamic> _$SmbHalfResultToJson(SmbHalfResult instance) => <String, dynamic>{
       'msg': instance.msg,
       'result': instance.result?.map((k, e) => MapEntry(k.toString(), e)),
     };
@@ -81,16 +61,13 @@ Map<String, dynamic> _$SmbHalfResultToJson(SmbHalfResult instance) =>
 FileInfo _$FileInfoFromJson(Map<String, dynamic> json) {
   return FileInfo()
     ..smbId = json['smbId'] as String
+    ..smbNickName = json['smbNickName'] as String
     ..absPath = json['absPath'] as String
     ..filename = json['filename'] as String
-    ..updateTime = json['updateTime'] == null
-        ? null
-        : DateTime.parse(json['updateTime'] as String)
+    ..updateTime = json['updateTime'] == null ? null : DateTime.parse(json['updateTime'] as String)
     ..isDirectory = json['isDirectory'] as bool
     ..isCompressFile = json['isCompressFile'] as bool
-    ..fileKey = json['fileKey'] == null
-        ? null
-        : FileKey.fromJson(json['fileKey'] as Map<String, dynamic>)
+    ..fileKey = json['fileKey'] == null ? null : FileKey.fromJson(json['fileKey'] as Map<String, dynamic>)
     ..star = json['star'] as int
     ..readLenght = json['readLenght'] as int
     ..length = json['length'] as int
@@ -99,6 +76,7 @@ FileInfo _$FileInfoFromJson(Map<String, dynamic> json) {
 
 Map<String, dynamic> _$FileInfoToJson(FileInfo instance) => <String, dynamic>{
       'smbId': instance.smbId,
+      'smbNickName': instance.smbNickName,
       'absPath': instance.absPath,
       'filename': instance.filename,
       'updateTime': instance.updateTime?.toIso8601String(),

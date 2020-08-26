@@ -234,7 +234,7 @@ class ViewerState extends State<Viewer> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<ViewerNavigator>(
-          create: (context) => _navigator = ViewerNavigator(false, index, pagelength, absFilename),
+          create: (context) => _navigator = ViewerNavigator(false, index, pagelength, absFilename)..beginTime = DateTime.now(),
           lazy: false,
         ),
       ],
@@ -252,8 +252,8 @@ class ViewerState extends State<Viewer> {
   void dispose() {
     // TODO: implement dispose
     logger.d("Viewer dispose");
-    _fileRepository.upsertFileKey(absFilename,null,null,)
-
+    _fileRepository.upsertFileKey(p.basename(absFilename),
+        clickTime: _navigator.beginTime, increReadTime: (DateTime.now().millisecondsSinceEpoch - _navigator.beginTime.millisecondsSinceEpoch) ~/ 1000);
     super.dispose();
   }
 }

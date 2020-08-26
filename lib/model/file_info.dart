@@ -8,6 +8,7 @@ import 'package:raising/channel/Smb.dart';
 import 'package:raising/exception/DbException.dart';
 import 'package:sembast/sembast.dart';
 import 'package:sembast/sembast_io.dart';
+import 'package:sembast/timestamp.dart';
 
 part 'file_info.g.dart';
 
@@ -225,7 +226,7 @@ class FileRepository extends ChangeNotifier {
     if ((clickTime == null && increReadTime != null) || (clickTime != null && increReadTime == null)) {
       throw DbException("clickTime and increReadTime should be together insert");
     }
-    clickTime != null ? updater["clickTimes"] = List.of([clickTime]) : null;
+    clickTime != null ? updater["clickTimes"] = List.of([Timestamp.fromDateTime(clickTime)]) : null;
     increReadTime != null ? updater["readTimes"] = List.of([increReadTime]) : null;
 
     var store = stringMapStoreFactory.store('fileKey');

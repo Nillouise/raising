@@ -15,12 +15,15 @@ Smb _$SmbFromJson(Map<String, dynamic> json) {
     password: json['password'] as String,
     path: json['path'] as String,
     searchPattern: json['searchPattern'] as String,
-  )..id = json['id'] as String;
+  )
+    ..id = json['id'] as String
+    ..nickName = json['nickName'] as String;
 }
 
 Map<String, dynamic> _$SmbToJson(Smb instance) => <String, dynamic>{
       'id': instance.id,
       'hostname': instance.hostname,
+      'nickName': instance.nickName,
       'shareName': instance.shareName,
       'domain': instance.domain,
       'username': instance.username,

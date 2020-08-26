@@ -10,7 +10,7 @@ var logger = Logger();
 
 class Utils {
   static bool invalidFilename(String x) {
-    return x.endsWith("\\$");
+    return x.endsWith("\$");
   }
 
   static Map filterEmptyFied(Map x) {}
