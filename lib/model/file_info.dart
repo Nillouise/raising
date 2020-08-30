@@ -203,11 +203,14 @@ class FileRepository extends ChangeNotifier {
             }
           }
         });
+        notifyListeners();
         return true;
       } on DbException catch (e) {
         logger.e(e);
       }
     }
+
+    notifyListeners();
     return false;
   }
 
@@ -231,6 +234,7 @@ class FileRepository extends ChangeNotifier {
 
     var store = stringMapStoreFactory.store('fileKey');
     var put = await store.record(filename).put(_db, updater, merge: true);
+    notifyListeners();
     return FileKey.fromJson(put);
   }
 
@@ -239,13 +243,14 @@ class FileRepository extends ChangeNotifier {
   }
 
   Future<FileKey> getFileKey(String filename) async {
-    var store = stringMapStoreFactory.store('fileKey');
-    Map<String, dynamic> fileKey = await store.record(filename).get(_db);
-    if (fileKey != null) {
-      return FileKey.fromJson(fileKey);
-    } else {
-      return null;
-    }
+
+var store = stringMapStoreFactory.store('fileKey');
+Map<String, dynamic> fileKey = await store.record(filename).get(_db);
+if (fileKey != null) {
+return FileKey.fromJson(fileKey);
+} else {
+return null;
+}
   }
 
   static Future<Void> getAllInfo() async {

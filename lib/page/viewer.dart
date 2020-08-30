@@ -162,12 +162,12 @@ class _ViewBottomState extends State<ViewBottom> {
                     }
                   },
                 )),
-                Text("${viewerNavigator.index} / ${viewerNavigator.pagelength}")
+                Text("${viewerNavigator.index + 1} / ${viewerNavigator.pagelength}")
               ],
             ),
             Row(
               children: <Widget>[
-                Expanded(child: Icon(Icons.star)),
+                Expanded(child: StarButton(viewerNavigator.absFilename)),
                 Expanded(
                     child: FlatButton(
                   onPressed: () async {
@@ -178,7 +178,9 @@ class _ViewBottomState extends State<ViewBottom> {
                       SmbHalfResult smbHalfResult = await Utils.getImage(viewP.index, viewP.absFilename, true, catalog.share);
 
                       String dir = (await getTemporaryDirectory()).path;
-                      var pa = '$dir/${viewP.absFilename}${viewP.index}T${DateTime.now().millisecondsSinceEpoch}.${p.extension(smbHalfResult.result[viewP.index].zipFilename)}';
+                      await new Directory('$dir/raising').create();
+                      var pa =
+                          '$dir/raising/${viewP.absFilename}${viewP.index}T${DateTime.now().millisecondsSinceEpoch}.${p.extension(smbHalfResult.result[viewP.index].zipFilename)}';
                       File file = new File(pa);
                       file.writeAsBytes(smbHalfResult.result[viewP.index].content);
                       var bool = await GallerySaver.saveImage(pa);
@@ -193,8 +195,8 @@ class _ViewBottomState extends State<ViewBottom> {
                     }
                   },
                   child: Text(
-                    "Flat Button",
-                    style: TextStyle(fontSize: 20.0),
+                    "截图",
+                    style: TextStyle(fontSize: 18.0),
                   ),
                 ))
               ],
@@ -203,6 +205,54 @@ class _ViewBottomState extends State<ViewBottom> {
     } else {
       return SizedBox.shrink();
     }
+  }
+}
+
+class StarButton extends StatefulWidget {
+  final String absFilename;
+
+  StarButton(this.absFilename);
+
+  @override
+  _StarButtonState createState() => _StarButtonState();
+}
+
+class _StarButtonState extends State<StarButton> {
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Widget>(future: () async {
+      FileRepository fileRepository = Provider.of<FileRepository>(context);
+      FileKey fileKey = await fileRepository.getFileKey(p.basename(widget.absFilename));
+
+      if (fileKey?.star != null && fileKey.star > 0) {
+        return FlatButton(
+          onPressed: () async {
+            fileRepository.upsertFileKey(p.basename(widget.absFilename), star: 0);
+          },
+          child: Icon(
+            Icons.star,
+            color: Colors.yellow[800],
+          ),
+        );
+      } else {
+        return FlatButton(
+          onPressed: () async {
+            fileRepository.upsertFileKey(p.basename(widget.absFilename), star: 5);
+          },
+          child: Icon(Icons.star_border),
+        );
+      }
+    }(), builder: (BuildContext context, AsyncSnapshot snapshot) {
+      if (snapshot.hasData) {
+        if (snapshot.data != null) {
+          return snapshot.data;
+        } else {
+          return Icon(Icons.star_border);
+        }
+      } else {
+        return Icon(Icons.error);
+      }
+    });
   }
 }
 

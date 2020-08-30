@@ -13,33 +13,33 @@ class RaisingHome extends StatelessWidget {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-          appBar: AppBar(
-              flexibleSpace: new Column(mainAxisAlignment: MainAxisAlignment.end, children: [
-            new TabBar(
-              tabs: [
-                Tab(text: "浏览"),
-                Tab(text: "排行榜"),
-                Tab(text: "分类"),
-              ],
-            ),
-          ])),
-          drawer: HomeDrawer(),
-          body: TabBarView(
-            children: [
-              Center(child: Explorer()),
-              Center(child: RankPage()),
-              Center(child: CategoryPage()),
+        appBar: AppBar(
+            flexibleSpace: new Column(mainAxisAlignment: MainAxisAlignment.end, children: [
+          new TabBar(
+            tabs: [
+              Tab(text: "浏览"),
+              Tab(text: "排行榜"),
+              Tab(text: "分类"),
             ],
           ),
-          floatingActionButton: Draggable(
-              feedback: FloatingActionButton(child: Icon(Icons.drag_handle), onPressed: () {}),
-              child: FloatingActionButton(child: Icon(Icons.star), onPressed: () {}),
-              childWhenDragging: Container(),
-              onDragEnd: (details) => print(details.offset))
-          // Here's the new attribute:
+        ])),
+        drawer: HomeDrawer(),
+        body: TabBarView(
+          children: [
+            Center(child: Explorer()),
+            Center(child: RankPage()),
+            Center(child: CategoryPage()),
+          ],
+        ),
+//          floatingActionButton: Draggable(
+//              feedback: FloatingActionButton(child: Icon(Icons.drag_handle), onPressed: () {}),
+//              child: FloatingActionButton(child: Icon(Icons.star), onPressed: () {}),
+//              childWhenDragging: Container(),
+//              onDragEnd: (details) => print(details.offset))
+        // Here's the new attribute:
 
 //        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-          ),
+      ),
     );
   }
 }

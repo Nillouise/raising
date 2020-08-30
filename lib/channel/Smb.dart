@@ -90,7 +90,7 @@ class Smb {
   void test() async {
     print("dart test");
     await methodChannel.invokeMethod(
-        \'test\', {"hostname": hostname, "shareName": shareName, "domain": domain, "username": username, "password": password, "path": path, "searchPattern": searchPattern});
+        "test", {"hostname": hostname, "shareName": shareName, "domain": domain, "username": username, "password": password, "path": path, "searchPattern": searchPattern});
   }
 
   static Future<Void> pushConfig(String configName, String hostname, String shareName, String domain, String username, String password, String path, String searchPattern) async {
