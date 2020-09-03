@@ -44,12 +44,12 @@ class _CategoryPageState extends State<CategoryPage> {
         // 底部导航
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-              icon: Icon(Icons.filter_1), title: Text('月榜')),
+              icon: Icon(Icons.filter_1), title: Text("月榜")),
           BottomNavigationBarItem(
-              icon: Icon(Icons.filter_2), title: Text('季榜')),
+              icon: Icon(Icons.filter_2), title: Text("季榜")),
           BottomNavigationBarItem(
-              icon: Icon(Icons.filter_3), title: Text('年榜')),
-          BottomNavigationBarItem(icon: Icon(Icons.filter), title: Text('总榜')),
+              icon: Icon(Icons.filter_3), title: Text("年榜")),
+          BottomNavigationBarItem(icon: Icon(Icons.filter), title: Text("总榜")),
         ],
         currentIndex: _selectedIndex,
         fixedColor: Colors.blue,

@@ -5,8 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:raising/channel/Smb.dart';
-import 'package:sembast/sembast.dart';
-import 'package:sembast/sembast_io.dart';
+import 'package:sqflite/sqflite.dart';
 
 var logger = Logger();
 
@@ -16,36 +15,29 @@ class SmbRepository {
   /// Loads todos first from File storage. If they don't exist or encounter an
   /// error, it attempts to load the Todos from a Web Client.
   Future<List<Smb>> loadTodos() async {
-    _db = await databaseFactoryIo.openDatabase(
-        (await getApplicationDocumentsDirectory()).path + "/sembast.db");
-    var store = intMapStoreFactory.store('smbManage');
-//    var key = await store.add(_db, {'name': 'ugly'});
-//    var record = await store.record(key).getSnapshot(_db);
-//    record =
-//        (await store.find(_db, finder: Finder(filter: Filter.byKey(record.key))))
-//            .first;
-//    print(record);
-    List<RecordSnapshot<int, Map<String, dynamic>>> records =
-        (await store.find(_db));
-//    print(records);
-
-    Iterable<Smb> map = records.map((element) {
-      return Smb.fromJson(element.value);
+    _db = await openDatabase((await getApplicationDocumentsDirectory()).path + "/sqllite.db", version: 1, onCreate: (Database db, int version) async {
+      await db.execute("CREATE TABLE smb_manage (id INTEGER PRIMARY KEY, _nickName TEXT, hostname TEXT, hostname TEXT,domain TEXT,username TEXT,password TEXT)");
     });
-    return map.toList();
-
-//    return Smb.smbMap.values.toList();
+    List<Map<String, dynamic>> list = await _db.rawQuery('SELECT * FROM file_key');
+    return list.map((e) => Smb.fromJson(e)).toList();
   }
 
   // Persists todos to local disk and the web
   Future save(List<Smb> smbs) async {
-    var store = intMapStoreFactory.store('smbManage');
-
     await _db.transaction((txn) async {
-      var i = (await store.delete(txn));
-      logger.i("delete $i msg befor save successfule");
-      await store.addAll(txn, smbs.map((e) => e.toJson()).toList());
+      txn.delete("smb_manage");
+      smbs.forEach((element) {
+        txn.insert("smb_manage", element.toJson());
+      });
     });
+
+//    var store = intMapStoreFactory.store('smbManage');
+//
+//    await _db.transaction((txn) async {
+//      var i = (await store.delete(txn));
+//      logger.i("delete $i msg befor save successfule");
+//      await store.addAll(txn, smbs.map((e) => e.toJson()).toList());
+//    });
 
 //    Smb.smbMap.clear();
 //    smbs.map((x) {

@@ -25,21 +25,6 @@ class Smb {
   String _nickName;
   String hostname;
 
-  String get nickName {
-    if (_nickName == null) {
-      if (id == null) {
-        return "error id";
-      } else {
-        _nickName = id.split("##~##")[0];
-      }
-    }
-    return _nickName;
-  }
-
-  set nickName(String x) {
-    _nickName = x;
-  }
-
   //deprecated
   String shareName;
   String domain;
@@ -57,6 +42,21 @@ class Smb {
     this.path,
     this.searchPattern,
   }) {}
+
+  String get nickName {
+    if (_nickName == null) {
+      if (id == null) {
+        return "error id";
+      } else {
+        _nickName = id.split("##~##")[0];
+      }
+    }
+    return _nickName;
+  }
+
+  set nickName(String x) {
+    _nickName = x;
+  }
 
   factory Smb.fromJson(Map<String, dynamic> json) => _$SmbFromJson(json);
 
@@ -125,7 +125,7 @@ class Smb {
 
   Future<List<FileInfo>> listFiles(String share, String path, String searchPattern) async {
     try {
-      final String result = await methodChannel.invokeMethod(\'listFiles\', {"path": path, "searchPattern": searchPattern, "share": share});
+      final String result = await methodChannel.invokeMethod("listFiles", {"path": path, "searchPattern": searchPattern, "share": share});
       List decode = json.decode(result);
       List<FileInfo> list = decode.map((element) => FileInfo.fromJson(element)).toList();
       return list

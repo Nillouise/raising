@@ -6,9 +6,7 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:raising/channel/Smb.dart';
 import 'package:raising/exception/DbException.dart';
-import 'package:sembast/sembast.dart';
-import 'package:sembast/sembast_io.dart';
-import 'package:sembast/timestamp.dart';
+import 'package:sqflite/sqflite.dart';
 
 part 'file_info.g.dart';
 
@@ -106,22 +104,22 @@ class FileKeyQuery {
   int star = -1; //-1 for all
   Set<String> partialFilenames; //find by partial filename
 
-  List<Filter> getFinders() {
-    List<Filter> finders = [];
-    if (filename?.isNotEmpty ?? false) {
-      finders.add(Filter.equals('filename', filename));
-    }
-    tags?.forEach((element) {
-      finders.add(Filter.equals('tags', element, anyInList: true));
-    });
-    if (star != -1) {
-      finders.add(Filter.equals('star', star));
-    }
-    partialFilenames?.forEach((element) {
-      finders.add(Filter.matches('filename', ".*" + element + ".*"));
-    });
-    return finders;
-  }
+//  List<Filter> getFinders() {
+//    List<Filter> finders = [];
+//    if (filename?.isNotEmpty ?? false) {
+//      finders.add(Filter.equals('filename', filename));
+//    }
+//    tags?.forEach((element) {
+//      finders.add(Filter.equals('tags', element, anyInList: true));
+//    });
+//    if (star != -1) {
+//      finders.add(Filter.equals('star', star));
+//    }
+//    partialFilenames?.forEach((element) {
+//      finders.add(Filter.matches('filename', ".*" + element + ".*"));
+//    });
+//    return finders;
+//  }
 }
 
 class FileRepository extends ChangeNotifier {
@@ -130,36 +128,36 @@ class FileRepository extends ChangeNotifier {
   Database _db;
 
   void init() async {
-    _db = await databaseFactoryIo.openDatabase((await getApplicationDocumentsDirectory()).path + "/sembast.db");
+    String filename; //唯一主键
+    Map<String, String> tags;
+    int star;
+
+    //什么时候点击了
+    List<DateTime> clickTimes = new List<DateTime>();
+
+    //按秒算，这次看了多少时间，应当跟clickTimes一起保存
+    List<int> readTimes;
+
+    _db = await openDatabase((await getApplicationDocumentsDirectory()).path + "/sqllite.db", version: 1, onCreate: (Database db, int version) async {
+      //File key
+      await db.execute("CREATE TABLE file_key (filename TEXT PRIMARY KEY, star INTEGER)");
+      await db.execute("CREATE TABLE file_key_clicks (id INTEGER PRIMARY KEY, filename TEXT, clickTime INTEGER, readTime INTEGER)");
+      await db.execute("CREATE TABLE file_key_tags (id INTEGER PRIMARY KEY, filename TEXT, tag TEXT)");
+
+      //File info
+      await db.execute(
+          "CREATE TABLE file_info (id INTEGER PRIMARY KEY,smbId TEXT,smbNickName TEXT,absPath TEXT, updateTime INTEGER, isDirectory INTEGER, isCompressFile INTEGER, readLenght INTEGER, lenght INTEGER, size INTEGER)");
+    });
     _cache_db = _db;
     print(_db);
   }
 
-  Future<List<FileInfo>> findFileKey(FileKey fileKey) async {
-    var store = intMapStoreFactory.store('fileInfo');
-    var finder = Finder(filter: Filter.equals('filename', fileKey.filename), sortOrders: [SortOrder('smbId')]);
-    List<RecordSnapshot<int, Map<String, dynamic>>> records = (await store.find(_db, finder: finder));
-  }
-
-  Future<List<FileKey>> findFileKeyQuery(FileKeyQuery query) async {
-    var store = intMapStoreFactory.store('fileInfo');
-    var finder = Finder(filter: Filter.and(query.getFinders()), sortOrders: [SortOrder('smbId')]);
-    List<RecordSnapshot<int, Map<String, dynamic>>> records = (await store.find(_db, finder: finder));
-  }
-
-  Future<List<FileInfo>> findByFilename(String filename) async {
-    var store = intMapStoreFactory.store('fileInfo');
-    var finder = Finder(filter: Filter.equals('filename', filename), sortOrders: [SortOrder('smbId')]);
-    List<RecordSnapshot<int, Map<String, dynamic>>> records = (await store.find(_db, finder: finder));
-  }
-
   Future<FileInfo> findByabsPath(String absPath, String smbId) async {
-    var store = intMapStoreFactory.store('fileInfo');
-    var finder = Finder(filter: Filter.and([Filter.equals('absPath', absPath), Filter.equals('smbId', smbId)]));
-    RecordSnapshot<int, Map<String, dynamic>> records = (await store.findFirst(_db, finder: finder));
-
-    if (records != null) {
-      return FileInfo.fromJson(records.value);
+    List<Map<String, dynamic>> list = await _cache_db.transaction((txn) async {
+      return await txn.rawQuery("select * from file_info where smbId=? and absPath=?", [smbId, absPath]);
+    });
+    if (list.length > 0) {
+      return FileInfo.fromJson(list[0]);
     } else {
       return null;
     }
@@ -175,67 +173,79 @@ class FileRepository extends ChangeNotifier {
       int length, //里面有多少文件
       int size //文件大小
       }) async {
-    var finder = Finder(filter: Filter.and([Filter.equals("absPath", absPath), Filter.equals("smbId", smbId)]));
-
-    Map<String, dynamic> updater = Map();
-    updater["smbNickName"] = smbNickName;
-    filename != null ? updater["filename"] = filename : null;
-    updateTime != null ? updater["updateTime"] = updateTime : null;
-    isDirectory != null ? updater["filename"] = isDirectory : null;
-    isCompressFile != null ? updater["isCompressFile"] = isCompressFile : null;
-    star != null ? updater["star"] = star : null;
-    readLenght != null ? updater["readLenght"] = readLenght : null;
-    length != null ? updater["length"] = length : null;
-    size != null ? updater["size"] = size : null;
-
-    var store = intMapStoreFactory.store('fileInfo');
-
-    //利用事务+乐观锁实现非key的upsert效果。
-    for (int i = 0; i < 3; i++) {
-      try {
-        await _db.transaction((txn) async {
-          int updateCount = await store.update(txn, updater, finder: finder);
-          if (updateCount == 0) {
-            store.add(txn, {"absPath": absPath, "smbId": smbId});
-            int doubelUpdateCount = await store.update(txn, updater, finder: finder);
-            if (doubelUpdateCount != 1) {
-              throw DbException("update conflict ${smbId} ${absPath}");
-            }
-          }
-        });
-        notifyListeners();
-        return true;
-      } on DbException catch (e) {
-        logger.e(e);
-      }
-    }
+//    var finder = Finder(filter: Filter.and([Filter.equals("absPath", absPath), Filter.equals("smbId", smbId)]));
+//
+//    Map<String, dynamic> updater = Map();
+//    updater["smbNickName"] = smbNickName;
+//    filename != null ? updater["filename"] = filename : null;
+//    updateTime != null ? updater["updateTime"] = updateTime : null;
+//    isDirectory != null ? updater["filename"] = isDirectory : null;
+//    isCompressFile != null ? updater["isCompressFile"] = isCompressFile : null;
+//    star != null ? updater["star"] = star : null;
+//    readLenght != null ? updater["readLenght"] = readLenght : null;
+//    length != null ? updater["length"] = length : null;
+//    size != null ? updater["size"] = size : null;
+//
+//    var store = intMapStoreFactory.store('fileInfo');
+//
+//    //利用事务+乐观锁实现非key的upsert效果。
+//    for (int i = 0; i < 3; i++) {
+//      try {
+//        await _db.transaction((txn) async {
+//          int updateCount = await store.update(txn, updater, finder: finder);
+//          if (updateCount == 0) {
+//            store.add(txn, {"absPath": absPath, "smbId": smbId});
+//            int doubelUpdateCount = await store.update(txn, updater, finder: finder);
+//            if (doubelUpdateCount != 1) {
+//              throw DbException("update conflict ${smbId} ${absPath}");
+//            }
+//          }
+//        });
+//        notifyListeners();
+//        return true;
+//      } on DbException catch (e) {
+//        logger.e(e);
+//      }
+//    }
 
     notifyListeners();
     return false;
   }
 
-  Future<FileKey> upsertFileKey(
+  Future<Void> upsertFileKey(
     String filename, {
-    Map<String, String> tags,
+    String tag,
     int star,
     DateTime clickTime,
     //应该根据阅读时间进行加成
     int increReadTime,
   }) async {
-    Map<String, dynamic> updater = Map();
-    tags != null ? updater["tags"] = tags : null;
-    star != null ? updater["star"] = star : null;
+    // Insert some records in a transaction
+    await _db.transaction((txn) async {
+      List<Map> maps = await txn.query("file_key", where: 'filename = ?', whereArgs: [filename]);
+      if (maps.length == 0) {
+        if (star == null) {
+          star = 0;
+        }
+        txn.rawInsert("insert into file_key(filename,star) values($filename,$star) ");
+      } else {
+        if (star != null) {
+          txn.update("file_key", {"star": star}, where: 'filename = ?', whereArgs: [filename]);
+        }
+      }
 
-    if ((clickTime == null && increReadTime != null) || (clickTime != null && increReadTime == null)) {
-      throw DbException("clickTime and increReadTime should be together insert");
-    }
-    clickTime != null ? updater["clickTimes"] = List.of([Timestamp.fromDateTime(clickTime)]) : null;
-    increReadTime != null ? updater["readTimes"] = List.of([increReadTime]) : null;
+      if ((clickTime == null && increReadTime != null) || (clickTime != null && increReadTime == null)) {
+        throw DbException("clickTime and increReadTime should be together insert");
+      }
+      if (clickTime != null && increReadTime != null) {
+        txn.rawInsert("insert into file_key_clicks(filename,clickTime,readTime) values($filename,$clickTime,$increReadTime) where filename=$filename");
+      }
+      if (tag != null) {
+        txn.rawInsert("insert into file_key_tags(filename,tag) values($filename,$tag)");
+      }
+    });
 
-    var store = stringMapStoreFactory.store('fileKey');
-    var put = await store.record(filename).put(_db, updater, merge: true);
     notifyListeners();
-    return FileKey.fromJson(put);
   }
 
   Future<bool> deleteFileKeyTag(String filename, String tag) {
@@ -243,21 +253,20 @@ class FileRepository extends ChangeNotifier {
   }
 
   Future<FileKey> getFileKey(String filename) async {
-
-var store = stringMapStoreFactory.store('fileKey');
-Map<String, dynamic> fileKey = await store.record(filename).get(_db);
-if (fileKey != null) {
-return FileKey.fromJson(fileKey);
-} else {
-return null;
-}
+    List<Map<String, dynamic>> list = await _db.rawQuery('SELECT * FROM file_key');
+    if (list.length > 0) {
+      return FileKey.fromJson(list[0]);
+    } else {
+      return null;
+    }
   }
 
   static Future<Void> getAllInfo() async {
-//    var store = stringMapStoreFactory.store('fileKey');
-    List<RecordSnapshot<String, Map<String, dynamic>>> list = await stringMapStoreFactory.store('fileKey').find(_cache_db);
-    List<RecordSnapshot<int, Map<String, dynamic>>> list2 = await intMapStoreFactory.store('fileInfo').find(_cache_db);
+    // Insert some records in a transaction
+    List<Map<String, dynamic>> list = await _cache_db.transaction((txn) async {
+      return await txn.query("file_key");
+    });
 //    logger.d(list);
-    logger.d("db info $list $list2");
+    logger.d("db info $list");
   }
 }

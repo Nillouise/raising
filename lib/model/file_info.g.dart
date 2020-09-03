@@ -13,7 +13,7 @@ FileKey _$FileKeyFromJson(Map<String, dynamic> json) {
       (k, e) => MapEntry(k, e as String),
     ),
     json['star'] as int,
-    (json['clickTimes'] as List)?.map((e) => e == null ? null : (e as Timestamp).toDateTime())?.toList(),
+    (json['clickTimes'] as List)?.map((e) => e == null ? null : (DateTime.fromMicrosecondsSinceEpoch(e * 1000)))?.toList(),
     (json['readTimes'] as List)?.map((e) => e as int)?.toList(),
   );
 }
