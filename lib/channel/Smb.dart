@@ -22,7 +22,7 @@ class Smb {
   static Map<String, Smb> smbMap = Map<String, Smb>();
   static Smb currentSmb;
   String id;
-  String _nickName;
+  String realNickName;
   String hostname;
 
   //deprecated
@@ -44,18 +44,18 @@ class Smb {
   }) {}
 
   String get nickName {
-    if (_nickName == null) {
+    if (realNickName == null) {
       if (id == null) {
         return "error id";
       } else {
-        _nickName = id.split("##~##")[0];
+        realNickName = id.split("##~##")[0];
       }
     }
-    return _nickName;
+    return realNickName;
   }
 
   set nickName(String x) {
-    _nickName = x;
+    realNickName = x;
   }
 
   factory Smb.fromJson(Map<String, dynamic> json) => _$SmbFromJson(json);

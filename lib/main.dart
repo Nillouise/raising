@@ -44,7 +44,7 @@ class MyApp extends StatelessWidget {
 
 Widget init() {
   // 方法二
-  Timer.periodic(Duration(milliseconds: 20000), (timer) async {
+  Timer.periodic(Duration(milliseconds: 30000), (timer) async {
     await FileRepository.getAllInfo();
 
 //    print('一秒钟后输出');

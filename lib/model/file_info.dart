@@ -24,7 +24,8 @@ class FileKey {
 
   FileKey(this.filename, this.tags, this.star, this.clickTimes, this.readTimes);
 
-  factory FileKey.fromJson(Map<String, dynamic> json) => _$FileKeyFromJson(json);
+  factory FileKey.fromJson(Map<String, dynamic> json) =>
+      _$FileKeyFromJson(json);
 
   Map<String, dynamic> toJson() => _$FileKeyToJson(this);
 }
@@ -37,11 +38,13 @@ class ZipFileContent {
   int length;
   dynamic content;
 
-  ZipFileContent(this.absFilename, this.zipFilename, this.index, this.length, this.content);
+  ZipFileContent(this.absFilename, this.zipFilename, this.index, this.length,
+      this.content);
 
   ZipFileContent.content(this.content);
 
-  factory ZipFileContent.fromJson(Map<String, dynamic> json) => _$ZipFileContentFromJson(json);
+  factory ZipFileContent.fromJson(Map<String, dynamic> json) =>
+      _$ZipFileContentFromJson(json);
 
   Map<String, dynamic> toJson() => _$ZipFileContentToJson(this);
 }
@@ -53,7 +56,8 @@ class SmbHalfResult {
 
   SmbHalfResult(this.msg, this.result);
 
-  factory SmbHalfResult.fromJson(Map<String, dynamic> json) => _$SmbHalfResultFromJson(json);
+  factory SmbHalfResult.fromJson(Map<String, dynamic> json) =>
+      _$SmbHalfResultFromJson(json);
 
   Map<String, dynamic> toJson() => _$SmbHalfResultToJson(this);
 }
@@ -78,7 +82,8 @@ class FileInfo {
 
   FileInfo();
 
-  factory FileInfo.fromJson(Map<String, dynamic> json) => _$FileInfoFromJson(json);
+  factory FileInfo.fromJson(Map<String, dynamic> json) =>
+      _$FileInfoFromJson(json);
 
   Map<String, dynamic> toJson() => _$FileInfoToJson(this);
 }
@@ -138,23 +143,17 @@ class FileRepository extends ChangeNotifier {
     //按秒算，这次看了多少时间，应当跟clickTimes一起保存
     List<int> readTimes;
 
-    _db = await openDatabase((await getApplicationDocumentsDirectory()).path + "/sqllite.db", version: 1, onCreate: (Database db, int version) async {
-      //File key
-      await db.execute("CREATE TABLE file_key (filename TEXT PRIMARY KEY, star INTEGER)");
-      await db.execute("CREATE TABLE file_key_clicks (id INTEGER PRIMARY KEY, filename TEXT, clickTime INTEGER, readTime INTEGER)");
-      await db.execute("CREATE TABLE file_key_tags (id INTEGER PRIMARY KEY, filename TEXT, tag TEXT)");
-
-      //File info
-      await db.execute(
-          "CREATE TABLE file_info (id INTEGER PRIMARY KEY,smbId TEXT,smbNickName TEXT,absPath TEXT, updateTime INTEGER, isDirectory INTEGER, isCompressFile INTEGER, readLenght INTEGER, lenght INTEGER, size INTEGER)");
-    });
+    _db = await openDatabase(
+        (await getApplicationDocumentsDirectory()).path + "/raising.sqflite");
     _cache_db = _db;
     print(_db);
   }
 
   Future<FileInfo> findByabsPath(String absPath, String smbId) async {
     List<Map<String, dynamic>> list = await _cache_db.transaction((txn) async {
-      return await txn.rawQuery("select * from file_info where smbId=? and absPath=?", [smbId, absPath]);
+      return await txn.rawQuery(
+          "select * from file_info where smbId=? and absPath=?",
+          [smbId, absPath]);
     });
     if (list.length > 0) {
       return FileInfo.fromJson(list[0]);
@@ -222,26 +221,34 @@ class FileRepository extends ChangeNotifier {
   }) async {
     // Insert some records in a transaction
     await _db.transaction((txn) async {
-      List<Map> maps = await txn.query("file_key", where: 'filename = ?', whereArgs: [filename]);
+      List<Map> maps = await txn
+          .query("file_key", where: 'filename = ?', whereArgs: [filename]);
       if (maps.length == 0) {
         if (star == null) {
           star = 0;
         }
-        txn.rawInsert("insert into file_key(filename,star) values($filename,$star) ");
+        txn.rawInsert("insert into file_key(filename,star) values(?,?)",
+            [filename, star]);
       } else {
         if (star != null) {
-          txn.update("file_key", {"star": star}, where: 'filename = ?', whereArgs: [filename]);
+          txn.update("file_key", {"star": star},
+              where: 'filename = ?', whereArgs: [filename]);
         }
       }
 
-      if ((clickTime == null && increReadTime != null) || (clickTime != null && increReadTime == null)) {
-        throw DbException("clickTime and increReadTime should be together insert");
+      if ((clickTime == null && increReadTime != null) ||
+          (clickTime != null && increReadTime == null)) {
+        throw DbException(
+            "clickTime and increReadTime should be together insert");
       }
       if (clickTime != null && increReadTime != null) {
-        txn.rawInsert("insert into file_key_clicks(filename,clickTime,readTime) values($filename,$clickTime,$increReadTime) where filename=$filename");
+        txn.rawInsert(
+            "insert into file_key_clicks(filename,clickTime,readTime) values(?,?,?)",
+            [filename, clickTime.millisecondsSinceEpoch, increReadTime]);
       }
       if (tag != null) {
-        txn.rawInsert("insert into file_key_tags(filename,tag) values($filename,$tag)");
+        txn.rawInsert("insert into file_key_tags(filename,tag) values(?,?)",
+            [filename, tag]);
       }
     });
 
@@ -253,7 +260,8 @@ class FileRepository extends ChangeNotifier {
   }
 
   Future<FileKey> getFileKey(String filename) async {
-    List<Map<String, dynamic>> list = await _db.rawQuery('SELECT * FROM file_key');
+    List<Map<String, dynamic>> list =
+        await _db.rawQuery('SELECT * FROM file_key');
     if (list.length > 0) {
       return FileKey.fromJson(list[0]);
     } else {
@@ -264,7 +272,13 @@ class FileRepository extends ChangeNotifier {
   static Future<Void> getAllInfo() async {
     // Insert some records in a transaction
     List<Map<String, dynamic>> list = await _cache_db.transaction((txn) async {
-      return await txn.query("file_key");
+      List<Map<String, dynamic>> lst = new List();
+      lst.addAll(await txn.query("file_key"));
+      lst.addAll(await txn.query("file_key_clicks"));
+      lst.addAll(await txn.query("file_key_tags"));
+      lst.addAll(await txn.query("smb_manage"));
+      lst.addAll(await txn.query("file_info"));
+      return lst;
     });
 //    logger.d(list);
     logger.d("db info $list");
