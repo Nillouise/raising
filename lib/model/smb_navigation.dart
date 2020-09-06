@@ -13,6 +13,7 @@ class SmbNavigation extends ChangeNotifier {
   String _title;
   String _path;
   String _smbId;
+  String smbNickName;
   List<FileInfo> _files;
   double scroll_speed;
 
@@ -38,14 +39,15 @@ class SmbNavigation extends ChangeNotifier {
 
   String get title => _title;
 
-  void refresh(
-      BuildContext context, String share, String path, String smbId) async {
+  void refresh(BuildContext context, String share, String path, String smbId,
+      String smbNickName) async {
 //    var smb = Smb.getConfig(null);
 //    List<FileInfo> list = await smb.listFiles(path, "*");
     _share = share;
     _title = path;
     _path = path;
     _smbId = smbId;
+    this.smbNickName = smbNickName;
 //    _files = list;
     notifyListeners();
   }
@@ -59,6 +61,7 @@ class SmbNavigation extends ChangeNotifier {
   }
 
   String get path => _path;
+
   String get share => _share;
 
   List<FileInfo> get files => _files;

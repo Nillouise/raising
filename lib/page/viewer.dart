@@ -304,6 +304,8 @@ class ViewerState extends State<Viewer> {
     logger.d("Viewer dispose");
     _fileRepository.upsertFileKey(p.basename(absFilename),
         clickTime: _navigator.beginTime, increReadTime: (DateTime.now().millisecondsSinceEpoch - _navigator.beginTime.millisecondsSinceEpoch) ~/ 1000);
+//    _fileRepository.upsertFileInfo(absFilename, );
+
     super.dispose();
   }
 }
@@ -320,6 +322,7 @@ class FutureViewerChecker extends StatelessWidget {
       future: () async {
         SmbNavigation catalog = Provider.of<SmbNavigation>(context);
         FileRepository fileRepository = Provider.of<FileRepository>(context, listen: false);
+
 
         FileInfo fileInfo = await fileRepository.findByabsPath(absFilename, catalog.smbId);
 
@@ -369,8 +372,10 @@ class FutureImage extends StatelessWidget {
         SmbNavigation catalog = Provider.of<SmbNavigation>(context);
         FileRepository fileRepository = Provider.of<FileRepository>(context, listen: false);
 
-        FileInfo fileInfo = await fileRepository.findByabsPath(absFilename, catalog.smbId);
-        return await Utils.getImage(index, absFilename, false, catalog.share);
+//        FileInfo fileInfo = await fileRepository.findByabsPath(absFilename, catalog.smbId);
+        var res = await Utils.getImage(index, absFilename, false, catalog.share);
+        fileRepository.upsertFileInfo(absFilename, catalog.smbId ,catalog.smbNickName);
+        return res;
       }(),
       builder: (BuildContext context, AsyncSnapshot<SmbHalfResult> snapshot) {
         // 请求已结束

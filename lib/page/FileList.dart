@@ -59,10 +59,10 @@ class ExplorerState extends State<Explorer> {
             //返回上一级目录或share
             var smb = Smb.getCurrentSmb();
             if (p.rootPrefix(catalog.path) == catalog.path) {
-              catalog.refresh(
-                  context, catalog.share, _dirname(catalog.path), smb.id);
+              catalog.refresh(context, catalog.share, _dirname(catalog.path),
+                  smb.id, smb.nickName);
             } else {
-              catalog.refresh(context, "", "", smb.id);
+              catalog.refresh(context, "", "", smb.id, smb.nickName);
             }
             return false;
           }
@@ -150,7 +150,7 @@ class FileListState extends State<FileList> {
                   SmbNavigation smbNavigation =
                       Provider.of<SmbNavigation>(context, listen: false);
                   smbNavigation.refresh(
-                      context, smb.shareName, smb.path, item.id);
+                      context, smb.shareName, smb.path, item.id, smb.nickName);
                 },
               ),
             );
@@ -183,8 +183,8 @@ class FileListState extends State<FileList> {
                       var smb = Smb.getCurrentSmb();
                       SmbNavigation smbNavigation =
                           Provider.of<SmbNavigation>(context, listen: false);
-                      smbNavigation.refresh(
-                          context, snapshot.data[index], "", smb.id);
+                      smbNavigation.refresh(context, snapshot.data[index], "",
+                          smb.id, smb.nickName);
                     },
                   );
                 },
@@ -252,7 +252,8 @@ class FileListState extends State<FileList> {
                                     smbNavigation.share,
                                     p.join(smbNavigation.path,
                                         files[index].filename),
-                                    smb.id);
+                                    smb.id,
+                                    smb.nickName);
                               } else if (Constants.COMPRESS_AND_IMAGE_FILE
                                   .contains(
                                       p.extension(files[index].absPath))) {
@@ -287,15 +288,23 @@ class PreviewFile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SmbNavigation catalog = Provider.of<SmbNavigation>(context, listen: false);
+    FileRepository fileRepository =
+        Provider.of<FileRepository>(context, listen: false);
+
     return FutureBuilder<Widget>(future: () async {
       if (fileinfo.isDirectory) {
         return Icon(Icons.folder);
       } else if ((Constants.COMPRESS_AND_IMAGE_FILE)
           .contains((p.extension(fileinfo.absPath)))) {
-        SmbNavigation catalog =
-            Provider.of<SmbNavigation>(context, listen: false);
         var smbHalfResult =
             (await Utils.getPreviewFile(0, fileinfo.absPath, catalog.share));
+        fileRepository.upsertFileInfo(
+          fileinfo.absPath,
+          catalog.smbId,
+          catalog.smbNickName,
+          length: smbHalfResult.result[0].length,
+        );
         return Image.memory(smbHalfResult.result[0].content, errorBuilder:
             (BuildContext context, Object exception, StackTrace stackTrace) {
           return Icon(Icons.error);

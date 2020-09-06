@@ -8,6 +8,8 @@ import 'package:raising/channel/Smb.dart';
 import 'package:raising/exception/DbException.dart';
 import 'package:sqflite/sqflite.dart';
 
+import 'package:path/path.dart' as p;
+
 part 'file_info.g.dart';
 
 @JsonSerializable()
@@ -66,7 +68,7 @@ class SmbHalfResult {
 class FileInfo {
   //smbId跟absPath组成一个唯一主键
   String smbId;
-  String smbNickName; //只用smbId可能无法恢复删除的smb链接
+  String smbNickName; //只用smbId可能无法恢复删除的smb链接,所以也存储一下这个nickName
   String absPath; //path 包括文件名合smbNickName
   String filename;
   DateTime updateTime;
@@ -163,52 +165,52 @@ class FileRepository extends ChangeNotifier {
   }
 
   Future<bool> upsertFileInfo(String absPath, String smbId, String smbNickName,
-      {String filename,
-      DateTime updateTime,
+      {DateTime updateTime,
       bool isDirectory,
       bool isCompressFile,
-      int star,
       int readLenght,
       int length, //里面有多少文件
       int size //文件大小
       }) async {
-//    var finder = Finder(filter: Filter.and([Filter.equals("absPath", absPath), Filter.equals("smbId", smbId)]));
-//
-//    Map<String, dynamic> updater = Map();
-//    updater["smbNickName"] = smbNickName;
-//    filename != null ? updater["filename"] = filename : null;
-//    updateTime != null ? updater["updateTime"] = updateTime : null;
-//    isDirectory != null ? updater["filename"] = isDirectory : null;
-//    isCompressFile != null ? updater["isCompressFile"] = isCompressFile : null;
-//    star != null ? updater["star"] = star : null;
-//    readLenght != null ? updater["readLenght"] = readLenght : null;
-//    length != null ? updater["length"] = length : null;
-//    size != null ? updater["size"] = size : null;
-//
-//    var store = intMapStoreFactory.store('fileInfo');
-//
-//    //利用事务+乐观锁实现非key的upsert效果。
-//    for (int i = 0; i < 3; i++) {
-//      try {
-//        await _db.transaction((txn) async {
-//          int updateCount = await store.update(txn, updater, finder: finder);
-//          if (updateCount == 0) {
-//            store.add(txn, {"absPath": absPath, "smbId": smbId});
-//            int doubelUpdateCount = await store.update(txn, updater, finder: finder);
-//            if (doubelUpdateCount != 1) {
-//              throw DbException("update conflict ${smbId} ${absPath}");
-//            }
-//          }
-//        });
-//        notifyListeners();
-//        return true;
-//      } on DbException catch (e) {
-//        logger.e(e);
-//      }
-//    }
+    Map<String, dynamic> map = {
+      "absPath": absPath,
+      "smbId": smbId,
+      "smbNickName": smbNickName,
+      "filename": p.basename(absPath)
+    };
+    if (updateTime != null) {
+      map["updateTime"] = updateTime.millisecondsSinceEpoch;
+    }
+    if (isDirectory != null) {
+      map["isDirectory"] = isDirectory;
+    }
+    if (isCompressFile != null) {
+      map["isCompressFile"] = isDirectory;
+    }
+    if (readLenght != null) {
+      map["readLenght"] = readLenght;
+    }
+    if (length != null) {
+      map["length"] = length;
+    }
+    if (size != null) {
+      map["size"] = size;
+    }
+
+    int res = await _cache_db.transaction((txn) async {
+      if ((await txn.query("file_info",
+                  where: "smbId=? and absPath=?", whereArgs: [smbId, absPath]))
+              .length ==
+          0) {
+        return await txn.insert("file_info", map);
+      } else {
+        return await txn.update("file_info", map,
+            where: "smbId=? and absPath=?", whereArgs: [smbId, absPath]);
+      }
+    });
 
     notifyListeners();
-    return false;
+    return res > 0;
   }
 
   Future<Void> upsertFileKey(
