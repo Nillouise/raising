@@ -188,6 +188,41 @@ public class Smb {
         }
     }
 
+    public ArrayList<FileInfo> queryFiles(SmbCO po) throws Exception {
+        ArrayList<FileInfo> res = new ArrayList<FileInfo>();
+        SMBClient client = getClient();
+
+        Logger.d("queryFiles: current smb setting %s", this.toString());
+        try (Connection connection = client.connect(hostname)) {
+            AuthenticationContext ac;
+            if (passwrod != null) {
+                ac = new AuthenticationContext(username, passwrod.toCharArray(), domain);
+            } else {
+                ac = AuthenticationContext.anonymous();
+            }
+            Session session = connection.authenticate(ac);
+
+            // Connect to Share
+            try (DiskShare share = (DiskShare) session.connectShare(shareName)) {
+                for (FileIdBothDirectoryInformation f : share.list(path, searchPattern)) {
+                    FileInfo fi = new FileInfo()
+                            .setFilename(f.getFileName())
+                            .setSize(f.getEndOfFile())
+                            .setUpdateTime(f.getLastWriteTime().toDate())
+                            .setDirectory(EnumWithValue.EnumUtils.isSet(f.getFileAttributes(), FILE_ATTRIBUTE_DIRECTORY));
+                    res.add(fi);
+                }
+            } catch (Exception e) {
+                Logger.e(e, "path %s searchPattern %s", path, searchPattern);
+                throw e;
+            }
+            return res;
+        } catch (Exception e) {
+            Logger.e(e, "path %s searchPattern %s", path, searchPattern);
+            throw e;
+        }
+    }
+
     @Deprecated
     public <T> T processShare(String hostname, String shareName, String domain, String username, String passwrod, String path, String searchPattern, ProcessShare<T> process) {
         SMBClient client = getClient();

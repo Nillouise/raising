@@ -93,18 +93,6 @@ class Smb {
         "test", {"hostname": hostname, "shareName": shareName, "domain": domain, "username": username, "password": password, "path": path, "searchPattern": searchPattern});
   }
 
-  static Future<Void> pushConfig(String configName, String hostname, String shareName, String domain, String username, String password, String path, String searchPattern) async {
-    if (!smbMap.containsKey(configName)) {
-      var smb = Smb(hostname: hostname, shareName: shareName, domain: domain, username: username, password: password, path: path, searchPattern: searchPattern);
-      smb.init();
-      smbMap[configName] = smb;
-      return null;
-    }
-  }
-
-  static Smb getConfig(String configName) {
-    return smbMap[configName];
-  }
 
   static Smb getCurrentSmb() {
     return currentSmb;

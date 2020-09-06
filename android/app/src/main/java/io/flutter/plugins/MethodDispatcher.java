@@ -168,6 +168,16 @@ public class MethodDispatcher implements MethodCallHandler {
                     result.error("listShare", e.toString(), ExceptionUtils.getStackTrace(e));
                 }
             });
+        } else if (call.method.equals("queryFiles")) {
+            executorService.submit(() -> {
+                try {
+                    List<String> strings = smb.listShares();
+                    result.success(strings);
+                } catch (Exception e) {
+                    Logger.e(e, "listShare error");
+                    result.error("listShare", e.toString(), ExceptionUtils.getStackTrace(e));
+                }
+            });
         } else {
             result.notImplemented();
         }
