@@ -3,12 +3,10 @@ import 'dart:ffi';
 
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:raising/channel/Smb.dart';
 import 'package:raising/exception/DbException.dart';
 import 'package:sqflite/sqflite.dart';
-
-import 'package:path/path.dart' as p;
 
 part 'file_info.g.dart';
 
@@ -26,8 +24,7 @@ class FileKey {
 
   FileKey(this.filename, this.tags, this.star, this.clickTimes, this.readTimes);
 
-  factory FileKey.fromJson(Map<String, dynamic> json) =>
-      _$FileKeyFromJson(json);
+  factory FileKey.fromJson(Map<String, dynamic> json) => _$FileKeyFromJson(json);
 
   Map<String, dynamic> toJson() => _$FileKeyToJson(this);
 }
@@ -40,13 +37,11 @@ class ZipFileContent {
   int length;
   dynamic content;
 
-  ZipFileContent(this.absFilename, this.zipFilename, this.index, this.length,
-      this.content);
+  ZipFileContent(this.absFilename, this.zipFilename, this.index, this.length, this.content);
 
   ZipFileContent.content(this.content);
 
-  factory ZipFileContent.fromJson(Map<String, dynamic> json) =>
-      _$ZipFileContentFromJson(json);
+  factory ZipFileContent.fromJson(Map<String, dynamic> json) => _$ZipFileContentFromJson(json);
 
   Map<String, dynamic> toJson() => _$ZipFileContentToJson(this);
 }
@@ -58,8 +53,7 @@ class SmbHalfResult {
 
   SmbHalfResult(this.msg, this.result);
 
-  factory SmbHalfResult.fromJson(Map<String, dynamic> json) =>
-      _$SmbHalfResultFromJson(json);
+  factory SmbHalfResult.fromJson(Map<String, dynamic> json) => _$SmbHalfResultFromJson(json);
 
   Map<String, dynamic> toJson() => _$SmbHalfResultToJson(this);
 }
@@ -84,8 +78,7 @@ class FileInfo {
 
   FileInfo();
 
-  factory FileInfo.fromJson(Map<String, dynamic> json) =>
-      _$FileInfoFromJson(json);
+  factory FileInfo.fromJson(Map<String, dynamic> json) => _$FileInfoFromJson(json);
 
   Map<String, dynamic> toJson() => _$FileInfoToJson(this);
 }
@@ -145,17 +138,14 @@ class FileRepository extends ChangeNotifier {
     //按秒算，这次看了多少时间，应当跟clickTimes一起保存
     List<int> readTimes;
 
-    _db = await openDatabase(
-        (await getApplicationDocumentsDirectory()).path + "/raising.sqflite");
+    _db = await openDatabase((await getApplicationDocumentsDirectory()).path + "/raising.sqflite");
     _cache_db = _db;
     print(_db);
   }
 
   Future<FileInfo> findByabsPath(String absPath, String smbId) async {
     List<Map<String, dynamic>> list = await _cache_db.transaction((txn) async {
-      return await txn.rawQuery(
-          "select * from file_info where smbId=? and absPath=?",
-          [smbId, absPath]);
+      return await txn.rawQuery("select * from file_info where smbId=? and absPath=?", [smbId, absPath]);
     });
     if (list.length > 0) {
       return FileInfo.fromJson(list[0]);
@@ -172,12 +162,7 @@ class FileRepository extends ChangeNotifier {
       int length, //里面有多少文件
       int size //文件大小
       }) async {
-    Map<String, dynamic> map = {
-      "absPath": absPath,
-      "smbId": smbId,
-      "smbNickName": smbNickName,
-      "filename": p.basename(absPath)
-    };
+    Map<String, dynamic> map = {"absPath": absPath, "smbId": smbId, "smbNickName": smbNickName, "filename": p.basename(absPath)};
     if (updateTime != null) {
       map["updateTime"] = updateTime.millisecondsSinceEpoch;
     }
@@ -198,14 +183,10 @@ class FileRepository extends ChangeNotifier {
     }
 
     int res = await _cache_db.transaction((txn) async {
-      if ((await txn.query("file_info",
-                  where: "smbId=? and absPath=?", whereArgs: [smbId, absPath]))
-              .length ==
-          0) {
+      if ((await txn.query("file_info", where: "smbId=? and absPath=?", whereArgs: [smbId, absPath])).length == 0) {
         return await txn.insert("file_info", map);
       } else {
-        return await txn.update("file_info", map,
-            where: "smbId=? and absPath=?", whereArgs: [smbId, absPath]);
+        return await txn.update("file_info", map, where: "smbId=? and absPath=?", whereArgs: [smbId, absPath]);
       }
     });
 
@@ -223,34 +204,26 @@ class FileRepository extends ChangeNotifier {
   }) async {
     // Insert some records in a transaction
     await _db.transaction((txn) async {
-      List<Map> maps = await txn
-          .query("file_key", where: 'filename = ?', whereArgs: [filename]);
+      List<Map> maps = await txn.query("file_key", where: 'filename = ?', whereArgs: [filename]);
       if (maps.length == 0) {
         if (star == null) {
           star = 0;
         }
-        txn.rawInsert("insert into file_key(filename,star) values(?,?)",
-            [filename, star]);
+        txn.rawInsert("insert into file_key(filename,star) values(?,?)", [filename, star]);
       } else {
         if (star != null) {
-          txn.update("file_key", {"star": star},
-              where: 'filename = ?', whereArgs: [filename]);
+          txn.update("file_key", {"star": star}, where: 'filename = ?', whereArgs: [filename]);
         }
       }
 
-      if ((clickTime == null && increReadTime != null) ||
-          (clickTime != null && increReadTime == null)) {
-        throw DbException(
-            "clickTime and increReadTime should be together insert");
+      if ((clickTime == null && increReadTime != null) || (clickTime != null && increReadTime == null)) {
+        throw DbException("clickTime and increReadTime should be together insert");
       }
       if (clickTime != null && increReadTime != null) {
-        txn.rawInsert(
-            "insert into file_key_clicks(filename,clickTime,readTime) values(?,?,?)",
-            [filename, clickTime.millisecondsSinceEpoch, increReadTime]);
+        txn.rawInsert("insert into file_key_clicks(filename,clickTime,readTime) values(?,?,?)", [filename, clickTime.millisecondsSinceEpoch, increReadTime]);
       }
       if (tag != null) {
-        txn.rawInsert("insert into file_key_tags(filename,tag) values(?,?)",
-            [filename, tag]);
+        txn.rawInsert("insert into file_key_tags(filename,tag) values(?,?)", [filename, tag]);
       }
     });
 
@@ -262,8 +235,7 @@ class FileRepository extends ChangeNotifier {
   }
 
   Future<FileKey> getFileKey(String filename) async {
-    List<Map<String, dynamic>> list =
-        await _db.rawQuery('SELECT * FROM file_key');
+    List<Map<String, dynamic>> list = await _db.rawQuery('SELECT * FROM file_key');
     if (list.length > 0) {
       return FileKey.fromJson(list[0]);
     } else {
@@ -283,6 +255,6 @@ class FileRepository extends ChangeNotifier {
       return lst;
     });
 //    logger.d(list);
-    logger.d("db info $list");
+//    logger.d("db info $list");
   }
 }

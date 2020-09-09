@@ -3,8 +3,9 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:logger/logger.dart';
 import 'package:raising/channel/Smb.dart';
-
-import 'file_info.dart';
+import 'package:raising/channel/SmbChannel.dart';
+import 'package:raising/dao/DirectoryVO.dart';
+import 'package:raising/dao/SmbVO.dart';
 
 var logger = Logger();
 
@@ -14,7 +15,7 @@ class SmbNavigation extends ChangeNotifier {
   String _path;
   String _smbId;
   String smbNickName;
-  List<FileInfo> _files;
+  List<DirectoryCO> _files;
   double scroll_speed;
 
   set title(value) {
@@ -39,8 +40,7 @@ class SmbNavigation extends ChangeNotifier {
 
   String get title => _title;
 
-  void refresh(BuildContext context, String share, String path, String smbId,
-      String smbNickName) async {
+  void refresh(BuildContext context, String share, String path, String smbId, String smbNickName) async {
 //    var smb = Smb.getConfig(null);
 //    List<FileInfo> list = await smb.listFiles(path, "*");
     _share = share;
@@ -54,7 +54,14 @@ class SmbNavigation extends ChangeNotifier {
 
   Future<SmbNavigation> awaitSelf() async {
     var smb = Smb.getCurrentSmb();
-    return smb.listFiles(_share, path, "*").then((value) {
+
+    return await SmbChannel.queryFiles(SmbVO()
+          ..hostname = smb.hostname
+          ..username = smb.username
+          ..password = smb.password
+          ..domain = smb.domain
+          ..path = path)
+        .then((value) {
       _files = value;
       return this;
     });
@@ -64,7 +71,7 @@ class SmbNavigation extends ChangeNotifier {
 
   String get share => _share;
 
-  List<FileInfo> get files => _files;
+  List<DirectoryCO> get files => _files;
 
   String get smbId => _smbId;
 }

@@ -15,31 +15,21 @@ class SmbRepository {
   /// Loads todos first from File storage. If they don't exist or encounter an
   /// error, it attempts to load the Todos from a Web Client.
   Future<List<Smb>> loadTodos() async {
-    _db = await openDatabase(
-        (await getApplicationDocumentsDirectory()).path + "/raising.sqflite",
-        version: 2, onCreate: (Database db, int version) async {
-      await db.execute(
-          "CREATE TABLE smb_manage (id TEXT PRIMARY KEY, realNickName TEXT, hostname TEXT,domain TEXT,username TEXT,password TEXT)");
+    _db = await openDatabase((await getApplicationDocumentsDirectory()).path + "/raising.sqflite", version: 2, onCreate: (Database db, int version) async {
+      await db.execute("CREATE TABLE smb_manage (id TEXT PRIMARY KEY, realNickName TEXT, hostname TEXT,domain TEXT,username TEXT,password TEXT)");
 
-      await db.execute(
-          "CREATE TABLE file_key (filename TEXT PRIMARY KEY, star INTEGER)");
-      await db.execute(
-          "CREATE TABLE file_key_clicks (id INTEGER PRIMARY KEY, filename TEXT, clickTime INTEGER, readTime INTEGER)");
-      await db.execute(
-          "CREATE INDEX file_key_clicks_index ON file_key_clicks(filename)");
-      await db.execute(
-          "CREATE TABLE file_key_tags (id INTEGER PRIMARY KEY, filename TEXT, tag TEXT)");
-      await db.execute(
-          "CREATE INDEX file_key_tags_index ON file_key_tags(filename)");
+      await db.execute("CREATE TABLE file_key (filename TEXT PRIMARY KEY, star INTEGER)");
+      await db.execute("CREATE TABLE file_key_clicks (id INTEGER PRIMARY KEY, filename TEXT, clickTime INTEGER, readTime INTEGER)");
+      await db.execute("CREATE INDEX file_key_clicks_index ON file_key_clicks(filename)");
+      await db.execute("CREATE TABLE file_key_tags (id INTEGER PRIMARY KEY, filename TEXT, tag TEXT)");
+      await db.execute("CREATE INDEX file_key_tags_index ON file_key_tags(filename)");
 
       //File info
       await db.execute(
           "CREATE TABLE file_info (id INTEGER PRIMARY KEY,smbId TEXT,smbNickName TEXT,absPath TEXT, filename TEXT, updateTime INTEGER, isDirectory INTEGER, isCompressFile INTEGER, readLenght INTEGER, lenght INTEGER, size INTEGER)");
-      await db.execute(
-          "CREATE UNIQUE INDEX file_info_index ON file_info(smbId, absPath)");
+      await db.execute("CREATE UNIQUE INDEX file_info_index ON file_info(smbId, absPath)");
     });
-    List<Map<String, dynamic>> list =
-        await _db.rawQuery('SELECT * FROM smb_manage');
+    List<Map<String, dynamic>> list = await _db.rawQuery('SELECT * FROM smb_manage');
     return list.map((e) => Smb.fromJson(e)).toList();
   }
 
@@ -49,16 +39,8 @@ class SmbRepository {
       txn.delete("smb_manage");
       smbs.forEach((e) {
 //        txn.insert("insert into smb_manage", e.toJson());
-        txn.rawInsert(
-            "insert into smb_manage(id, realNickName, hostname, domain, username, password) values(?,?,?,?,?)",
-            [
-              e.id,
-              e.realNickName,
-              e.hostname,
-              e.domain,
-              e.username,
-              e.password
-            ]);
+        txn.rawInsert("insert into smb_manage(id, realNickName, hostname, domain, username, password) values(?,?,?,?,?,?)",
+            [e.id, e.realNickName, e.hostname, e.domain, e.username, e.password]);
       });
     });
 

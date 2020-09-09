@@ -72,4 +72,14 @@ class Utils {
       return SmbHalfResult("successful", {index: ZipFileContent.content(content)});
     }
   }
+
+  static String joinPath(String a, String b) {
+    if (p.isAbsolute(b)) {
+      var split = p.split(b);
+      split[0] = a;
+      return p.joinAll(split);
+    } else {
+      return p.join(a, b);
+    }
+  }
 }

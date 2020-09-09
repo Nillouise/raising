@@ -1,10 +1,9 @@
-import 'package:json_annotation/json_annotation.dart';
 import 'package:logger/logger.dart';
+import 'package:raising/util.dart';
 
 var logger = Logger();
 
-@JsonSerializable()
-class SmbVO {
+class SmbPO {
   String id;
   String _nickName;
   String hostname; //maybe include the path
@@ -13,12 +12,23 @@ class SmbVO {
   String username;
   String password;
 
-  SmbVO({
-    this.hostname,
-    this.domain,
-    this.username,
-    this.password,
-  });
+  SmbPO copySmbPO(SmbPO vo) {
+    return vo
+      ..id = this.id
+      .._nickName = this._nickName
+      ..hostname = this.hostname
+      ..domain = this.domain
+      ..username = this.username
+      ..password = this.password;
+  }
+
+  String get onlyHostname {
+    if (hostname != null && hostname.contains(":")) {
+      return hostname.split(":")[0];
+    } else {
+      return hostname;
+    }
+  }
 
   String get nickName {
     if (_nickName == null) {
@@ -36,18 +46,45 @@ class SmbVO {
   }
 }
 
-class SmbPO extends SmbVO {
-  String path;
+class SmbVO extends SmbPO {
+  String _path;
+  String wholePath; //include hostname'spath
 
+  get path {
+    return _path;
+  }
 
+  set path(x) {
+    _path = x;
+    if (hostname != null && hostname.contains(":")) {
+      wholePath = Utils.joinPath(hostname.split(":")[1], x);
+    } else {
+      wholePath = x;
+    }
+  }
 }
 
 //用在channel上交互产生
-class SmbCO extends SmbPO {
-  String wholePath; //include hostname,sharename,path
+class SmbCO {
+  String hostname; //combine with path
+  String domain;
+  String username;
+  String password;
+  String wholePath;
 
+  SmbCO.copyFrom(SmbVO vo) {
+    this.hostname = vo.onlyHostname;
+    this.password = vo.password;
+    this.domain = vo.domain;
+    this.username = vo.username;
+    this.wholePath = vo.wholePath;
+  }
+
+  Map toMap() {
+    return {"hostname": hostname, "domain": domain, "username": username, "password": password, "wholePath": wholePath};
+  }
 }
 
-class SmbSearchPO extends SmbPO {
+class SmbSearchPO extends SmbVO {
   String searchPattern;
 }

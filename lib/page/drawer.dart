@@ -31,8 +31,7 @@ class _SmbManageState extends State<SmbManage> {
 //    _smbnameController.text = initSmbName;
 //    var gm = GmLocalizations.of(context);
     if (widget.smbId != null) {
-      SmbListModel smbListModel =
-          Provider.of<SmbListModel>(context, listen: false);
+      SmbListModel smbListModel = Provider.of<SmbListModel>(context, listen: false);
       Smb smbById = smbListModel.smbById(widget.smbId);
       _smbnameController.text = smbById.nickName;
       _smbIpController.text = smbById.hostname;
@@ -62,8 +61,7 @@ class _SmbManageState extends State<SmbManage> {
                       if (v.trim().isEmpty) {
                         return "必填";
                       }
-                      SmbListModel smbListModel =
-                          Provider.of<SmbListModel>(context, listen: false);
+                      SmbListModel smbListModel = Provider.of<SmbListModel>(context, listen: false);
                       smbListModel.checkDuplicate(_smbnameController.text);
                       if (smbListModel.checkDuplicate(v)) {
                         return "跟现有Smb链接重复";
@@ -104,8 +102,7 @@ class _SmbManageState extends State<SmbManage> {
                       hintText: "Smb密码",
                       prefixIcon: Icon(Icons.lock),
                       suffixIcon: IconButton(
-                        icon: Icon(
-                            pwdShow ? Icons.visibility_off : Icons.visibility),
+                        icon: Icon(pwdShow ? Icons.visibility_off : Icons.visibility),
                         onPressed: () {
                           setState(() {
                             pwdShow = !pwdShow;
@@ -143,8 +140,7 @@ class _SmbManageState extends State<SmbManage> {
 
       if (widget.smbId != null) {
         //修改smb
-        SmbListModel smbListModel =
-            Provider.of<SmbListModel>(context, listen: false);
+        SmbListModel smbListModel = Provider.of<SmbListModel>(context, listen: false);
 
         smbListModel.replaceSmb(Smb()
           ..id = widget.smbId
@@ -154,13 +150,10 @@ class _SmbManageState extends State<SmbManage> {
           ..password = _pwdController.text);
         Navigator.of(context).pop();
       } else {
-        SmbListModel smbListModel =
-            Provider.of<SmbListModel>(context, listen: false);
+        SmbListModel smbListModel = Provider.of<SmbListModel>(context, listen: false);
 
         smbListModel.addSmb(Smb()
-          ..id = _smbnameController.text +
-              "##~##" +
-              (new DateTime.now().millisecondsSinceEpoch).toString()
+          ..id = _smbnameController.text + "##~##" + (new DateTime.now().millisecondsSinceEpoch).toString()
           ..nickName = _smbnameController.text
           ..hostname = _smbIpController.text
           ..username = _usernameController.text
@@ -290,8 +283,7 @@ class _SmbDrawerState extends State<SmbDrawer> {
               });
 
               // Then show a snackbar.
-              Scaffold.of(context)
-                  .showSnackBar(SnackBar(content: Text("$item dismissed")));
+              Scaffold.of(context).showSnackBar(SnackBar(content: Text("$item dismissed")));
             },
             // Show a red background as the item is swiped away.
             background: Container(color: Colors.red),
@@ -307,14 +299,11 @@ class _SmbDrawerState extends State<SmbDrawer> {
                         ));
                   }),
               onTap: () {
-                SmbListModel smbListModel =
-                    Provider.of<SmbListModel>(context, listen: false);
+                SmbListModel smbListModel = Provider.of<SmbListModel>(context, listen: false);
                 var smb = smbListModel.smbById(item.id);
                 smb.init();
-                SmbNavigation smbNavigation =
-                    Provider.of<SmbNavigation>(context, listen: false);
-                smbNavigation.refresh(
-                    context, smb.shareName, smb.path, item.id, smb.nickName);
+                SmbNavigation smbNavigation = Provider.of<SmbNavigation>(context, listen: false);
+                smbNavigation.refresh(context, smb.shareName, smb.shareName, item.id, smb.nickName);
                 Navigator.of(context).pop();
 //                smbListModel.
 //                Smb.pushConfig(item.id, hostname, shareName, domain, username, password, path, searchPattern)
