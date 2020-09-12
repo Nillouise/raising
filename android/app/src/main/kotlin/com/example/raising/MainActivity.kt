@@ -8,6 +8,8 @@ import com.orhanobut.logger.PrettyFormatStrategy
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugins.GeneratedPluginRegistrant
+import io.flutter.plugins.MethodDispatcher
 
 
 class MainActivity : FlutterActivity() {

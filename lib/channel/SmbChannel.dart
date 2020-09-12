@@ -65,7 +65,7 @@ class SmbChannel {
   static Future<FileContentCO> loadWholeFile(String absFilename, SmbVO smbVO) async {
     try {
       SmbCO smbCO = SmbCO.copyFrom(smbVO);
-      final Map<dynamic, dynamic> loadImageFromIndex = await methodChannel.invokeMethod(\'loadWholeFile\', {"absFilename": absFilename, "smbCO": smbCO.toMap()});
+      final Map<dynamic, dynamic> loadImageFromIndex = await methodChannel.invokeMethod('loadWholeFile', {"absFilename": absFilename, "smbCO": smbCO.toMap()});
       SmbResult res = SmbResult.fromJson(new Map<String, dynamic>.from(loadImageFromIndex));
       if (res.msg == SmbResult.successful) {
         var list2 = (Map<int, dynamic>.from(res.result));

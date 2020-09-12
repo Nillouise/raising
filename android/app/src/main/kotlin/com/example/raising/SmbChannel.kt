@@ -59,7 +59,7 @@ object SmbChannel {
                     AuthenticationContext.anonymous()
                 }
                 val session = connection.authenticate(ac)
-                if (StringUtils.isEmpty(co.wholePath) || co.wholePath == "/" || co.wholePath == "\\\\") { //return share;
+                if (StringUtils.isEmpty(co.wholePath) || co.wholePath == "/" || co.wholePath == "\\") { //return share;
                     val transport = SMBTransportFactories.SRVSVC.getTransport(session)
                     val serverService = ServerService(transport)
                     val shares = serverService.shares0

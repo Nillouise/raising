@@ -58,7 +58,7 @@ public class SmbCO {
         if (wholePath == null) {
             return "";
         }
-        String[] split = wholePath.split("[/\\\\\\\\]");
+        String[] split = wholePath.split("[/\\\\]");
         if (split.length == 0) {
             return "";
         }
@@ -66,18 +66,18 @@ public class SmbCO {
     }
 
     public String getPath() {
-        List<String> split = Arrays.asList(wholePath.split("[/\\\\\\\\]"));
+        List<String> split = Arrays.asList(wholePath.split("[/\\\\]"));
         return String.join("/", split.subList(1, split.size()));
     }
 
     @Override
     public String toString() {
         return "SmbCO{" +
-                "hostname=\'" + hostname + \'\\\'\' +
-                ", domain=\'" + domain + \'\\\'\' +
-                ", username=\'" + username + \'\\\'\' +
-                ", password=\'" + password + \'\\\'\' +
-                ", wholePath=\'" + wholePath + \'\\\'\' +
+                "hostname='" + hostname + '\'' +
+                ", domain='" + domain + '\'' +
+                ", username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                ", wholePath='" + wholePath + '\'' +
                 '}';
     }
 

@@ -16,6 +16,7 @@ public class SmbRandomFile implements IInStream {
     File file;
     volatile long offset;
     long fileLength;
+    GeneratedPluginRegistrant t;
 
     public SmbRandomFile(File file) {
         this.file = file;

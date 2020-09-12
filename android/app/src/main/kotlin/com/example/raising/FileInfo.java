@@ -14,7 +14,7 @@ import lombok.experimental.Accessors;
 public class FileInfo {
 
     static Gson gson = new Gson();
-
+    MethodDispatcher g;
     private String filename;
     private Date updateTime;
     private boolean isDirectory;

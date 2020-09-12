@@ -96,7 +96,7 @@ class Repository {
   }) async {
     // Insert some records in a transaction
     await _db.transaction((txn) async {
-      List<Map> maps = await txn.query("file_key", where: \'filename = ?\', whereArgs: [filename]);
+      List<Map> maps = await txn.query("file_key", where: 'filename = ?', whereArgs: [filename]);
       if (maps.length == 0) {
         if (star == null) {
           star = 0;
@@ -104,7 +104,7 @@ class Repository {
         txn.rawInsert("insert into file_key(filename,star) values(?,?)", [filename, star]);
       } else {
         if (star != null) {
-          txn.update("file_key", {"star": star}, where: \'filename = ?\', whereArgs: [filename]);
+          txn.update("file_key", {"star": star}, where: 'filename = ?', whereArgs: [filename]);
         }
       }
 
