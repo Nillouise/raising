@@ -6,7 +6,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/SmbVO.dart';
 import 'package:raising/exception/DbException.dart';
-import 'package:raising/model/file_info.dart';
 import 'package:sqflite/sqflite.dart';
 
 class Repository {
@@ -15,8 +14,8 @@ class Repository {
   static Database _db;
 
   static void init() async {
-    _db = await openDatabase((await getApplicationDocumentsDirectory()).path + "/raising.sqflite", version: 2, onCreate: (Database db, int version) async {
-      await db.execute("CREATE TABLE smb_manage (id TEXT PRIMARY KEY, realNickName TEXT, hostname TEXT,domain TEXT,username TEXT,password TEXT)");
+    _db = await openDatabase((await getApplicationDocumentsDirectory()).path + "/cur2.db", version: 1, onCreate: (Database db, int version) async {
+      await db.execute("CREATE TABLE smb_manage (id TEXT PRIMARY KEY, _nickName TEXT, hostname TEXT,domain TEXT,username TEXT,password TEXT)");
 
       await db.execute("CREATE TABLE file_key (filename TEXT PRIMARY KEY, star INTEGER)");
       await db.execute("CREATE TABLE file_key_clicks (id INTEGER PRIMARY KEY, filename TEXT, clickTime INTEGER, readTime INTEGER)");
@@ -46,12 +45,13 @@ class Repository {
   static Future<void> deleteAllSmbPO() async {
     await _db.transaction((txn) async {
       return await txn.rawQuery(
-        "delete * from smb_manage",
+        "delete from smb_manage",
       );
     });
   }
 
   static Future<void> insertSmbPO(List<SmbPO> lst) async {
+    var list = await getAllSmbPO();
     await _db.transaction((txn) async {
       lst.forEach((element) {
         txn.insert("smb_manage", element.toJson());
@@ -170,7 +170,8 @@ class Repository {
       lst.addAll(await txn.query("file_info"));
       return lst;
     });
-//    logger.d(list);
-//    logger.d("db info $list");
   }
+
+
+
 }

@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:logger/logger.dart';
-import 'package:raising/channel/Smb.dart';
 import 'package:raising/channel/SmbChannel.dart';
 import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/SmbVO.dart';

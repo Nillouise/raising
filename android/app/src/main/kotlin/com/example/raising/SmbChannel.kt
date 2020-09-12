@@ -226,22 +226,23 @@ object SmbChannel {
     @Throws(SmbException::class)
     fun loadFileFromZip(indexs: ArrayList<Int>, needFileDetailInfo: Boolean, co: SmbCO): SmbResult? {
 
+        val absFilename = co.path
         return getShare(co
         ) { share ->
-            val task: Future<SmbResult> = executorService.submit(Callable { getFileWorker(co.absPath, needFileDetailInfo, indexs, share) })
+            val task: Future<SmbResult> = executorService.submit(Callable { getFileWorker(absFilename, needFileDetailInfo, indexs, share) })
             try {
                 task.get()
             } catch (e: CancellationException) {
-                Logger.e(e, "%s %s", co.absPath, indexs.toString())
+                Logger.e(e, "%s %s", absFilename, indexs.toString())
                 try { //睡眠一小段时间，是为了传输完成正在传输中的图片
                     Thread.sleep(130)
                     task.get()
                 } catch (ex: java.lang.Exception) {
-                    Logger.e(e, "double %s %s", co.absPath, indexs.toString())
+                    Logger.e(e, "double %s %s", absFilename, indexs.toString())
                     SmbResult.ofCancel()
                 }
             } catch (e: java.lang.Exception) {
-                Logger.e(e, "%s %s", co.absPath, indexs.toString())
+                Logger.e(e, "%s %s", absFilename, indexs.toString())
                 SmbResult.ofUnknownError()
             }
 
@@ -256,7 +257,7 @@ object SmbChannel {
 
         return getShare(co
         ) { share ->
-            val absPath = co.absPath
+            val absPath = co.path
             val task: Future<SmbResult> = executorService.submit(Callable {
                 val f: File? = null
                 val fileExists = share.fileExists(absPath)

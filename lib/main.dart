@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:raising/dao/Repository.dart';
 import 'package:raising/page/drawer.dart';
 import 'package:raising/page/home.dart';
 
-import 'model/file_info.dart';
 import 'model/smb_list_model.dart';
 import 'model/smb_navigation.dart';
 
@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
 Widget init() {
   // 方法二
   Timer.periodic(Duration(milliseconds: 30000), (timer) async {
-    await FileRepository.getAllInfo();
+    await Repository.getAllInfo();
 
 //    print('一秒钟后输出');
     // 每隔 1 秒钟会调用一次，如果要结束调用
@@ -54,11 +54,13 @@ Widget init() {
   return MultiProvider(
       providers: [
         ChangeNotifierProvider<SmbListModel>(
-          create: (context) => SmbListModel()..loadTodos(),
+          create: (context) {
+            Repository.init();
+            return SmbListModel()..loadTodos();
+          },
           lazy: false,
         ),
         ChangeNotifierProvider<SmbNavigation>(create: (context) => SmbNavigation(), lazy: false),
-        ChangeNotifierProvider<FileRepository>(create: (context) => FileRepository()..init(), lazy: false),
       ],
       child: MaterialApp(
           title: 'Infinite List Sample',

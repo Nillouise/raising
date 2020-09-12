@@ -1,5 +1,4 @@
 import 'package:logger/logger.dart';
-import 'package:raising/channel/Smb.dart';
 import 'package:raising/util.dart';
 
 var logger = Logger();
@@ -80,15 +79,6 @@ class SmbPO {
 
 class SmbVO extends SmbPO {
   String absPath;
-
-  static SmbVO fromSmb() {
-    var smb = Smb.getCurrentSmb();
-    return SmbVO()
-      ..hostname = smb.hostname
-      ..username = smb.username
-      ..password = smb.password
-      ..domain = smb.domain;
-  }
 
   static SmbVO copyFromSmbPO(SmbPO po) {
     SmbVO res = SmbVO();

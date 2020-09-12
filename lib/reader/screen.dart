@@ -1,9 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:archive/archive.dart';
-import 'package:archive/archive_io.dart';
+
 import 'package:flutter/material.dart';
-import 'package:raising/channel/Smb.dart';
 
 Future<Uint8List> getImage(String filename) {
 //  filename = "[C]//"+filename;

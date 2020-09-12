@@ -16,10 +16,7 @@ import '../util.dart';
 
 var logger = Logger();
 
-
-enum FileType{
-  img,compress
-}
+enum FileType { img, compress }
 
 class ViewerNavigator extends ChangeNotifier {
   bool _detailToggle = false; //要不要打开viewer内的控制面板
@@ -373,7 +370,7 @@ class FutureImage extends StatelessWidget {
   Widget build(BuildContext context) {
     return FutureBuilder<FileContentCO>(
       future: () async {
-        var res = await Utils.getWholeFile(smbVO);
+        var res = await Utils.getFileFromZip(index, smbVO);
 //        Repository.upsertFileInfo(absFilename, catalog.smbId, catalog.smbNickName);
         return res;
       }(),

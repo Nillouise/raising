@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
-import 'package:raising/channel/Smb.dart';
 import 'package:raising/constant/Constant.dart';
 import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/Repository.dart';
@@ -69,16 +68,8 @@ class FileList extends StatefulWidget {
   }
 }
 
-void test() async {
-  var smb = Smb();
-  await smb.test();
-}
 
 class FileListState extends State<FileList> {
-  void test() async {
-    var smb = Smb();
-    await smb.test();
-  }
 
   double _pixels;
   int _timestamp = 0;

@@ -60,8 +60,8 @@ class SmbChannel {
       SmbResultCO smbResult =
           SmbResultCO.fromJson(Map<String, dynamic>.from(result));
       if (smbResult.msg == SmbResultCO.successful) {
-        var list2 = (Map<int, FileContentCO>.from(smbResult.result));
-        return list2[index];
+        Map<int,dynamic> list2 = (Map<int, dynamic>.from(smbResult.result));
+        return FileContentCO.fromJson(Map<String, dynamic>.from(list2[index]));
       } else {
         throw SmbException(smbResult.msg);
       }

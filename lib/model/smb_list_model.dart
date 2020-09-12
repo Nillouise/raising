@@ -3,11 +3,8 @@ import 'dart:collection';
 
 import 'package:flutter/widgets.dart';
 import 'package:logger/logger.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:raising/channel/Smb.dart';
 import 'package:raising/dao/Repository.dart';
 import 'package:raising/dao/SmbVO.dart';
-import 'package:sqflite/sqflite.dart';
 
 var logger = Logger();
 
@@ -61,8 +58,12 @@ class SmbListModel extends ChangeNotifier {
   }
 
   void _uploadItems() {
-    Repository.deleteAllSmbPO();
-    Repository.insertSmbPO(_smbs);
+    Repository.deleteAllSmbPO().then((value) => Repository.insertSmbPO(_smbs));
+//    Repository.getAllSmbPO().then((value) => Repository.deleteAllSmbPO()).then((value) => Repository.insertSmbPO(_smbs));
+
+//    Repository.getAllSmbPO().then((value) => print(value[0].toJson()));
+    //    Repository.deleteAllSmbPO();
+//    Repository.insertSmbPO(_smbs);
   }
 
   SmbPO smbById(String id) {
