@@ -3,15 +3,23 @@ package com.example.raising.vo;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import lombok.Data;
-import lombok.experimental.Accessors;
 
-@Data
-@Accessors(chain = true)
+
+
 public class SmbResult implements GetMapInterface {
     String msg;
     Object result;
+
+    public String getMsg() {
+        return msg;
+    }
+
+    public SmbResult setMsg(String msg) {
+        this.msg = msg;
+        return this;
+    }
 
     public static SmbResult ofEmptyIndex() {
         return new SmbResult().setMsg("empty indexs");
@@ -42,10 +50,10 @@ public class SmbResult implements GetMapInterface {
         return this;
     }
 
-    public SmbResult setFiles(List<FileVO> vos) {
-        List<HashMap> res = new ArrayList<HashMap>();
-        for (FileVO vo : vos) {
-            res.add(vo.getMap());
+    public SmbResult setZipFiles(HashMap<Integer, ZipFileContentCO> vos) {
+        HashMap<Integer, HashMap> res = new HashMap<Integer, HashMap>();
+        for (Map.Entry<Integer, ZipFileContentCO> e : vos.entrySet()) {
+            res.put( e.getKey(),e.getValue().getMap());
         }
         result = res;
         return this;

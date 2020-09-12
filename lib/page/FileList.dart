@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:raising/channel/Smb.dart';
 import 'package:raising/constant/Constant.dart';
 import 'package:raising/dao/DirectoryVO.dart';
-import 'package:raising/model/file_info.dart';
+import 'package:raising/dao/Repository.dart';
 import 'package:raising/model/smb_list_model.dart';
 import 'package:raising/model/smb_navigation.dart';
 import 'package:raising/page/viewer.dart';
@@ -265,18 +265,17 @@ class PreviewFile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     SmbNavigation catalog = Provider.of<SmbNavigation>(context, listen: false);
-    FileRepository fileRepository = Provider.of<FileRepository>(context, listen: false);
 
     return FutureBuilder<Widget>(future: () async {
       if (fileinfo.isDirectory) {
         return Icon(Icons.folder);
       } else if ((Constants.COMPRESS_AND_IMAGE_FILE).contains((p.extension(fileinfo.filename)))) {
         var smbHalfResult = (await Utils.getPreviewFile(0, fileinfo.filename, catalog.share));
-        fileRepository.upsertFileInfo(
+        Repository.upsertFileInfo(
           Utils.joinPath(catalog.path, fileinfo.filename),
           catalog.smbId,
           catalog.smbNickName,
-          length: smbHalfResult.result[0].length,
+          fileNum: smbHalfResult.result[0].length,
         );
         return Image.memory(smbHalfResult.result[0].content, errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
           return Icon(Icons.error);

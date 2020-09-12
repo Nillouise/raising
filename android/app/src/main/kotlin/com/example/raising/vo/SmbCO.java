@@ -1,6 +1,10 @@
 package com.example.raising.vo;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 public class SmbCO {
     private String hostname; //combine with path
@@ -47,6 +51,23 @@ public class SmbCO {
 
     public void setWholePath(String wholePath) {
         this.wholePath = wholePath;
+    }
+
+
+    public String getShareName() {
+        if (wholePath == null) {
+            return "";
+        }
+        String[] split = wholePath.split("[/\\\\\\\\]");
+        if (split.length == 0) {
+            return "";
+        }
+        return split[0];
+    }
+
+    public String getPath() {
+        List<String> split = Arrays.asList(wholePath.split("[/\\\\\\\\]"));
+        return String.join("/", split.subList(1, split.size()));
     }
 
     @Override

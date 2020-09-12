@@ -136,6 +136,32 @@ public class MethodDispatcher implements MethodCallHandler {
                     result.error("loadImageFromIndex", e.toString(), ExceptionUtils.getStackTrace(e));
                 }
             });
+        } else if (call.method.equals("loadWholeFile")) {
+            executorService.submit(() -> {
+                try {
+                    SmbResult res = SmbChannel.INSTANCE.loadWholeFile(call.argument("absFilename"), SmbCO.fromMap(call.argument("smbCO")));
+
+                    result.success(res.getMap());
+                } catch (Exception e) {
+                    Logger.e(e, "loadWholeFile error");
+                    result.error("loadWholeFile", e.toString(), ExceptionUtils.getStackTrace(e));
+                }
+            });
+        } else if (call.method.equals("loadFileFromZip")) {
+            executorService.submit(() -> {
+                try {
+                    SmbResult res = SmbChannel.INSTANCE.loadFileFromZip(
+                            call.argument("absFilename"),
+                            call.argument("indexs"),
+                            call.argument("needFileDetailInfo"), SmbCO.fromMap(call.argument("smbCO")));
+
+                    result.success(res.getMap());
+                } catch (Exception e) {
+                    Logger.e(e, "loadFileFromZip error");
+                    //由于发现加入e到errorDetails会导致应用崩溃，所以不加了
+                    result.error("loadFileFromZip", e.toString(), ExceptionUtils.getStackTrace(e));
+                }
+            });
         } else if (call.method.equals("loadImageFile")) {
             executorService.submit(() -> {
                 try {
@@ -159,16 +185,6 @@ public class MethodDispatcher implements MethodCallHandler {
                 } catch (Exception e) {
                     Logger.e(e, "stopSmbRequest error");
                     result.error("stopSmbRequest", e.toString(), ExceptionUtils.getStackTrace(e));
-                }
-            });
-        } else if (call.method.equals("listShares")) {
-            executorService.submit(() -> {
-                try {
-                    List<String> strings = smb.listShares();
-                    result.success(strings);
-                } catch (Exception e) {
-                    Logger.e(e, "listShare error");
-                    result.error("listShare", e.toString(), ExceptionUtils.getStackTrace(e));
                 }
             });
         } else if (call.method.equals("queryFiles")) {

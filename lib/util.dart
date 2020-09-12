@@ -1,5 +1,8 @@
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as p;
+import 'package:raising/channel/SmbChannel.dart';
+import 'package:raising/dao/DirectoryVO.dart';
+import 'package:raising/dao/SmbVO.dart';
 
 import 'channel/Smb.dart';
 import 'constant/Constant.dart';
@@ -53,6 +56,8 @@ class Utils {
   }
 
   static Future<SmbHalfResult> getPreviewFile(int index, String absPath, String share) async {
+    FileContentCO co = await SmbChannel.loadWholeFile(absPath, SmbVO.fromSmb()..wholePath = "smbshare/" + absPath);
+    FileContentCO co2 = await SmbChannel.loadFileFromZip(absPath, 0, SmbVO.fromSmb()..wholePath = "smbshare/" + absPath);
     var content = await getImageFromCache(absPath, index);
     if (content == null) {
       logger.i("getImage cache have not $share $absPath $index and load from origin file");

@@ -39,4 +39,44 @@ class SmbChannel {
       throw e;
     }
   }
+
+  static Future<FileContentCO> loadFileFromZip(String absFilename, int index, SmbVO smbVO, {bool needFileDetailInfo = false}) async {
+    try {
+      SmbCO smbCO = SmbCO.copyFrom(smbVO);
+      final Map<dynamic, dynamic> result = await methodChannel.invokeMethod('loadFileFromZip', {
+        "absFilename": absFilename,
+        "indexs": [index],
+        "needFileDetailInfo": needFileDetailInfo,
+        "smbCO": smbCO.toMap()
+      });
+      SmbResult smbResult = SmbResult.fromJson(Map<String, dynamic>.from(result));
+      if (smbResult.msg == SmbResult.successful) {
+        var list2 = (Map<int, FileContentCO>.from(smbResult.result));
+        return list2[index];
+      } else {
+        throw SmbException(smbResult.msg);
+      }
+    } on PlatformException catch (e) {
+      logger.e("PlatformException {}", e);
+      throw e;
+    }
+  }
+
+  static Future<FileContentCO> loadWholeFile(String absFilename, SmbVO smbVO) async {
+    try {
+      SmbCO smbCO = SmbCO.copyFrom(smbVO);
+      final Map<dynamic, dynamic> loadImageFromIndex = await methodChannel.invokeMethod(\'loadWholeFile\', {"absFilename": absFilename, "smbCO": smbCO.toMap()});
+      SmbResult res = SmbResult.fromJson(new Map<String, dynamic>.from(loadImageFromIndex));
+      if (res.msg == SmbResult.successful) {
+        var list2 = (Map<int, dynamic>.from(res.result));
+        var map = Map<String, dynamic>.from(list2[0]);
+        return FileContentCO.fromJson(map);
+      } else {
+        throw SmbException(res.msg);
+      }
+    } on PlatformException catch (e) {
+      logger.e("PlatformException {}", e);
+      throw e;
+    }
+  }
 }

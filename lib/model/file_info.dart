@@ -3,7 +3,6 @@ import 'dart:ffi';
 
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:raising/exception/DbException.dart';
 import 'package:sqflite/sqflite.dart';
@@ -12,7 +11,7 @@ part 'file_info.g.dart';
 
 @JsonSerializable()
 class FileKey {
-  String filename; //唯一主键
+  String filename; //唯一索引，以后可能会加上md5之类的文件唯一标识
   Map<String, String> tags;
   int star;
 
@@ -141,57 +140,6 @@ class FileRepository extends ChangeNotifier {
     _db = await openDatabase((await getApplicationDocumentsDirectory()).path + "/raising.sqflite");
     _cache_db = _db;
     print(_db);
-  }
-
-  Future<FileInfo> findByabsPath(String absPath, String smbId) async {
-    List<Map<String, dynamic>> list = await _cache_db.transaction((txn) async {
-      return await txn.rawQuery("select * from file_info where smbId=? and absPath=?", [smbId, absPath]);
-    });
-    if (list.length > 0) {
-      return FileInfo.fromJson(list[0]);
-    } else {
-      return null;
-    }
-  }
-
-  Future<bool> upsertFileInfo(String absPath, String smbId, String smbNickName,
-      {DateTime updateTime,
-      bool isDirectory,
-      bool isCompressFile,
-      int readLenght,
-      int length, //里面有多少文件
-      int size //文件大小
-      }) async {
-    Map<String, dynamic> map = {"absPath": absPath, "smbId": smbId, "smbNickName": smbNickName, "filename": p.basename(absPath)};
-    if (updateTime != null) {
-      map["updateTime"] = updateTime.millisecondsSinceEpoch;
-    }
-    if (isDirectory != null) {
-      map["isDirectory"] = isDirectory;
-    }
-    if (isCompressFile != null) {
-      map["isCompressFile"] = isDirectory;
-    }
-    if (readLenght != null) {
-      map["readLenght"] = readLenght;
-    }
-    if (length != null) {
-      map["length"] = length;
-    }
-    if (size != null) {
-      map["size"] = size;
-    }
-
-    int res = await _cache_db.transaction((txn) async {
-      if ((await txn.query("file_info", where: "smbId=? and absPath=?", whereArgs: [smbId, absPath])).length == 0) {
-        return await txn.insert("file_info", map);
-      } else {
-        return await txn.update("file_info", map, where: "smbId=? and absPath=?", whereArgs: [smbId, absPath]);
-      }
-    });
-
-    notifyListeners();
-    return res > 0;
   }
 
   Future<Void> upsertFileKey(

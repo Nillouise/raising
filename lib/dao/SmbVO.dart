@@ -1,4 +1,5 @@
 import 'package:logger/logger.dart';
+import 'package:raising/channel/Smb.dart';
 import 'package:raising/util.dart';
 
 var logger = Logger();
@@ -61,6 +62,15 @@ class SmbVO extends SmbPO {
     } else {
       wholePath = x;
     }
+  }
+
+  static SmbVO fromSmb() {
+    var smb = Smb.getCurrentSmb();
+    return SmbVO()
+      ..hostname = smb.hostname
+      ..username = smb.username
+      ..password = smb.password
+      ..domain = smb.domain;
   }
 }
 

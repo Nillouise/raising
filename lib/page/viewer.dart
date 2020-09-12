@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:preload_page_view/preload_page_view.dart';
 import 'package:provider/provider.dart';
+import 'package:raising/dao/Repository.dart';
 import 'package:raising/model/file_info.dart';
 import 'package:raising/model/smb_navigation.dart';
 
@@ -323,9 +324,6 @@ class FutureViewerChecker extends StatelessWidget {
         SmbNavigation catalog = Provider.of<SmbNavigation>(context);
         FileRepository fileRepository = Provider.of<FileRepository>(context, listen: false);
 
-
-        FileInfo fileInfo = await fileRepository.findByabsPath(absFilename, catalog.smbId);
-
         if (Utils.isImageFile(absFilename)) {
           SmbHalfResult halfResult = await Utils.getPreviewFile(0, absFilename, catalog.share);
           return Image.memory(halfResult.result[0].content, errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
@@ -370,11 +368,10 @@ class FutureImage extends StatelessWidget {
     return FutureBuilder<SmbHalfResult>(
       future: () async {
         SmbNavigation catalog = Provider.of<SmbNavigation>(context);
-        FileRepository fileRepository = Provider.of<FileRepository>(context, listen: false);
 
 //        FileInfo fileInfo = await fileRepository.findByabsPath(absFilename, catalog.smbId);
         var res = await Utils.getImage(index, absFilename, false, catalog.share);
-        fileRepository.upsertFileInfo(absFilename, catalog.smbId ,catalog.smbNickName);
+        Repository.upsertFileInfo(absFilename, catalog.smbId, catalog.smbNickName);
         return res;
       }(),
       builder: (BuildContext context, AsyncSnapshot<SmbHalfResult> snapshot) {
