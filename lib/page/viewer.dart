@@ -7,22 +7,35 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:preload_page_view/preload_page_view.dart';
 import 'package:provider/provider.dart';
+import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/Repository.dart';
-import 'package:raising/model/file_info.dart';
+import 'package:raising/dao/SmbVO.dart';
 import 'package:raising/model/smb_navigation.dart';
 
 import '../util.dart';
 
 var logger = Logger();
 
+
+enum FileType{
+  img,compress
+}
+
 class ViewerNavigator extends ChangeNotifier {
-  bool _detailToggle = false;
+  bool _detailToggle = false; //要不要打开viewer内的控制面板
+  FileType fileType;
   int _index = 0;
   int _pagelength = 0;
-  String _absFilename;
+  SmbVO _smbVO;
   DateTime beginTime;
-
   var _preloadPageController = PreloadPageController(initialPage: 0);
+
+  SmbVO get smbVO => _smbVO;
+
+  set smbVO(SmbVO value) {
+    _smbVO = value;
+    notifyListeners();
+  }
 
   get preloadPageController => _preloadPageController;
 
@@ -44,13 +57,6 @@ class ViewerNavigator extends ChangeNotifier {
     notifyListeners();
   }
 
-  String get absFilename => _absFilename;
-
-  set absFilename(String absFilename) {
-    _absFilename = absFilename;
-    notifyListeners();
-  }
-
   bool get detailToggle => _detailToggle;
 
   set detailToggle(value) {
@@ -58,7 +64,7 @@ class ViewerNavigator extends ChangeNotifier {
     notifyListeners();
   }
 
-  ViewerNavigator(this._detailToggle, this._index, this._pagelength, this._absFilename);
+  ViewerNavigator(this._detailToggle, this._index, this._pagelength, this._smbVO);
 }
 
 Area getArea(Offset offset, Size size) {
@@ -80,7 +86,7 @@ class ViewerBody extends StatelessWidget {
             child: PreloadPageView.builder(
           preloadPagesCount: 5,
           itemCount: viewerNavigator.pagelength,
-          itemBuilder: (BuildContext context, int index) => FutureImage(index, viewerNavigator.absFilename),
+          itemBuilder: (BuildContext context, int index) => FutureImage(index, viewerNavigator.smbVO),
           controller: viewerNavigator.preloadPageController,
           onPageChanged: (int position) {
             print('page changed. current: $position');
@@ -168,22 +174,24 @@ class _ViewBottomState extends State<ViewBottom> {
             ),
             Row(
               children: <Widget>[
-                Expanded(child: StarButton(viewerNavigator.absFilename)),
+                Expanded(child: StarButton(viewerNavigator.smbVO)),
                 Expanded(
                     child: FlatButton(
                   onPressed: () async {
                     try {
-                      SmbNavigation catalog = Provider.of<SmbNavigation>(context, listen: false);
                       ViewerNavigator viewP = Provider.of<ViewerNavigator>(context, listen: false);
 
-                      SmbHalfResult smbHalfResult = await Utils.getImage(viewP.index, viewP.absFilename, true, catalog.share);
+                      var smbHalfResult = await Utils.getFileFromZip(
+                        viewP.index,
+                        viewP.smbVO,
+                        forceFromSource: true,
+                      );
 
                       String dir = (await getTemporaryDirectory()).path;
                       await new Directory('$dir/raising').create();
-                      var pa =
-                          '$dir/raising/${viewP.absFilename}${viewP.index}T${DateTime.now().millisecondsSinceEpoch}.${p.extension(smbHalfResult.result[viewP.index].zipFilename)}';
+                      var pa = '$dir/raising/${viewP.smbVO.absPath}${viewP.index}T${DateTime.now().millisecondsSinceEpoch}.${p.extension(smbHalfResult.absFilename)}';
                       File file = new File(pa);
-                      file.writeAsBytes(smbHalfResult.result[viewP.index].content);
+                      file.writeAsBytes(smbHalfResult.content);
                       var bool = await GallerySaver.saveImage(pa);
                       if (bool) {
                         Scaffold.of(context).showSnackBar(SnackBar(content: Text("save image successful")));
@@ -192,7 +200,7 @@ class _ViewBottomState extends State<ViewBottom> {
                       }
                     } catch (e) {
                       logger.e(e);
-                      throw e;
+                      Scaffold.of(context).showSnackBar(SnackBar(content: Text("save image failed" + e)));
                     }
                   },
                   child: Text(
@@ -210,7 +218,7 @@ class _ViewBottomState extends State<ViewBottom> {
 }
 
 class StarButton extends StatefulWidget {
-  final String absFilename;
+  final SmbVO absFilename;
 
   StarButton(this.absFilename);
 
@@ -222,13 +230,12 @@ class _StarButtonState extends State<StarButton> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Widget>(future: () async {
-      FileRepository fileRepository = Provider.of<FileRepository>(context);
-      FileKey fileKey = await fileRepository.getFileKey(p.basename(widget.absFilename));
+      FileKeyPO fileKey = await Repository.getFileKey(p.basename(widget.absFilename.absPath));
 
       if (fileKey?.star != null && fileKey.star > 0) {
         return FlatButton(
           onPressed: () async {
-            fileRepository.upsertFileKey(p.basename(widget.absFilename), star: 0);
+            Repository.upsertFileKey(p.basename(widget.absFilename.absPath), star: 0);
           },
           child: Icon(
             Icons.star,
@@ -238,7 +245,7 @@ class _StarButtonState extends State<StarButton> {
       } else {
         return FlatButton(
           onPressed: () async {
-            fileRepository.upsertFileKey(p.basename(widget.absFilename), star: 5);
+            Repository.upsertFileKey(p.basename(widget.absFilename.absPath), star: 5);
           },
           child: Icon(Icons.star_border),
         );
@@ -262,7 +269,7 @@ class Viewer extends StatefulWidget {
 
   final int index;
   final int pagelength;
-  final String absFilename;
+  final SmbVO absFilename;
 
   Viewer(this.absFilename, this.pagelength, {this.index: 0, Key key}) : super(key: key);
 
@@ -273,15 +280,13 @@ class Viewer extends StatefulWidget {
 class ViewerState extends State<Viewer> {
   int index;
   int pagelength;
-  String absFilename;
+  SmbVO absFilename;
   ViewerNavigator _navigator;
-  FileRepository _fileRepository;
 
   ViewerState(this.index, this.pagelength, this.absFilename);
 
   @override
   Widget build(BuildContext context) {
-    _fileRepository = Provider.of<FileRepository>(context, listen: false);
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<ViewerNavigator>(
@@ -303,7 +308,7 @@ class ViewerState extends State<Viewer> {
   void dispose() {
     // TODO: implement dispose
     logger.d("Viewer dispose");
-    _fileRepository.upsertFileKey(p.basename(absFilename),
+    Repository.upsertFileKey(p.basename(absFilename.absPath),
         clickTime: _navigator.beginTime, increReadTime: (DateTime.now().millisecondsSinceEpoch - _navigator.beginTime.millisecondsSinceEpoch) ~/ 1000);
 //    _fileRepository.upsertFileInfo(absFilename, );
 
@@ -322,22 +327,23 @@ class FutureViewerChecker extends StatelessWidget {
     return FutureBuilder<Widget>(
       future: () async {
         SmbNavigation catalog = Provider.of<SmbNavigation>(context);
-        FileRepository fileRepository = Provider.of<FileRepository>(context, listen: false);
 
+        var copy = catalog.smbVO.copy()..absPath = absFilename;
         if (Utils.isImageFile(absFilename)) {
-          SmbHalfResult halfResult = await Utils.getPreviewFile(0, absFilename, catalog.share);
-          return Image.memory(halfResult.result[0].content, errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
+          FileContentCO halfResult = await Utils.getWholeFile(copy);
+          //TODO: 处理一下，统一用viewer功能并且要能收藏。
+          return Image.memory(halfResult.content, errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
             return Icon(Icons.error);
           });
         } else if (Utils.isCompressFile(absFilename)) {
-          var smbHalfResult = await Utils.getImage(index, absFilename, true, catalog.share);
+          FileContentCO smbHalfResult = await Utils.getFileFromZip(index, copy, forceFromSource: true);
           return Viewer(
-            absFilename,
-            smbHalfResult.result.values.first.length,
+            copy,
+            smbHalfResult.length,
             index: index,
           );
         } else {
-          return Text("invalid file");
+          return Text("Invalid file");
         }
       }(),
       builder: (BuildContext context, AsyncSnapshot<Widget> snapshot) {
@@ -361,27 +367,24 @@ class FutureViewerChecker extends StatelessWidget {
 
 class FutureImage extends StatelessWidget {
   final int index;
-  final String absFilename;
+  final SmbVO smbVO;
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<SmbHalfResult>(
+    return FutureBuilder<FileContentCO>(
       future: () async {
-        SmbNavigation catalog = Provider.of<SmbNavigation>(context);
-
-//        FileInfo fileInfo = await fileRepository.findByabsPath(absFilename, catalog.smbId);
-        var res = await Utils.getImage(index, absFilename, false, catalog.share);
-        Repository.upsertFileInfo(absFilename, catalog.smbId, catalog.smbNickName);
+        var res = await Utils.getWholeFile(smbVO);
+//        Repository.upsertFileInfo(absFilename, catalog.smbId, catalog.smbNickName);
         return res;
       }(),
-      builder: (BuildContext context, AsyncSnapshot<SmbHalfResult> snapshot) {
+      builder: (BuildContext context, AsyncSnapshot<FileContentCO> snapshot) {
         // 请求已结束
         if (snapshot.connectionState == ConnectionState.done) {
           if (snapshot.hasError) {
             // 请求失败，显示错误
             return Text("Error: ${snapshot.error}");
           } else {
-            return Image.memory(snapshot.data.result[index].content);
+            return Image.memory(snapshot.data.content);
           }
         } else {
           return Center(child: CircularProgressIndicator());
@@ -390,5 +393,5 @@ class FutureImage extends StatelessWidget {
     );
   }
 
-  FutureImage(this.index, this.absFilename);
+  FutureImage(this.index, this.smbVO);
 }

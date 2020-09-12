@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:raising/channel/Smb.dart';
+import 'package:raising/dao/SmbVO.dart';
 import 'package:raising/model/smb_list_model.dart';
 import 'package:raising/model/smb_navigation.dart';
 
@@ -32,7 +33,7 @@ class _SmbManageState extends State<SmbManage> {
 //    var gm = GmLocalizations.of(context);
     if (widget.smbId != null) {
       SmbListModel smbListModel = Provider.of<SmbListModel>(context, listen: false);
-      Smb smbById = smbListModel.smbById(widget.smbId);
+      SmbPO smbById = smbListModel.smbById(widget.smbId);
       _smbnameController.text = smbById.nickName;
       _smbIpController.text = smbById.hostname;
       _usernameController.text = smbById.username;
@@ -142,7 +143,7 @@ class _SmbManageState extends State<SmbManage> {
         //修改smb
         SmbListModel smbListModel = Provider.of<SmbListModel>(context, listen: false);
 
-        smbListModel.replaceSmb(Smb()
+        smbListModel.replaceSmb(SmbPO()
           ..id = widget.smbId
           ..nickName = _smbnameController.text
           ..hostname = _smbIpController.text
@@ -152,7 +153,7 @@ class _SmbManageState extends State<SmbManage> {
       } else {
         SmbListModel smbListModel = Provider.of<SmbListModel>(context, listen: false);
 
-        smbListModel.addSmb(Smb()
+        smbListModel.addSmb(SmbPO()
           ..id = _smbnameController.text + "##~##" + (new DateTime.now().millisecondsSinceEpoch).toString()
           ..nickName = _smbnameController.text
           ..hostname = _smbIpController.text
@@ -300,10 +301,9 @@ class _SmbDrawerState extends State<SmbDrawer> {
                   }),
               onTap: () {
                 SmbListModel smbListModel = Provider.of<SmbListModel>(context, listen: false);
-                var smb = smbListModel.smbById(item.id);
-                smb.init();
+                SmbPO smb = smbListModel.smbById(item.id);
                 SmbNavigation smbNavigation = Provider.of<SmbNavigation>(context, listen: false);
-                smbNavigation.refresh(context, smb.shareName, smb.shareName, item.id, smb.nickName);
+                smbNavigation.refreshSmbPo(smb);
                 Navigator.of(context).pop();
 //                smbListModel.
 //                Smb.pushConfig(item.id, hostname, shareName, domain, username, password, path, searchPattern)

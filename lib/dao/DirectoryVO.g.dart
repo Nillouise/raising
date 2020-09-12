@@ -72,3 +72,27 @@ Map<String, dynamic> _$ZipFileContentCOToJson(FileContentCO instance) => <String
       'length': instance.length,
       'content': instance.content,
     };
+
+
+FileKeyPO _$FileKeyPOFromJson(Map<String, dynamic> json) {
+  return FileKeyPO(
+    json['filename'] as String,
+    (json['tags'] as Map<String, dynamic>)?.map(
+          (k, e) => MapEntry(k, e as String),
+    ),
+    json['star'] as int,
+    (json['clickTimes'] as List)
+        ?.map((e) => e == null ? null : DateTime.parse(e as String))
+        ?.toList(),
+    (json['readTimes'] as List)?.map((e) => e as int)?.toList(),
+  );
+}
+
+Map<String, dynamic> _$FileKeyPOToJson(FileKeyPO instance) => <String, dynamic>{
+  'filename': instance.filename,
+  'tags': instance.tags,
+  'star': instance.star,
+  'clickTimes':
+  instance.clickTimes?.map((e) => e?.toIso8601String())?.toList(),
+  'readTimes': instance.readTimes,
+};

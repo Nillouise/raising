@@ -59,30 +59,6 @@ class Smb {
 
   Map<String, dynamic> toJson() => _$SmbToJson(this);
 
-  Future<Void> init() async {
-    //valid field;
-    shareName = "";
-    domain = "";
-    if (p.split(hostname).length > 1) {
-      path = p.joinAll(p.split(hostname).sublist(1));
-    } else {
-      path = "";
-    }
-    searchPattern = searchPattern ?? "*";
-
-    try {
-      await methodChannel.invokeMethod('init',
-          {"hostname": p.split(hostname)[0], "shareName": shareName, "domain": domain, "username": username, "password": password, "path": path, "searchPattern": searchPattern});
-      currentSmb = this;
-      return null;
-    } on PlatformException catch (e) {
-      logger.e("PlatformException {}", e);
-      throw e;
-    } catch (e) {
-      logger.e(e);
-      throw e;
-    }
-  }
 
   void test() async {
     print("dart test");

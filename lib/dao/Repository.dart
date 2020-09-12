@@ -4,6 +4,7 @@ import 'dart:ffi';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:raising/dao/DirectoryVO.dart';
+import 'package:raising/dao/SmbVO.dart';
 import 'package:raising/exception/DbException.dart';
 import 'package:raising/model/file_info.dart';
 import 'package:sqflite/sqflite.dart';
@@ -31,6 +32,31 @@ class Repository {
 
     _cache_db = _db;
     print(_db);
+  }
+
+  static Future<List<SmbPO>> getAllSmbPO() async {
+    List<Map<String, dynamic>> list = await _db.transaction((txn) async {
+      return await txn.rawQuery(
+        "select * from smb_manage",
+      );
+    });
+    return list.map((e) => SmbPO.fromJson(e)).toList();
+  }
+
+  static Future<void> deleteAllSmbPO() async {
+    await _db.transaction((txn) async {
+      return await txn.rawQuery(
+        "delete * from smb_manage",
+      );
+    });
+  }
+
+  static Future<void> insertSmbPO(List<SmbPO> lst) async {
+    await _db.transaction((txn) async {
+      lst.forEach((element) {
+        txn.insert("smb_manage", element.toJson());
+      });
+    });
   }
 
   static Future<FileInfoPO> findByabsPath(String absPath, String smbId) async {
@@ -75,7 +101,7 @@ class Repository {
       map["fileNum"] = fileNum;
     }
 
-    int res = await _cache_db.transaction((txn) async {
+    int res = await _db.transaction((txn) async {
       if ((await txn.query("file_info", where: "smbId=? and absPath=?", whereArgs: [smbId, absPath])).length == 0) {
         return await txn.insert("file_info", map);
       } else {
@@ -124,10 +150,10 @@ class Repository {
     //TODO:
   }
 
-  static Future<FileKey> getFileKey(String filename) async {
+  static Future<FileKeyPO> getFileKey(String filename) async {
     List<Map<String, dynamic>> list = await _db.rawQuery('SELECT * FROM file_key');
     if (list.length > 0) {
-      return FileKey.fromJson(list[0]);
+      return FileKeyPO.fromJson(list[0]);
     } else {
       return null;
     }

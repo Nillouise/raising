@@ -1,7 +1,5 @@
 package com.example.raising.vo;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -11,7 +9,7 @@ public class SmbCO {
     private String domain;
     private String username;
     private String password;
-    private String wholePath;
+    private String absPath;
 
     public String getHostname() {
         return hostname;
@@ -45,20 +43,20 @@ public class SmbCO {
         this.password = password;
     }
 
-    public String getWholePath() {
-        return wholePath;
+    public String getAbsPath() {
+        return absPath;
     }
 
-    public void setWholePath(String wholePath) {
-        this.wholePath = wholePath;
+    public void setAbsPath(String absPath) {
+        this.absPath = absPath;
     }
 
 
     public String getShareName() {
-        if (wholePath == null) {
+        if (absPath == null) {
             return "";
         }
-        String[] split = wholePath.split("[/\\\\]");
+        String[] split = absPath.split("[/\\\\]");
         if (split.length == 0) {
             return "";
         }
@@ -66,7 +64,7 @@ public class SmbCO {
     }
 
     public String getPath() {
-        List<String> split = Arrays.asList(wholePath.split("[/\\\\]"));
+        List<String> split = Arrays.asList(absPath.split("[/\\\\]"));
         return String.join("/", split.subList(1, split.size()));
     }
 
@@ -77,7 +75,7 @@ public class SmbCO {
                 ", domain='" + domain + '\'' +
                 ", username='" + username + '\'' +
                 ", password='" + password + '\'' +
-                ", wholePath='" + wholePath + '\'' +
+                ", wholePath='" + absPath + '\'' +
                 '}';
     }
 
@@ -87,7 +85,7 @@ public class SmbCO {
         smbCO.setDomain((String) map.get("domain"));
         smbCO.setUsername((String) map.get("username"));
         smbCO.setPassword((String) map.get("password"));
-        smbCO.setWholePath((String) map.get("wholePath"));
+        smbCO.setAbsPath((String) map.get("absPath"));
         return smbCO;
     }
 }

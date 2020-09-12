@@ -3,15 +3,15 @@ import 'package:json_annotation/json_annotation.dart';
 part 'SmbResultCO.g.dart';
 
 @JsonSerializable()
-class SmbResult {
+class SmbResultCO {
   String msg;
   dynamic result;
 
-  SmbResult();
+  SmbResultCO();
 
-  factory SmbResult.fromJson(Map<String, dynamic> json) => _$SmbResultFromJson(json);
+  factory SmbResultCO.fromJson(Map<String, dynamic> json) => _$SmbResultCOFromJson(json);
 
-  Map<String, dynamic> toJson() => _$SmbResultToJson(this);
+  Map<String, dynamic> toJson() => _$SmbResultCOToJson(this);
 
   static String successful = "successful";
   static String emptyIndex = "empty indexs";

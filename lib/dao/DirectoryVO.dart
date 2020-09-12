@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:json_annotation/json_annotation.dart';
+import 'package:raising/image/cache.dart';
 
 part 'DirectoryVO.g.dart';
 
@@ -14,7 +17,8 @@ class DirectoryCO {
 
   DirectoryCO();
 
-  factory DirectoryCO.fromJson(Map<String, dynamic> json) => _$DirectoryCOFromJson(json);
+  factory DirectoryCO.fromJson(Map<String, dynamic> json) =>
+      _$DirectoryCOFromJson(json);
 
   Map<String, dynamic> toJson() => _$DirectoryCOToJson(this);
 
@@ -44,13 +48,14 @@ class FileInfoPO {
 
   FileInfoPO();
 
-  factory FileInfoPO.fromJson(Map<String, dynamic> json) => _$FileInfoPOFromJson(json);
+  factory FileInfoPO.fromJson(Map<String, dynamic> json) =>
+      _$FileInfoPOFromJson(json);
 
   Map<String, dynamic> toJson() => _$FileInfoPOToJson(this);
 }
 
 @JsonSerializable()
-class FileContentCO {
+class FileContentCO implements CacheContent {
   String absFilename; //压缩文件名字
   String zipAbsFilename; //压缩文件内的绝对路径
   int index;
@@ -59,7 +64,34 @@ class FileContentCO {
 
   FileContentCO();
 
-  factory FileContentCO.fromJson(Map<String, dynamic> json) => _$ZipFileContentCOFromJson(json);
+  factory FileContentCO.fromJson(Map<String, dynamic> json) =>
+      _$ZipFileContentCOFromJson(json);
 
   Map<String, dynamic> toJson() => _$ZipFileContentCOToJson(this);
+
+  @override
+  Uint8List getCacheFile() {
+    return content;
+  }
+}
+
+@JsonSerializable()
+class FileKeyPO {
+  String filename; //唯一索引，以后可能会加上md5之类的文件唯一标识
+  Map<String, String> tags;
+  int star;
+
+  //什么时候点击了
+  List<DateTime> clickTimes = new List<DateTime>();
+
+  //按秒算，这次看了多少时间，应当跟clickTimes一起保存
+  List<int> readTimes;
+
+  FileKeyPO(
+      this.filename, this.tags, this.star, this.clickTimes, this.readTimes);
+
+  factory FileKeyPO.fromJson(Map<String, dynamic> json) =>
+      _$FileKeyPOFromJson(json);
+
+  Map<String, dynamic> toJson() => _$FileKeyPOToJson(this);
 }

@@ -67,37 +67,3 @@ Map<String, dynamic> _$SmbHalfResultToJson(SmbHalfResult instance) =>
       'result': instance.result?.map((k, e) => MapEntry(k.toString(), e)),
     };
 
-FileInfo _$FileInfoFromJson(Map<String, dynamic> json) {
-  return FileInfo()
-    ..smbId = json['smbId'] as String
-    ..smbNickName = json['smbNickName'] as String
-    ..absPath = json['absPath'] as String
-    ..filename = json['filename'] as String
-    ..updateTime = json['updateTime'] == null
-        ? null
-        : DateTime.parse(json['updateTime'] as String)
-    ..isDirectory = json['isDirectory'] as bool
-    ..isCompressFile = json['isCompressFile'] as bool
-    ..fileKey = json['fileKey'] == null
-        ? null
-        : FileKey.fromJson(json['fileKey'] as Map<String, dynamic>)
-    ..star = json['star'] as int
-    ..readLenght = json['readLenght'] as int
-    ..length = json['length'] as int
-    ..size = json['size'] as int;
-}
-
-Map<String, dynamic> _$FileInfoToJson(FileInfo instance) => <String, dynamic>{
-      'smbId': instance.smbId,
-      'smbNickName': instance.smbNickName,
-      'absPath': instance.absPath,
-      'filename': instance.filename,
-      'updateTime': instance.updateTime?.toIso8601String(),
-      'isDirectory': instance.isDirectory,
-      'isCompressFile': instance.isCompressFile,
-      'fileKey': instance.fileKey,
-      'star': instance.star,
-      'readLenght': instance.readLenght,
-      'length': instance.length,
-      'size': instance.size,
-    };

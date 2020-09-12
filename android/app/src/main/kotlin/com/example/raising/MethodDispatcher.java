@@ -139,7 +139,7 @@ public class MethodDispatcher implements MethodCallHandler {
         } else if (call.method.equals("loadWholeFile")) {
             executorService.submit(() -> {
                 try {
-                    SmbResult res = SmbChannel.INSTANCE.loadWholeFile(call.argument("absFilename"), SmbCO.fromMap(call.argument("smbCO")));
+                    SmbResult res = SmbChannel.INSTANCE.loadWholeFile(SmbCO.fromMap(call.argument("smbCO")));
 
                     result.success(res.getMap());
                 } catch (Exception e) {
@@ -151,7 +151,6 @@ public class MethodDispatcher implements MethodCallHandler {
             executorService.submit(() -> {
                 try {
                     SmbResult res = SmbChannel.INSTANCE.loadFileFromZip(
-                            call.argument("absFilename"),
                             call.argument("indexs"),
                             call.argument("needFileDetailInfo"), SmbCO.fromMap(call.argument("smbCO")));
 

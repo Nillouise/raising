@@ -3,11 +3,10 @@ import 'package:path/path.dart' as p;
 import 'package:raising/channel/SmbChannel.dart';
 import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/SmbVO.dart';
+import 'package:raising/exception/SmbException.dart';
 
-import 'channel/Smb.dart';
 import 'constant/Constant.dart';
 import 'image/cache.dart';
-import 'model/file_info.dart';
 
 var logger = Logger();
 
@@ -32,53 +31,44 @@ class Utils {
     return Constants.COMPRESS_AND_IMAGE_FILE.contains(p.extension(absPath));
   }
 
-  static Future<SmbHalfResult> getImage(int index, String absPath, bool needFileDetailInfo, String share) async {
-    if (needFileDetailInfo) {
-      logger.i("getImage needFileDetailInfo load from origin file $share $absPath $index");
-      SmbHalfResult smbHalfResult = await Smb.getCurrentSmb().loadImageFromIndex(absPath, index, share, needFileDetailInfo: needFileDetailInfo);
-      if (smbHalfResult.msg == "successful") {
-        putImageToCache(absPath, index, smbHalfResult.result[index].content);
+
+  /// Throw SmbException if get file error
+  static Future<FileContentCO> getWholeFile(SmbVO smbVO, {bool forceFromSource = false}) async {
+    CacheVO<FileContentCO> f = await loadFromCache<FileContentCO>("WholeFile@" + smbVO.id + "@" + smbVO.absPath, () {
+      return SmbChannel.loadWholeFile(smbVO);
+    }, forceFromSource: forceFromSource);
+    if (f.code == CacheResult.ok) {
+      if (f.source == CacheSource.originSource) {
+        return f.metaObj;
+      } else {
+        return FileContentCO()
+          ..absFilename = smbVO.absPath
+          ..content = f.file;
       }
-      return smbHalfResult;
-    }
-    var cacheImage = await getImageFromCache(absPath, index);
-    if (cacheImage == null) {
-      logger.i("getImage cache have not $share $absPath $index and load from origin file");
-      SmbHalfResult smbHalfResult = await Smb.getCurrentSmb().loadImageFromIndex(absPath, index, share, needFileDetailInfo: needFileDetailInfo);
-      if (smbHalfResult.msg == "successful") {
-        putImageToCache(absPath, index, smbHalfResult.result[index].content);
-      }
-      return smbHalfResult;
-    } else {
-      logger.i("getImage load from cache $share $absPath $index");
-      return SmbHalfResult("successful", {index: ZipFileContent.content(cacheImage)});
+    }else{
+      throw SmbException("getWholeFile error");
     }
   }
 
-  static Future<SmbHalfResult> getPreviewFile(int index, String absPath, String share) async {
-    FileContentCO co = await SmbChannel.loadWholeFile(absPath, SmbVO.fromSmb()..wholePath = "smbshare/" + absPath);
-    FileContentCO co2 = await SmbChannel.loadFileFromZip(absPath, 0, SmbVO.fromSmb()..wholePath = "smbshare/" + absPath);
-    var content = await getImageFromCache(absPath, index);
-    if (content == null) {
-      logger.i("getImage cache have not $share $absPath $index and load from origin file");
-      var currentSmb = Smb.getCurrentSmb();
-      SmbHalfResult smbHalfResult;
-      if (isCompressOrImageFile(absPath)) {
-        smbHalfResult = await currentSmb.loadImageFromIndex(absPath, index, share, needFileDetailInfo: true);
-      } else if (isImageFile(absPath)) {
-        smbHalfResult = await currentSmb.loadImageFile(absPath, share);
+  static Future<FileContentCO> getFileFromZip(int index, SmbVO smbVO, {bool forceFromSource = false}) async {
+    CacheVO<FileContentCO> f = await loadFromCache<FileContentCO>("fileFromZip@" + smbVO.id + "@" + smbVO.absPath + "@$index", () {
+      return SmbChannel.loadFileFromZip(index, smbVO);
+    }, forceFromSource: forceFromSource);
+    if (f.code == CacheResult.ok) {
+      if (f.source == CacheSource.originSource) {
+        return f.metaObj;
+      } else {
+        return FileContentCO()
+          ..absFilename = smbVO.absPath
+          ..content = f.file;
       }
-      if (smbHalfResult.msg == "successful") {
-        putImageToCache(absPath, index, smbHalfResult.result[index].content);
-      }
-      return smbHalfResult;
-    } else {
-      logger.i("getPreviewFile load from cache $share $absPath $index");
-      return SmbHalfResult("successful", {index: ZipFileContent.content(content)});
+    }else{
+      throw SmbException("getFileFromZip error");
     }
   }
 
   static String joinPath(String a, String b) {
+    a = a??"";
     if (p.isAbsolute(b)) {
       var split = p.split(b);
       split[0] = a;

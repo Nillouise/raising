@@ -13,14 +13,14 @@ class SmbPO {
   String username;
   String password;
 
-  SmbPO copySmbPO(SmbPO vo) {
-    return vo
-      ..id = this.id
-      .._nickName = this._nickName
-      ..hostname = this.hostname
-      ..domain = this.domain
-      ..username = this.username
-      ..password = this.password;
+  static void copySmbPO(SmbPO source, SmbPO target) {
+    target
+      ..id = source.id
+      .._nickName = source._nickName
+      ..hostname = source.hostname
+      ..domain = source.domain
+      ..username = source.username
+      ..password = source.password;
   }
 
   String get onlyHostname {
@@ -28,6 +28,14 @@ class SmbPO {
       return hostname.split(":")[0];
     } else {
       return hostname;
+    }
+  }
+
+  String get hostnamePath {
+    if (hostname != null && hostname.contains(":")) {
+      return hostname.split(":")[1];
+    } else {
+      return "";
     }
   }
 
@@ -45,24 +53,33 @@ class SmbPO {
   set nickName(String x) {
     _nickName = x;
   }
+
+  SmbPO();
+
+  factory SmbPO.fromJson(Map<String, dynamic> json) {
+    return SmbPO()
+      ..id = json['id'] as String
+      .._nickName = json['_nickName'] as String
+      ..hostname = json['hostname'] as String
+      ..domain = json['domain'] as String
+      ..username = json['username'] as String
+      ..password = json['password'] as String;
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'id': id,
+      '_nickName': _nickName,
+      'hostname': hostname,
+      'domain': domain,
+      'username': username,
+      'password': password,
+    };
+  }
 }
 
 class SmbVO extends SmbPO {
-  String _path;
-  String wholePath; //include hostname'spath
-
-  get path {
-    return _path;
-  }
-
-  set path(x) {
-    _path = x;
-    if (hostname != null && hostname.contains(":")) {
-      wholePath = Utils.joinPath(hostname.split(":")[1], x);
-    } else {
-      wholePath = x;
-    }
-  }
+  String absPath;
 
   static SmbVO fromSmb() {
     var smb = Smb.getCurrentSmb();
@@ -72,6 +89,17 @@ class SmbVO extends SmbPO {
       ..password = smb.password
       ..domain = smb.domain;
   }
+
+  static SmbVO copyFromSmbPO(SmbPO po) {
+    SmbVO res = SmbVO();
+    SmbPO.copySmbPO(po, res);
+    return res;
+  }
+  SmbVO copy(){
+    var vo = copyFromSmbPO(this);
+    vo.absPath = this.absPath;
+    return vo;
+  }
 }
 
 //用在channel上交互产生
@@ -80,18 +108,18 @@ class SmbCO {
   String domain;
   String username;
   String password;
-  String wholePath;
+  String absPath;
 
   SmbCO.copyFrom(SmbVO vo) {
     this.hostname = vo.onlyHostname;
     this.password = vo.password;
     this.domain = vo.domain;
     this.username = vo.username;
-    this.wholePath = vo.wholePath;
+    this.absPath = vo.absPath;
   }
 
   Map toMap() {
-    return {"hostname": hostname, "domain": domain, "username": username, "password": password, "wholePath": wholePath};
+    return {"hostname": hostname, "domain": domain, "username": username, "password": password, "absPath": absPath};
   }
 }
 

@@ -1,6 +1,5 @@
 package com.example.raising
 
-import com.example.raising.Smb.ZipFileContent
 import com.example.raising.exception.SmbException
 import com.example.raising.exception.SmbInterruptException
 import com.example.raising.vo.DirectoryVO
@@ -59,7 +58,7 @@ object SmbChannel {
                     AuthenticationContext.anonymous()
                 }
                 val session = connection.authenticate(ac)
-                if (StringUtils.isEmpty(co.wholePath) || co.wholePath == "/" || co.wholePath == "\\") { //return share;
+                if (StringUtils.isEmpty(co.absPath) || co.absPath == "/" || co.absPath == "\\") { //return share;
                     val transport = SMBTransportFactories.SRVSVC.getTransport(session)
                     val serverService = ServerService(transport)
                     val shares = serverService.shares0
@@ -225,24 +224,24 @@ object SmbChannel {
     }
 
     @Throws(SmbException::class)
-    fun loadFileFromZip(absFilename: String, indexs: ArrayList<Int>, needFileDetailInfo: Boolean, co: SmbCO): SmbResult? {
+    fun loadFileFromZip(indexs: ArrayList<Int>, needFileDetailInfo: Boolean, co: SmbCO): SmbResult? {
 
         return getShare(co
         ) { share ->
-            val task: Future<SmbResult> = executorService.submit(Callable { getFileWorker(absFilename, needFileDetailInfo, indexs, share) })
+            val task: Future<SmbResult> = executorService.submit(Callable { getFileWorker(co.absPath, needFileDetailInfo, indexs, share) })
             try {
                 task.get()
             } catch (e: CancellationException) {
-                Logger.e(e, "%s %s", absFilename, indexs.toString())
+                Logger.e(e, "%s %s", co.absPath, indexs.toString())
                 try { //睡眠一小段时间，是为了传输完成正在传输中的图片
                     Thread.sleep(130)
                     task.get()
                 } catch (ex: java.lang.Exception) {
-                    Logger.e(e, "double %s %s", absFilename, indexs.toString())
+                    Logger.e(e, "double %s %s", co.absPath, indexs.toString())
                     SmbResult.ofCancel()
                 }
             } catch (e: java.lang.Exception) {
-                Logger.e(e, "%s %s", absFilename, indexs.toString())
+                Logger.e(e, "%s %s", co.absPath, indexs.toString())
                 SmbResult.ofUnknownError()
             }
 
@@ -253,19 +252,20 @@ object SmbChannel {
 
 
     @Throws(SmbException::class)
-    fun loadWholeFile(absFilename: String, co: SmbCO): SmbResult? {
+    fun loadWholeFile(co: SmbCO): SmbResult? {
 
         return getShare(co
         ) { share ->
+            val absPath = co.absPath
             val task: Future<SmbResult> = executorService.submit(Callable {
                 val f: File? = null
-                val fileExists = share.fileExists(absFilename)
+                val fileExists = share.fileExists(absPath)
                 if (!fileExists) {
-                    Logger.w("File %s not exist.", absFilename)
-                    throw SmbException("File $absFilename not exist")
+                    Logger.w("File %s not exist.", absPath)
+                    throw SmbException("File $absPath not exist")
                 }
                 try {
-                    val smbFileRead = share.openFile(absFilename, EnumSet.of(AccessMask.GENERIC_READ), null, SMB2ShareAccess.ALL, SMB2CreateDisposition.FILE_OPEN, null)
+                    val smbFileRead = share.openFile(absPath, EnumSet.of(AccessMask.GENERIC_READ), null, SMB2ShareAccess.ALL, SMB2CreateDisposition.FILE_OPEN, null)
                     val info = smbFileRead.getFileInformation(FileStandardInformation::class.java)
                     val `in` = smbFileRead.inputStream
                     val buffer = ByteArrayOutputStream()
@@ -279,7 +279,7 @@ object SmbChannel {
                     val imagebyte = buffer.toByteArray()
                     val res = HashMap<Int, ZipFileContentCO>()
                     val zipFileContentCO = ZipFileContentCO()
-                    zipFileContentCO.absFilename = (absFilename);
+                    zipFileContentCO.absFilename = absPath;
                     zipFileContentCO.content = (imagebyte);
                     zipFileContentCO.index = (0);
                     zipFileContentCO.length = (total);
@@ -294,16 +294,16 @@ object SmbChannel {
             try {
                 task.get()
             } catch (e: CancellationException) {
-                Logger.e(e, "%s", absFilename)
+                Logger.e(e, "%s", absPath)
                 try { //睡眠一小段时间，是为了传输完成正在传输中的图片
                     Thread.sleep(130)
                     task.get()
                 } catch (ex: java.lang.Exception) {
-                    Logger.e(e, "double %s", absFilename)
+                    Logger.e(e, "double %s", absPath)
                     SmbResult.ofCancel()
                 }
             } catch (e: java.lang.Exception) {
-                Logger.e(e, "%s", absFilename)
+                Logger.e(e, "%s", absPath)
                 SmbResult.ofUnknownError()
             }
         }
