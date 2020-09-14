@@ -5,9 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
-
-
 public class SmbResult implements GetMapInterface {
     String msg;
     Object result;

@@ -55,8 +55,9 @@ Widget init() {
       providers: [
         ChangeNotifierProvider<SmbListModel>(
           create: (context) {
-            Repository.init();
-            return SmbListModel()..loadTodos();
+            var smbListModel = SmbListModel();
+            Repository.init().then((value) => smbListModel..loadTodos());
+            return smbListModel;
           },
           lazy: false,
         ),

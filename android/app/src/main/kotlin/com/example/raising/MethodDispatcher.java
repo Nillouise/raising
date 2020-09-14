@@ -71,9 +71,6 @@ public class MethodDispatcher implements MethodCallHandler {
     //    private ConcurrentLinkedQueue<String> previewFileQueue = new ConcurrentLinkedQueue<>();
     private ExecutorService executorService = Executors.newFixedThreadPool(4);
 
-    //一次只会处理一个smb链接
-    private Smb smb;
-
     public Gson gson = new GsonBuilder()
             .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").create();
 
@@ -81,62 +78,8 @@ public class MethodDispatcher implements MethodCallHandler {
     public void onMethodCall(MethodCall call, @NotNull Result rawResult) {
         Result result = new MethodResultWrapper(rawResult);
 
-        if (call.method.equals("test")) {
-            executorService.submit(() -> {
-                try {
-                    new Smb().test();
-                    result.success(null);
-                } catch (Exception e) {
-                    result.error("test", e.toString(), ExceptionUtils.getStackTrace(e));
-                }
-            });
-            return;
-        }
 
-        if (call.method.equals("init")) {
-            smb = new Smb(
-                    call.argument("hostname"),
-                    call.argument("shareName"),
-                    call.argument("domain"),
-                    call.argument("username"),
-                    call.argument("password"),
-                    call.argument("path"),
-                    call.argument("searchPattern")
-            );
-            result.success(null);
-        } else if (call.method.equals("listFiles")) {
-            executorService.submit(() -> {
-                try {
-                    ArrayList res = smb.listFiles(
-                            call.argument("path"),
-                            call.argument("searchPattern"),
-                            call.argument("share")
-                    );
-                    result.success(gson.toJson(res));
-                } catch (Exception e) {
-                    Logger.e(e, "listFiles error");
-                    result.error("listFiles", e.toString(), ExceptionUtils.getStackTrace(e));
-                }
-            });
-        } else if (call.method.equals("loadImageFromIndex")) {
-            executorService.submit(() -> {
-                try {
-                    Smb.SmbHalfResult res = smb.processShare(share -> {
-                                return smb.loadImageFromIndex(
-                                        call.argument("absFilename"),
-                                        call.argument("indexs"),
-                                        call.argument("needFileDetailInfo"),
-                                        share);
-                            }, call.argument("share")
-                    );
-                    result.success(res.getMap());
-                } catch (Exception e) {
-                    Logger.e(e, "loadImageFromIndex error");
-                    //由于发现加入e到errorDetails会导致应用崩溃，所以不加了
-                    result.error("loadImageFromIndex", e.toString(), ExceptionUtils.getStackTrace(e));
-                }
-            });
-        } else if (call.method.equals("loadWholeFile")) {
+        if (call.method.equals("loadWholeFile")) {
             executorService.submit(() -> {
                 try {
                     SmbResult res = SmbChannel.INSTANCE.loadWholeFile(SmbCO.fromMap(call.argument("smbCO")));
@@ -161,25 +104,10 @@ public class MethodDispatcher implements MethodCallHandler {
                     result.error("loadFileFromZip", e.toString(), ExceptionUtils.getStackTrace(e));
                 }
             });
-        } else if (call.method.equals("loadImageFile")) {
-            executorService.submit(() -> {
-                try {
-                    Smb.SmbHalfResult res = smb.processShare(share -> {
-                                return smb.loadImageFile(
-                                        call.argument("absFilename"),
-                                        share);
-                            }, call.argument("share")
-                    );
-                    result.success(res.getMap());
-                } catch (Exception e) {
-                    Logger.e(e, "loadImageFile error");
-                    result.error("loadImageFile", e.toString(), ExceptionUtils.getStackTrace(e));
-                }
-            });
         } else if (call.method.equals("stopSmbRequest")) {
             executorService.submit(() -> {
                 try {
-                    smb.stopSmbRequest();
+                    SmbChannel.INSTANCE.stopSmbRequest();
                     result.success(null);
                 } catch (Exception e) {
                     Logger.e(e, "stopSmbRequest error");

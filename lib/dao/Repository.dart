@@ -13,7 +13,7 @@ class Repository {
 
   static Database _db;
 
-  static void init() async {
+  static Future<void> init() async {
     _db = await openDatabase((await getApplicationDocumentsDirectory()).path + "/cur2.db", version: 1, onCreate: (Database db, int version) async {
       await db.execute("CREATE TABLE smb_manage (id TEXT PRIMARY KEY, _nickName TEXT, hostname TEXT,domain TEXT,username TEXT,password TEXT)");
 
@@ -34,12 +34,20 @@ class Repository {
   }
 
   static Future<List<SmbPO>> getAllSmbPO() async {
-    List<Map<String, dynamic>> list = await _db.transaction((txn) async {
-      return await txn.rawQuery(
-        "select * from smb_manage",
-      );
-    });
-    return list.map((e) => SmbPO.fromJson(e)).toList();
+    try{
+
+      List<Map<String, dynamic>> list = await _db.transaction((txn) async {
+        var res = await txn.rawQuery(
+          "select * from smb_manage",
+        );
+        return res;
+      });
+      return list.map((e) => SmbPO.fromJson(e)).toList();
+    }catch (e){
+      logger.e(e);
+      throw e;
+    }
+
   }
 
   static Future<void> deleteAllSmbPO() async {

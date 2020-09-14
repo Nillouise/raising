@@ -21,14 +21,6 @@ class DirectoryCO {
       _$DirectoryCOFromJson(json);
 
   Map<String, dynamic> toJson() => _$DirectoryCOToJson(this);
-
-//  var filename: String? = null
-//  var updateTime: Date? = null
-//  var size: Long? = null
-//  public var isDirectory = false
-//  public var isCompressFile = false
-//  public var isShare = false
-//  public var fileNum = 0//如果是压缩文件里面有多少文件，如果是目录，里面有多少文件
 }
 
 @JsonSerializable()
