@@ -31,6 +31,15 @@ class Utils {
     return Constants.COMPRESS_AND_IMAGE_FILE.contains(p.extension(absPath));
   }
 
+  static String getFileType(String absPath) {
+    if (isImageFile(absPath)) {
+      return "image";
+    } else if (isCompressFile(absPath)) {
+      return "compress";
+    } else {
+      return "unknown";
+    }
+  }
 
   /// Throw SmbException if get file error
   static Future<FileContentCO> getWholeFile(SmbVO smbVO, {bool forceFromSource = false}) async {
@@ -45,7 +54,7 @@ class Utils {
           ..absFilename = smbVO.absPath
           ..content = f.file;
       }
-    }else{
+    } else {
       throw SmbException("getWholeFile error");
     }
   }
@@ -62,13 +71,13 @@ class Utils {
           ..absFilename = smbVO.absPath
           ..content = f.file;
       }
-    }else{
+    } else {
       throw SmbException("getFileFromZip error");
     }
   }
 
   static String joinPath(String a, String b) {
-    a = a??"";
+    a = a ?? "";
     if (p.isAbsolute(b)) {
       var split = p.split(b);
       split[0] = a;

@@ -173,6 +173,7 @@ object SmbChannel {
             val proto = ZipFileContentCO()
             proto.length = simpleInArchive.archiveItems.size
             proto.absFilename = (absFilename)
+            proto.wholeFileSize = info.endOfFile
             val paths = ArrayList<String>()
             val mapPath = HashMap<String, Int>()
             var archiIndex = 0
@@ -283,7 +284,8 @@ object SmbChannel {
                     zipFileContentCO.absFilename = absPath;
                     zipFileContentCO.content = (imagebyte);
                     zipFileContentCO.index = (0);
-                    zipFileContentCO.length = (total);
+                    zipFileContentCO.length = (1);
+                    zipFileContentCO.wholeFileSize = total;
 
                     res[0] = zipFileContentCO
                     return@Callable SmbResult.ofSuccessful().setZipFiles(res)

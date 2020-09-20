@@ -38,7 +38,7 @@ class ExplorerState extends State<Explorer> {
         child: Column(
           children: <Widget>[
             Row(
-              children: <Widget>[  Text("path:${catalog.smbVO?.absPath??""}")],
+              children: <Widget>[Text("path:${catalog.smbVO?.absPath ?? ""}")],
             ),
             Expanded(
               child: FileList(),
@@ -68,9 +68,7 @@ class FileList extends StatefulWidget {
   }
 }
 
-
 class FileListState extends State<FileList> {
-
   double _pixels;
   int _timestamp = 0;
 
@@ -177,7 +175,7 @@ class FileListState extends State<FileList> {
                               } else if (Constants.COMPRESS_AND_IMAGE_FILE.contains(p.extension(files[index].filename))) {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => FutureViewerChecker(0, Utils.joinPath(catalog.smbVO.absPath, files[index].filename))),
+                                  MaterialPageRoute(builder: (context) => FutureViewerChecker(0, Utils.joinPath(catalog.smbVO.absPath, files[index].filename), files)),
                                 );
                               }
                             },

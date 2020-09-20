@@ -18,6 +18,7 @@ public class ZipFileContentCO {
     public String zipAbsFilename; //压缩文件内的绝对路径
     public int index;
     public int length; //整个压缩文件内的文件的数量。
+    public long wholeFileSize;
     public byte[] content;
 
     HashMap<String, Object> getMap() {
@@ -27,6 +28,7 @@ public class ZipFileContentCO {
         res.put("index", index);
         res.put("length", length);
         res.put("content", content);
+        res.put("wholeFileSize", wholeFileSize);
         return res;
     }
 
@@ -37,6 +39,7 @@ public class ZipFileContentCO {
         res.index = index;
         res.length = length;
         res.content = content;
+        res.wholeFileSize = wholeFileSize;
         return res;
     }
 

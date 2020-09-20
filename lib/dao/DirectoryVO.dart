@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:json_annotation/json_annotation.dart';
+import 'package:path/path.dart' as p;
 import 'package:raising/image/cache.dart';
 
 part 'DirectoryVO.g.dart';
@@ -17,8 +18,7 @@ class DirectoryCO {
 
   DirectoryCO();
 
-  factory DirectoryCO.fromJson(Map<String, dynamic> json) =>
-      _$DirectoryCOFromJson(json);
+  factory DirectoryCO.fromJson(Map<String, dynamic> json) => _$DirectoryCOFromJson(json);
 
   Map<String, dynamic> toJson() => _$DirectoryCOToJson(this);
 }
@@ -40,8 +40,15 @@ class FileInfoPO {
 
   FileInfoPO();
 
-  factory FileInfoPO.fromJson(Map<String, dynamic> json) =>
-      _$FileInfoPOFromJson(json);
+  FileInfoPO copyFromFileContentCO(FileContentCO co) {
+    this
+      ..absPath = co.absFilename
+      ..size = co.wholeFileSize
+      ..fileNum = co.length
+      ..filename = p.basename(co.absFilename);
+  }
+
+  factory FileInfoPO.fromJson(Map<String, dynamic> json) => _$FileInfoPOFromJson(json);
 
   Map<String, dynamic> toJson() => _$FileInfoPOToJson(this);
 }
@@ -52,12 +59,12 @@ class FileContentCO implements CacheContent {
   String zipAbsFilename; //压缩文件内的绝对路径
   int index;
   int length; //整个压缩文件内的文件的数量。
+  int wholeFileSize; // 整个文件，而不是压缩文件内的文件，的大小
   dynamic content;
 
   FileContentCO();
 
-  factory FileContentCO.fromJson(Map<String, dynamic> json) =>
-      _$ZipFileContentCOFromJson(json);
+  factory FileContentCO.fromJson(Map<String, dynamic> json) => _$ZipFileContentCOFromJson(json);
 
   Map<String, dynamic> toJson() => _$ZipFileContentCOToJson(this);
 
@@ -79,11 +86,9 @@ class FileKeyPO {
   //按秒算，这次看了多少时间，应当跟clickTimes一起保存
   List<int> readTimes;
 
-  FileKeyPO(
-      this.filename, this.tags, this.star, this.clickTimes, this.readTimes);
+  FileKeyPO(this.filename, this.tags, this.star, this.clickTimes, this.readTimes);
 
-  factory FileKeyPO.fromJson(Map<String, dynamic> json) =>
-      _$FileKeyPOFromJson(json);
+  factory FileKeyPO.fromJson(Map<String, dynamic> json) => _$FileKeyPOFromJson(json);
 
   Map<String, dynamic> toJson() => _$FileKeyPOToJson(this);
 }
