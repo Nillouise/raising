@@ -58,8 +58,8 @@ class ViewerNavigator extends ChangeNotifier {
     Repository.upsertFileKey(p.basename(_smbVO.absPath), clickTime: beginTime, increReadTime: (DateTime.now().millisecondsSinceEpoch - beginTime.millisecondsSinceEpoch) ~/ 1000);
   }
 
-  Future<FileContentCO> getContent(int index, {forceFromSource: true}) async {
-    return await Utils.getFileFromZip(index, _smbVO, forceFromSource: true);
+  Future<FileContentCO> getContent(int index, {forceFromSource: false}) async {
+    return await Utils.getFileFromZip(index, _smbVO, forceFromSource: forceFromSource);
   }
 
   void jumpTo(int index) {
@@ -111,84 +111,6 @@ class ViewerNavigator extends ChangeNotifier {
     beginTime = DateTime.now();
   }
 }
-
-//class OriginViewerNavigator extends ChangeNotifier {
-//  bool _detailToggle = false; //要不要打开viewer内的控制面板
-//  FileInfoPO file;
-//  int _index = 0;
-//  SmbVO _smbVO;
-//  DateTime beginTime;
-//  List<DirectoryCO> pwdFiles;
-//  String type;
-//  int length;
-//  var _preloadPageController = PreloadPageController(initialPage: 0);
-//
-//  String getCurDisplayAbsfilename() {
-//    if (type == "compress") {
-//      return smbVO.absPath;
-//    } else if (type == "image") {
-//      return
-//    }
-//  }
-//
-//  void starFileKey(String filename, int star) async {
-//    Repository.upsertFileKey(filename, star: star);
-//    notifyListeners();
-//  }
-//
-//  void closeViewer() {
-//    if (type == "compress") {
-//      Repository.upsertFileKey(p.basename(smbVO.absPath), clickTime: beginTime, increReadTime: (DateTime.now().millisecondsSinceEpoch - beginTime.millisecondsSinceEpoch) ~/ 1000);
-//    }
-//  }
-//
-//  //TODO:记录收藏行为
-//  void collectFile(
-//      String filename,
-//      ) async {}
-//
-//  Future<FileContentCO> getContent(int index) async {
-//    if (type == "compress") {
-//      return await Utils.getFileFromZip(index, smbVO);
-//    } else if (type == "image") {
-//      SmbVO copy = smbVO.copy();
-//      copy.absPath = Utils.joinPath(p.dirname(copy.absPath), pwdFiles[index].filename);
-//      FileContentCO halfResult = await Utils.getWholeFile(copy);
-//      return halfResult.content;
-//    } else {
-//      throw Exception("viewerNavigator type error");
-//    }
-//  }
-//
-//  SmbVO get smbVO => _smbVO;
-//
-//  set smbVO(SmbVO value) {
-//    _smbVO = value;
-//    notifyListeners();
-//  }
-//
-//  get preloadPageController => _preloadPageController;
-//
-//  set preloadPageController(preloadPageController) {
-//    _preloadPageController = preloadPageController;
-//  }
-//
-//  int get index => _index;
-//
-//  set index(int index) {
-//    _index = index;
-//    notifyListeners();
-//  }
-//
-//  bool get detailToggle => _detailToggle;
-//
-//  set detailToggle(value) {
-//    _detailToggle = value;
-//    notifyListeners();
-//  }
-//
-//  OriginViewerNavigator(this._detailToggle, this._index, this._smbVO, this.file, this.type, this.pwdFiles);
-//}
 
 class ImageViewerNavigator extends ViewerNavigator {
   List<DirectoryCO> _iterFiles;
@@ -248,8 +170,10 @@ class ImageViewerNavigator extends ViewerNavigator {
   }
 
   @override
-  Future<FileContentCO> getContent(int index, {forceFromSource: true}) async {
-    return await Utils.getFileFromZip(index, _smbVO, forceFromSource: true);
+  Future<FileContentCO> getContent(int index, {forceFromSource: false}) async {
+    var copy = _smbVO.copy();
+    copy.absPath = p.join(p.dirname(copy.absPath), _iterFiles[index].filename);
+    return await Utils.getWholeFile(copy, forceFromSource: forceFromSource);
   }
 
   @override
@@ -435,14 +359,7 @@ class _StarButtonState extends State<StarButton> {
 }
 
 class Viewer extends StatefulWidget {
-//  Viewer(this.absFilename, this.pagelength, {this.index: 0, Key key}) : super(key: key);
-
-  final int index;
-  final SmbVO smbVO;
-  final FileInfoPO file;
-  final String viewerType;
-
-  Viewer(this.smbVO, this.file, {this.index: 0, this.viewerType: "compress"});
+  Viewer();
 
   @override
   State<StatefulWidget> createState() => ViewerState();
@@ -467,10 +384,7 @@ class ViewerState extends State<Viewer> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
     logger.d("Viewer dispose");
-//    Repository.upsertFileKey(p.basename(widget.smbVO.absPath),
-//        clickTime: _navigator.beginTime, increReadTime: (DateTime.now().millisecondsSinceEpoch - _navigator.beginTime.millisecondsSinceEpoch) ~/ 1000);
     _navigator.closeViewer();
     super.dispose();
   }
@@ -490,32 +404,30 @@ class FutureViewerChecker extends StatelessWidget {
         SmbNavigation catalog = Provider.of<SmbNavigation>(context, listen: false);
         SmbVO pageSmbVO = catalog.smbVO.copy()..absPath = absFilename;
         if (Utils.isCompressOrImageFile(absFilename)) {
-          FileContentCO content = await Utils.getFileFromZip(readPages, pageSmbVO, forceFromSource: true);
+          FileContentCO content;
+          if (Utils.isCompressFile(absFilename)) {
+            content = await Utils.getFileFromZip(readPages, pageSmbVO, forceFromSource: true);
+          } else {
+            content = await Utils.getWholeFile(pageSmbVO, forceFromSource: true);
+          }
           FileInfoPO filePo = FileInfoPO()..copyFromFileContentCO(content);
-
-          List<DirectoryCO> filterDirectory = pwdFiles.where((element) {
-            if (element.isDirectory == false && Utils.isImageFile(element.filename)) {
-              return true;
-            } else {
-              return false;
-            }
-          }).toList();
-
-          return MultiProvider(
-              providers: [
-                ChangeNotifierProvider<ViewerNavigator>(
-                  create: (context) {
-//                    return ViewerNavigator(false, readPages, pageSmbVO, filePo, Utils.getFileType(absFilename), filterDirectory)..beginTime = DateTime.now();
-                    return ViewerNavigator();
-                  },
-                  lazy: false,
-                ),
-              ],
-              child: Viewer(
-                pageSmbVO,
-                filePo,
-                index: readPages,
-              ));
+          return MultiProvider(providers: [
+            ChangeNotifierProvider<ViewerNavigator>(
+              create: (context) {
+                if (Utils.isCompressFile(absFilename)) {
+                  return ViewerNavigator(false, 0, pageSmbVO, filePo);
+                } else if (Utils.isImageFile(absFilename)) {
+                  List<DirectoryCO> filterDirectory = pwdFiles.where((element) {
+                    return element.isDirectory == false && Utils.isImageFile(element.filename);
+                  }).toList();
+                  return ImageViewerNavigator(false, 0, pageSmbVO, filePo, filterDirectory);
+                } else {
+                  throw Exception("Invalid file");
+                }
+              },
+              lazy: false,
+            ),
+          ], child: Viewer());
         } else {
           return Text("Invalid file");
         }

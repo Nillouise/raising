@@ -273,7 +273,7 @@ object SmbChannel {
                     val buffer = ByteArrayOutputStream()
                     var nRead: Int
                     val data = ByteArray(16384)
-                    var total = 0
+                    var total:Long = 0
                     while (`in`.read(data, 0, data.size).also { nRead = it } != -1) {
                         buffer.write(data, 0, nRead)
                         total += nRead

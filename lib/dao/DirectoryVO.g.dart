@@ -58,10 +58,11 @@ Map<String, dynamic> _$FileInfoPOToJson(FileInfoPO instance) => <String, dynamic
 
 FileContentCO _$ZipFileContentCOFromJson(Map<String, dynamic> json) {
   return FileContentCO()
-    ..absFilename = json['filename'] as String
+    ..absFilename = json['absFilename'] as String
     ..zipAbsFilename = json['zipAbsFilename'] as String
     ..index = json['index'] as int
     ..length = json['length'] as int
+    ..wholeFileSize = json['wholeFileSize'] as int
     ..content = json['content'];
 }
 
@@ -73,26 +74,22 @@ Map<String, dynamic> _$ZipFileContentCOToJson(FileContentCO instance) => <String
       'content': instance.content,
     };
 
-
 FileKeyPO _$FileKeyPOFromJson(Map<String, dynamic> json) {
   return FileKeyPO(
     json['filename'] as String,
     (json['tags'] as Map<String, dynamic>)?.map(
-          (k, e) => MapEntry(k, e as String),
+      (k, e) => MapEntry(k, e as String),
     ),
     json['star'] as int,
-    (json['clickTimes'] as List)
-        ?.map((e) => e == null ? null : DateTime.parse(e as String))
-        ?.toList(),
+    (json['clickTimes'] as List)?.map((e) => e == null ? null : DateTime.parse(e as String))?.toList(),
     (json['readTimes'] as List)?.map((e) => e as int)?.toList(),
   );
 }
 
 Map<String, dynamic> _$FileKeyPOToJson(FileKeyPO instance) => <String, dynamic>{
-  'filename': instance.filename,
-  'tags': instance.tags,
-  'star': instance.star,
-  'clickTimes':
-  instance.clickTimes?.map((e) => e?.toIso8601String())?.toList(),
-  'readTimes': instance.readTimes,
-};
+      'filename': instance.filename,
+      'tags': instance.tags,
+      'star': instance.star,
+      'clickTimes': instance.clickTimes?.map((e) => e?.toIso8601String())?.toList(),
+      'readTimes': instance.readTimes,
+    };

@@ -45,7 +45,7 @@ class FileInfoPO {
       ..absPath = co.absFilename
       ..size = co.wholeFileSize
       ..fileNum = co.length
-      ..filename = p.basename(co.absFilename);
+      ..filename = p.basename(co.absFilename ?? "");
   }
 
   factory FileInfoPO.fromJson(Map<String, dynamic> json) => _$FileInfoPOFromJson(json);

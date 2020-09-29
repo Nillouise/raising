@@ -23,7 +23,7 @@ class Explorer extends StatefulWidget {
   }
 }
 
-class ExplorerState extends State<Explorer> {
+class ExplorerState extends State<Explorer> with AutomaticKeepAliveClientMixin<Explorer> {
   String _dirname(String path) {
     var dirname = p.dirname(path);
     return dirname == '.' ? "" : dirname;
@@ -57,6 +57,10 @@ class ExplorerState extends State<Explorer> {
           }
         });
   }
+
+  @override
+  // TODO: implement wantKeepAlive
+  bool get wantKeepAlive => true;
 }
 
 class FileList extends StatefulWidget {
@@ -71,6 +75,12 @@ class FileList extends StatefulWidget {
 class FileListState extends State<FileList> {
   double _pixels;
   int _timestamp = 0;
+  Future<SmbNavigation> future;
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -208,14 +218,19 @@ class PreviewFile extends StatelessWidget {
       if (fileinfo.isDirectory) {
         return Icon(Icons.folder);
       } else if ((Constants.COMPRESS_AND_IMAGE_FILE).contains((p.extension(fileinfo.filename)))) {
-        FileContentCO smbHalfResult = (await Utils.getFileFromZip(0, smbVO));
+        FileContentCO content;
+        if (Utils.isCompressFile(fileinfo.filename)) {
+          content = await Utils.getFileFromZip(0, smbVO);
+        } else {
+          content = await Utils.getWholeFile(smbVO);
+        }
         Repository.upsertFileInfo(
           smbVO.absPath,
           smbVO.id,
           smbVO.nickName,
-          fileNum: smbHalfResult.length,
+          fileNum: content.length,
         );
-        return Image.memory(smbHalfResult.content, errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
+        return Image.memory(content.content, errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
           return Icon(Icons.error);
         });
       } else {
