@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:raising/dao/MetaPO.dart';
 import 'package:raising/dao/Repository.dart';
 import 'package:raising/page/drawer.dart';
 import 'package:raising/page/home.dart';
@@ -42,6 +44,18 @@ class MyApp extends StatelessWidget {
   }
 }
 
+void onStart(SmbListModel model) async {
+  await Repository.init();
+  await model.loadTodos();
+  MetaPo meta = await Repository.getMetaData();
+  Duration difference = meta.fileKeyScoreChangeDay.difference(DateTime.now());
+  if (difference.inDays.abs() > 0) {
+    await Repository.minFileKeyScore14(exp(-0.085 * difference.inDays.abs()));
+    await Repository.minFileKeyScore60(exp(-0.02 * difference.inDays.abs()));
+  }
+  await Repository.saveMetaData(meta);
+}
+
 Widget init() {
   // 方法二
   Timer.periodic(Duration(milliseconds: 30000), (timer) async {
@@ -56,7 +70,8 @@ Widget init() {
         ChangeNotifierProvider<SmbListModel>(
           create: (context) {
             var smbListModel = SmbListModel();
-            Repository.init().then((value) => smbListModel..loadTodos());
+//            Repository.init().then((value) => smbListModel..loadTodos());
+            onStart(smbListModel);
             return smbListModel;
           },
           lazy: false,
@@ -66,7 +81,16 @@ Widget init() {
       child: MaterialApp(
           title: 'Infinite List Sample',
 //        home: InfList(),
-          home: Scaffold(drawer: HomeDrawer(), body: RaisingHome())));
+          home: Scaffold(
+            drawer: HomeDrawer(),
+            body: RaisingHome(),
+            floatingActionButton: FloatingActionButton(
+                //悬浮按钮，用于测试
+                child: Icon(Icons.search),
+                onPressed: () {
+                  Repository.testInsertFileKeyScore();
+                }),
+          )));
 }
 
 class MyHomePage extends StatefulWidget {

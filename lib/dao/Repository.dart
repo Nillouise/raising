@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:ffi';
+import 'dart:math';
 
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:raising/dao/DirectoryVO.dart';
+import 'package:raising/dao/MetaPO.dart';
 import 'package:raising/dao/SmbVO.dart';
 import 'package:raising/exception/DbException.dart';
 import 'package:sqflite/sqflite.dart';
@@ -14,10 +16,14 @@ class Repository {
   static Database _db;
 
   static Future<void> init() async {
-    _db = await openDatabase((await getApplicationDocumentsDirectory()).path + "/cur2.db", version: 1, onCreate: (Database db, int version) async {
-      await db.execute("CREATE TABLE smb_manage (id TEXT PRIMARY KEY, _nickName TEXT, hostname TEXT,domain TEXT,username TEXT,password TEXT)");
+    _db = await openDatabase((await getApplicationDocumentsDirectory()).path + "/cur.db", version: 1, onCreate: (Database db, int version) async {
+      await db.execute("CREATE TABLE meta_data (keyname TEXT PRIMARY KEY, content TEXT)");
 
-      await db.execute("CREATE TABLE file_key (filename TEXT PRIMARY KEY, star INTEGER)");
+      await db.execute("CREATE TABLE smb_manage (id TEXT PRIMARY KEY, _nickName TEXT, hostname TEXT,domain TEXT,username TEXT,password TEXT)");
+      await db.execute("CREATE TABLE file_key (filename TEXT PRIMARY KEY, star INTEGER, score14 REAL, score60 REAL)");
+      await db.execute("CREATE INDEX score14_index ON file_key(score14)");
+      await db.execute("CREATE INDEX score60_index ON file_key(score60)");
+
       await db.execute("CREATE TABLE file_key_clicks (id INTEGER PRIMARY KEY, filename TEXT, clickTime INTEGER, readTime INTEGER)");
       await db.execute("CREATE INDEX file_key_clicks_index ON file_key_clicks(filename)");
       await db.execute("CREATE TABLE file_key_tags (id INTEGER PRIMARY KEY, filename TEXT, tag TEXT)");
@@ -33,9 +39,25 @@ class Repository {
     print(_db);
   }
 
-  static Future<List<SmbPO>> getAllSmbPO() async {
-    try{
+  static Future<MetaPo> getMetaData() async {
+    List<Map<String, dynamic>> list = await _db.transaction((txn) async {
+      return await txn.rawQuery("select * from meta_data");
+    });
+    var res = list.map((e) => metaPoFromJson(e["content"])).toList();
+    if (res.isEmpty) {
+      return MetaPo(key: "metaData", fileKeyScoreChangeDay: DateTime.now());
+    }
+    return res[0];
+  }
 
+  static Future saveMetaData(MetaPo po) async {
+    await _db.transaction((txn) async {
+      return await txn.insert("meta_data", {"keyname": po.key, "content": metaPoToJson(po)}, conflictAlgorithm: ConflictAlgorithm.replace);
+    });
+  }
+
+  static Future<List<SmbPO>> getAllSmbPO() async {
+    try {
       List<Map<String, dynamic>> list = await _db.transaction((txn) async {
         var res = await txn.rawQuery(
           "select * from smb_manage",
@@ -43,11 +65,10 @@ class Repository {
         return res;
       });
       return list.map((e) => SmbPO.fromJson(e)).toList();
-    }catch (e){
+    } catch (e) {
       logger.e(e);
       throw e;
     }
-
   }
 
   static Future<void> deleteAllSmbPO() async {
@@ -120,6 +141,45 @@ class Repository {
     return res > 0;
   }
 
+  //把所有Score14除以x，在存到数据库
+  static Future<Void> minFileKeyScore14(double x) async {
+    await _db.transaction((txn) async {
+      txn.rawUpdate("UPDATE file_key set score14 = score14/?", [x]);
+    });
+  }
+
+  //把所有Score60除以x，在存到数据库
+  static Future<Void> minFileKeyScore60(double x) async {
+    await _db.transaction((txn) async {
+      txn.rawUpdate("UPDATE file_key set score60 = score60 / ?  ", [x]);
+    });
+  }
+
+  static String randString() {
+    const _chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
+    Random _rnd = Random();
+
+    return String.fromCharCodes(Iterable.generate(6, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
+  }
+
+  //把所有Score除以x，在存到数据库
+  static Future<Void> testInsertFileKeyScore() async {
+    Stopwatch stopwatch = new Stopwatch()..start();
+//    minFileKeyScore(2.1);
+    print('doSomething() executed in ${stopwatch.elapsed}');
+    // Insert some records in a transaction
+    await _db.transaction((txn) async {
+//      for (int i = 0; i < 20000; i++) {
+//        await txn.rawInsert("insert into file_key(filename,star,score14,score60) values(?,?,?,?)", ["file" + randString() + i.toString(), 5, 1000.0, 2000.0]);
+//      }
+      var rawQuery = await txn.rawQuery("select * from file_key order by score14 desc limit 1000 ");
+
+      print('doSomething() executed in ${stopwatch.elapsed}');
+      print(rawQuery);
+    });
+    print("testInsertFileKeyScore complete");
+  }
+
   static Future<Void> upsertFileKey(
     String filename, {
     String tag,
@@ -179,7 +239,4 @@ class Repository {
       return lst;
     });
   }
-
-
-
 }
