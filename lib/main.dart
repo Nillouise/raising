@@ -7,6 +7,7 @@ import 'package:raising/dao/MetaPO.dart';
 import 'package:raising/dao/Repository.dart';
 import 'package:raising/page/drawer.dart';
 import 'package:raising/page/home.dart';
+import 'package:raising/page/test_page.dart';
 
 import 'model/smb_list_model.dart';
 import 'model/smb_navigation.dart';
@@ -39,7 +40,7 @@ void main() => runApp(MyApp());
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return init();
+    return init(context);
 //    return Scaffold(body: Container(child: TestSlider()));
   }
 }
@@ -56,7 +57,7 @@ void onStart(SmbListModel model) async {
   await Repository.saveMetaData(meta);
 }
 
-Widget init() {
+Widget init(BuildContext context) {
   // 方法二
   Timer.periodic(Duration(milliseconds: 30000), (timer) async {
     await Repository.getAllInfo();
@@ -81,16 +82,20 @@ Widget init() {
       child: MaterialApp(
           title: 'Infinite List Sample',
 //        home: InfList(),
-          home: Scaffold(
+          home: Builder (builder:(context)=> Scaffold(
             drawer: HomeDrawer(),
             body: RaisingHome(),
             floatingActionButton: FloatingActionButton(
                 //悬浮按钮，用于测试
                 child: Icon(Icons.search),
                 onPressed: () {
-                  Repository.testInsertFileKeyScore();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => TestPage()),
+                  );
+
                 }),
-          )));
+          ))));
 }
 
 class MyHomePage extends StatefulWidget {
@@ -171,7 +176,12 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => TestPage()),
+          );
+        },
         tooltip: 'Increment',
         child: Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
