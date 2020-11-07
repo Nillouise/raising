@@ -246,6 +246,7 @@ class _ViewerAppBarState extends State<ViewerAppBar> {
   @override
   Widget build(BuildContext context) {
     ViewerNavigator viewerNavigator = Provider.of<ViewerNavigator>(context);
+    //TODO：这里还要改，不然会闪烁，看看加个动画，还是参考medium改改
     if (viewerNavigator.getDetailToggle()) {
       return AppBar(title: Text(viewerNavigator.getCurFilename()));
     } else {

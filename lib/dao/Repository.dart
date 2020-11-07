@@ -8,6 +8,7 @@ import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/MetaPO.dart';
 import 'package:raising/dao/SmbVO.dart';
 import 'package:raising/exception/DbException.dart';
+import 'package:raising/rank/rankAlgorithm.dart';
 import 'package:sqflite/sqflite.dart';
 
 class Repository {
@@ -15,12 +16,16 @@ class Repository {
 
   static Database _db;
 
+
+  static Database get db => _db;
+
   static Future<void> init() async {
     _db = await openDatabase((await getApplicationDocumentsDirectory()).path + "/cur.db", version: 1, onCreate: (Database db, int version) async {
       await db.execute("CREATE TABLE meta_data (keyname TEXT PRIMARY KEY, content TEXT)");
 
       await db.execute("CREATE TABLE smb_manage (id TEXT PRIMARY KEY, _nickName TEXT, hostname TEXT,domain TEXT,username TEXT,password TEXT)");
-      await db.execute("CREATE TABLE file_key (filename TEXT PRIMARY KEY, star INTEGER, score14 REAL, score60 REAL)");
+      //TODO:处理一下recentReadTime
+      await db.execute("CREATE TABLE file_key (filename TEXT PRIMARY KEY, star INTEGER, recentReadTime INTEGER, score14 REAL, score60 REAL)");
       await db.execute("CREATE INDEX score14_index ON file_key(score14)");
       await db.execute("CREATE INDEX score60_index ON file_key(score60)");
 
@@ -37,6 +42,16 @@ class Repository {
 
     _cache_db = _db;
     print(_db);
+  }
+
+  static Future<List<FileKeyPO>> rankFileKey14(int page, int size) async {
+    List<Map<String, dynamic>> list = await _db.rawQuery('SELECT * FROM file_key sort by score14 desc limit ? offset ?', [size, page * size]);
+    return list.map((e) => FileKeyPO.fromJson(e)).toList();
+  }
+
+  static Future<List<FileKeyPO>> rankFileKey60(int page, int size) async {
+    List<Map<String, dynamic>> list = await _db.rawQuery('SELECT * FROM file_key sort by score60 desc limit ? offset ?', [size, page * size]);
+    return list.map((e) => FileKeyPO.fromJson(e)).toList();
   }
 
   static Future<MetaPo> getMetaData() async {
@@ -195,19 +210,17 @@ class Repository {
         if (star == null) {
           star = 0;
         }
-        txn.rawInsert("insert into file_key(filename,star) values(?,?)", [filename, star]);
+        txn.rawInsert("insert into file_key(filename,star, score14, score60) values(?,?)",
+            [filename, star, getScoreByReadTime(increReadTime, true), getScoreByReadTime(increReadTime, true)]);
       } else {
         if (star != null) {
-          txn.update("file_key", {"star": star}, where: 'filename = ?', whereArgs: [filename]);
+//          txn.update("file_key", {"star": star}, where: 'filename = ?', whereArgs: [filename]);
+          txn.update("file_key",
+              {"star": star, "score14": maps[0]["score14"] + getScoreByReadTime(increReadTime, false), "score60": maps[0]["score60"] + getScoreByReadTime(increReadTime, false)},
+              where: 'filename = ?', whereArgs: [filename]);
         }
       }
 
-      if ((clickTime == null && increReadTime != null) || (clickTime != null && increReadTime == null)) {
-        throw DbException("clickTime and increReadTime should be together insert");
-      }
-      if (clickTime != null && increReadTime != null) {
-        txn.rawInsert("insert into file_key_clicks(filename,clickTime,readTime) values(?,?,?)", [filename, clickTime.millisecondsSinceEpoch, increReadTime]);
-      }
       if (tag != null) {
         txn.rawInsert("insert into file_key_tags(filename,tag) values(?,?)", [filename, tag]);
       }
@@ -219,7 +232,8 @@ class Repository {
   }
 
   static Future<FileKeyPO> getFileKey(String filename) async {
-    List<Map<String, dynamic>> list = await _db.rawQuery('SELECT * FROM file_key');
+//    List<Map<String, dynamic>> list = await _db.rawQuery('SELECT * FROM file_key');
+    List<Map<String, dynamic>> list = await _db.rawQuery('SELECT * FROM file_key where filename = ?', [filename]);
     if (list.length > 0) {
       return FileKeyPO.fromJson(list[0]);
     } else {

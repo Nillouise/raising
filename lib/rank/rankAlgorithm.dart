@@ -17,3 +17,11 @@ double getShorttermScore(int readSecond, double shrinkageFactor) {
 double getLongtermScore(int readSecond, double shrinkageFactor) {
   return getScore(DateTime.now(), readSecond, 0.02, shrinkageFactor);
 }
+
+double getScoreByReadTime(int readSecond, bool isFirstTime) {
+  int first = isFirstTime ? 3 : 1;
+  if (readSecond < 10) {
+    return 0.1 * log(readSecond) / log(10) * first;
+  }
+  return log(readSecond) / log(10) * first;
+}
