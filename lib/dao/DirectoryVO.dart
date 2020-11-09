@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:path/path.dart' as p;
 import 'package:raising/image/cache.dart';
+import 'dart:convert';
 
 part 'DirectoryVO.g.dart';
 
@@ -23,6 +24,86 @@ class DirectoryCO {
   Map<String, dynamic> toJson() => _$DirectoryCOToJson(this);
 }
 
+/**
+    {
+    "smbId":"value",
+    "smbNickName":"smbNickName",
+    "absPath":"value",
+    "filename":"value",
+    "updateTime":"2018-09-06 15:03:48",
+    "size":5,
+    "isDirectory":true,
+    "isCompressFile":true,
+    "isShare":true,
+    "readLenght":5,
+    "fileNum":5,
+    "recentReadTime":"2018-09-06 15:03:48"
+    }
+ */
+FileInfoPo fileInfoPoFromJson(String str) => FileInfoPo.fromJson(json.decode(str));
+
+String fileInfoPoToJson(FileInfoPo data) => json.encode(data.toJson());
+
+class FileInfoPo {
+  FileInfoPo({
+    this.smbId,
+    this.smbNickName,
+    this.absPath,
+    this.filename,
+    this.updateTime,
+    this.size,
+    this.isDirectory,
+    this.isCompressFile,
+    this.isShare,
+    this.readLenght,
+    this.fileNum,
+    this.recentReadTime,
+  });
+
+  String smbId;
+  String smbNickName;
+  String absPath;
+  String filename;
+  DateTime updateTime;
+  int size;
+  bool isDirectory;
+  bool isCompressFile;
+  bool isShare;
+  int readLenght;
+  int fileNum;
+  DateTime recentReadTime;
+
+  factory FileInfoPo.fromJson(Map<String, dynamic> json) => FileInfoPo(
+    smbId: json["smbId"],
+    smbNickName: json["smbNickName"],
+    absPath: json["absPath"],
+    filename: json["filename"],
+    updateTime: DateTime.parse(json["updateTime"]),
+    size: json["size"],
+    isDirectory: json["isDirectory"],
+    isCompressFile: json["isCompressFile"],
+    isShare: json["isShare"],
+    readLenght: json["readLenght"],
+    fileNum: json["fileNum"],
+    recentReadTime: DateTime.parse(json["recentReadTime"]),
+  );
+
+  Map<String, dynamic> toJson() => {
+    "smbId": smbId,
+    "smbNickName": smbNickName,
+    "absPath": absPath,
+    "filename": filename,
+    "updateTime": updateTime.toIso8601String(),
+    "size": size,
+    "isDirectory": isDirectory,
+    "isCompressFile": isCompressFile,
+    "isShare": isShare,
+    "readLenght": readLenght,
+    "fileNum": fileNum,
+    "recentReadTime": recentReadTime.toIso8601String(),
+  };
+}
+
 @JsonSerializable()
 class FileInfoPO {
   String smbId;
@@ -32,7 +113,7 @@ class FileInfoPO {
   DateTime updateTime;
   int size;
   bool isDirectory;
-  bool isComprssFile;
+  bool isCompressFile;
   bool isShare;
 
   int readLenght; //已经看了多少页
@@ -73,6 +154,56 @@ class FileContentCO implements CacheContent {
     return content;
   }
 }
+
+
+/**
+    {
+    "filename":"value",
+    "star":5,
+    "score14":5.0,
+    "score60":5.0,
+    "recentReadTime":"2018-09-06 15:03:48"
+    }
+ */
+
+FileKeyPo fileKeyPoFromJson(String str) => FileKeyPo.fromJson(json.decode(str));
+
+String fileKeyPoToJson(FileKeyPo data) => json.encode(data.toJson());
+
+class FileKeyPo {
+  FileKeyPo({
+    this.filename,
+    this.star,
+    this.score14,
+    this.score60,
+    this.recentReadTime,
+  });
+
+  String filename;
+  int star;
+  int score14;
+  int score60;
+  DateTime recentReadTime;
+
+  factory FileKeyPo.fromJson(Map<String, dynamic> json) => FileKeyPo(
+    filename: json["filename"],
+    star: json["star"],
+    score14: json["score14"],
+    score60: json["score60"],
+    recentReadTime: DateTime.parse(json["recentReadTime"]),
+  );
+
+  Map<String, dynamic> toJson() => {
+    "filename": filename,
+    "star": star,
+    "score14": score14,
+    "score60": score60,
+    "recentReadTime": recentReadTime.toIso8601String(),
+  };
+}
+
+
+
 
 @JsonSerializable()
 class FileKeyPO {
