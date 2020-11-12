@@ -36,6 +36,13 @@ class ViewerNavigator extends ChangeNotifier {
   SmbVO _smbVO;
   int _index;
   FileInfoPO _fileInfoPO;
+  FileKeyPO fileKeyPO;
+
+  void recordWhenExist() {}
+
+  Future<void> refreshData() async {
+    fileKeyPO = await Repository.getFileKey(getCurFilename());
+  }
 
   int getCurIndex() {
     return _index;
@@ -49,13 +56,19 @@ class ViewerNavigator extends ChangeNotifier {
     return _smbVO;
   }
 
-  Future<void> starCurFile(int star) {
+  void starCurFile(int star) {
     Repository.upsertFileKey(p.basename(_smbVO.absPath), star: star);
-    notifyListeners();
+    refreshData().then((value) => notifyListeners());
   }
 
   void closeViewer() {
-    Repository.upsertFileKey(p.basename(_smbVO.absPath), clickTime: beginTime, increReadTime: (DateTime.now().millisecondsSinceEpoch - beginTime.millisecondsSinceEpoch) ~/ 1000);
+    Repository.upsertFileKey(p.basename(_smbVO.absPath),
+        recentReadTime: beginTime, increReadTime: (DateTime.now().millisecondsSinceEpoch - beginTime.millisecondsSinceEpoch) ~/ 1000);
+    Repository.upsertFileInfo(
+      _smbVO.absPath,
+      _smbVO.id,
+      _smbVO.nickName,
+    );
   }
 
   Future<FileContentCO> getContent(int index, {forceFromSource: false}) async {
@@ -76,6 +89,7 @@ class ViewerNavigator extends ChangeNotifier {
 
   void setDetailToggle(bool toggle) {
     _detailToggle = toggle;
+
     notifyListeners();
   }
 
@@ -166,7 +180,8 @@ class ImageViewerNavigator extends ViewerNavigator {
 
   @override
   void closeViewer() {
-    Repository.upsertFileKey(getFilename(getCurIndex()), clickTime: beginTime, increReadTime: (DateTime.now().millisecondsSinceEpoch - beginTime.millisecondsSinceEpoch) ~/ 1000);
+    Repository.upsertFileKey(getFilename(getCurIndex()),
+        recentReadTime: beginTime, increReadTime: (DateTime.now().millisecondsSinceEpoch - beginTime.millisecondsSinceEpoch) ~/ 1000);
   }
 
   @override
@@ -289,7 +304,7 @@ class _ViewBottomState extends State<ViewBottom> {
             ),
             Row(
               children: <Widget>[
-                Expanded(child: StarButton()),
+                Expanded(child: StarButton2()),
                 Expanded(
                     child: FlatButton(
                   onPressed: () async {
@@ -310,6 +325,32 @@ class _ViewBottomState extends State<ViewBottom> {
           ]));
     } else {
       return SizedBox.shrink();
+    }
+  }
+}
+
+class StarButton2 extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    ViewerNavigator viewerNavigator = Provider.of<ViewerNavigator>(context);
+    FileKeyPO fileKey = viewerNavigator.fileKeyPO;
+    if (fileKey?.star != null && fileKey.star > 0) {
+      return FlatButton(
+        onPressed: () async {
+          viewerNavigator.starCurFile(0);
+        },
+        child: Icon(
+          Icons.star,
+          color: Colors.yellow[800],
+        ),
+      );
+    } else {
+      return FlatButton(
+        onPressed: () async {
+          viewerNavigator.starCurFile(5);
+        },
+        child: Icon(Icons.star_border),
+      );
     }
   }
 }
@@ -357,6 +398,11 @@ class _StarButtonState extends State<StarButton> {
       }
     });
   }
+
+  @override
+  void initState() {
+    super.initState();
+  }
 }
 
 class Viewer extends StatefulWidget {
@@ -373,7 +419,7 @@ class ViewerState extends State<Viewer> {
 
   @override
   Widget build(BuildContext context) {
-    _navigator = Provider.of<ViewerNavigator>(context);
+    _navigator = Provider.of<ViewerNavigator>(context, listen: false);
     return Scaffold(
       appBar: ViewerAppBar(),
       body: ViewerBody(),

@@ -19,6 +19,9 @@ double getLongtermScore(int readSecond, double shrinkageFactor) {
 }
 
 double getScoreByReadTime(int readSecond, bool isFirstTime) {
+  if (readSecond == null) {
+    return 0;
+  }
   int first = isFirstTime ? 3 : 1;
   if (readSecond < 10) {
     return 0.1 * log(readSecond) / log(10) * first;

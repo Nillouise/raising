@@ -2,12 +2,10 @@ import 'dart:async';
 import 'dart:ffi';
 import 'dart:math';
 
-import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/MetaPO.dart';
 import 'package:raising/dao/SmbVO.dart';
-import 'package:raising/exception/DbException.dart';
 import 'package:raising/rank/rankAlgorithm.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -16,11 +14,10 @@ class Repository {
 
   static Database _db;
 
-
   static Database get db => _db;
 
   static Future<void> init() async {
-    _db = await openDatabase((await getApplicationDocumentsDirectory()).path + "/cur.db", version: 1, onCreate: (Database db, int version) async {
+    _db = await openDatabase((await getApplicationDocumentsDirectory()).path + "/sqlite2.db", version: 1, onCreate: (Database db, int version) async {
       await db.execute("CREATE TABLE meta_data (keyname TEXT PRIMARY KEY, content TEXT)");
 
       await db.execute("CREATE TABLE smb_manage (id TEXT PRIMARY KEY, _nickName TEXT, hostname TEXT,domain TEXT,username TEXT,password TEXT)");
@@ -34,9 +31,9 @@ class Repository {
       await db.execute("CREATE TABLE file_key_tags (id INTEGER PRIMARY KEY, filename TEXT, tag TEXT)");
       await db.execute("CREATE INDEX file_key_tags_index ON file_key_tags(filename)");
 
-      //File info
+      //TODO: File info，还需要加入recentReadTime
       await db.execute(
-          "CREATE TABLE file_info (id INTEGER PRIMARY KEY,smbId TEXT,smbNickName TEXT,absPath TEXT, filename TEXT, updateTime INTEGER, isDirectory INTEGER, isShare INTEGER, isCompressFile INTEGER, readLenght INTEGER, fileNum INTEGER, size INTEGER)");
+          "CREATE TABLE file_info (id INTEGER PRIMARY KEY,smbId TEXT,smbNickName TEXT,absPath TEXT, filename TEXT, updateTime INTEGER, isDirectory INTEGER, isShare INTEGER, isCompressFile INTEGER, readLenght INTEGER, fileNum INTEGER, size INTEGER, recentReadTime INTEGER)");
       await db.execute("CREATE UNIQUE INDEX file_info_index ON file_info(smbId, absPath)");
     });
 
@@ -44,15 +41,25 @@ class Repository {
     print(_db);
   }
 
-  static Future<List<FileKeyPO>> rankFileKey14(int page, int size) async {
-    List<Map<String, dynamic>> list = await _db.rawQuery('SELECT * FROM file_key sort by score14 desc limit ? offset ?', [size, page * size]);
+  static Future<List<FileKeyPO>> rankFileKey14(String orderBy, int page, int size, {bool star = false}) async {
+    List<Map<String, dynamic>> list = await _db.query("file_key", where: star ? "star > 0" : null, orderBy: orderBy, offset: page * size, limit: size);
     return list.map((e) => FileKeyPO.fromJson(e)).toList();
   }
 
-  static Future<List<FileKeyPO>> rankFileKey60(int page, int size) async {
-    List<Map<String, dynamic>> list = await _db.rawQuery('SELECT * FROM file_key sort by score60 desc limit ? offset ?', [size, page * size]);
-    return list.map((e) => FileKeyPO.fromJson(e)).toList();
+  static Future<List<FileInfoPO>> historyFileInfo(String orderBy, int page, int size, {bool star = false}) async {
+    List<Map<String, dynamic>> list = await _db.query("file_info", where: star ? "star > 0" : null, orderBy: orderBy, offset: page * size, limit: size);
+    return list.map((e) => FileInfoPO.fromJson(e)).toList();
   }
+
+//  static Future<List<FileKeyPO>> rankFileKey60(int page, int size) async {
+//    List<Map<String, dynamic>> list = await _db.rawQuery('SELECT * FROM file_key sort by score60 desc limit ? offset ?', [size, page * size]);
+//    return list.map((e) => FileKeyPO.fromJson(e)).toList();
+//  }
+//
+//  static Future<List<FileKeyPO>> rankFileKeyHistory(int page, int size) async {
+//    List<Map<String, dynamic>> list = await _db.rawQuery('SELECT * FROM file_key sort by recentReadTime desc limit ? offset ?', [size, page * size]);
+//    return list.map((e) => FileKeyPO.fromJson(e)).toList();
+//  }
 
   static Future<MetaPo> getMetaData() async {
     List<Map<String, dynamic>> list = await _db.transaction((txn) async {
@@ -114,45 +121,20 @@ class Repository {
     }
   }
 
-  static Future<bool> upsertFileInfo(String absPath, String smbId, String smbNickName,
-      {DateTime updateTime,
-      bool isDirectory,
-      bool isCompressFile,
-      bool isShare,
-      int readLenght,
-      int size, //文件大小
-      int fileNum}) async {
-    Map<String, dynamic> map = {"absPath": absPath, "smbId": smbId, "smbNickName": smbNickName, "filename": p.basename(absPath)};
-    if (updateTime != null) {
-      map["updateTime"] = updateTime.millisecondsSinceEpoch;
-    }
-    if (isDirectory != null) {
-      map["isDirectory"] = isDirectory;
-    }
-    if (isCompressFile != null) {
-      map["isCompressFile"] = isCompressFile;
-    }
-    if (isShare != null) {
-      map["isShare"] = isShare;
-    }
-    if (readLenght != null) {
-      map["readLenght"] = readLenght;
-    }
-    if (size != null) {
-      map["size"] = size;
-    }
-    if (fileNum != null) {
-      map["fileNum"] = fileNum;
-    }
-
+  static Future<bool> upsertFileInfo(String absPath, String smbId, String smbNickName, FileInfoPO fileinfo) async {
+    fileinfo
+      ..absPath = absPath
+      ..smbId = smbId
+      ..smbNickName = smbNickName;
+    var json = fileinfo.toJson();
+    json.removeWhere((key, value) => key == null || value == null);
     int res = await _db.transaction((txn) async {
       if ((await txn.query("file_info", where: "smbId=? and absPath=?", whereArgs: [smbId, absPath])).length == 0) {
-        return await txn.insert("file_info", map);
+        return await txn.insert("file_info", json);
       } else {
-        return await txn.update("file_info", map, where: "smbId=? and absPath=?", whereArgs: [smbId, absPath]);
+        return await txn.update("file_info", json, where: "smbId=? and absPath=?", whereArgs: [smbId, absPath]);
       }
     });
-
     return res > 0;
   }
 
@@ -199,7 +181,7 @@ class Repository {
     String filename, {
     String tag,
     int star,
-    DateTime clickTime,
+    DateTime recentReadTime,
     //应该根据阅读时间进行加成
     int increReadTime,
   }) async {
@@ -210,8 +192,15 @@ class Repository {
         if (star == null) {
           star = 0;
         }
-        txn.rawInsert("insert into file_key(filename,star, score14, score60) values(?,?)",
-            [filename, star, getScoreByReadTime(increReadTime, true), getScoreByReadTime(increReadTime, true)]);
+//        txn.rawInsert("insert into file_key(filename,star, score14, score60) values(?,?,?,?)",
+//            [filename, star, getScoreByReadTime(increReadTime, true), getScoreByReadTime(increReadTime, true)]);
+        txn.insert("file_key", {
+          "filename": filename,
+          "star": star,
+          "recentReadTime": recentReadTime.millisecondsSinceEpoch,
+          "score14": getScoreByReadTime(increReadTime, true),
+          "score60": getScoreByReadTime(increReadTime, true)
+        });
       } else {
         if (star != null) {
 //          txn.update("file_key", {"star": star}, where: 'filename = ?', whereArgs: [filename]);

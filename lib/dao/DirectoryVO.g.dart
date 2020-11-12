@@ -34,6 +34,7 @@ FileInfoPO _$FileInfoPOFromJson(Map<String, dynamic> json) {
     ..absPath = json['absPath'] as String
     ..filename = json['filename'] as String
     ..updateTime = json['updateTime'] == null ? null : DateTime.parse(json['updateTime'] as String)
+    ..recentReadTime = json['recentReadTime'] == null ? null : DateTime.parse(json['recentReadTime'] as String)
     ..size = json['size'] as int
     ..isDirectory = json['isDirectory'] as bool
     ..isCompressFile = json['isComprssFile'] as bool
@@ -74,22 +75,22 @@ Map<String, dynamic> _$ZipFileContentCOToJson(FileContentCO instance) => <String
       'content': instance.content,
     };
 
-FileKeyPO _$FileKeyPOFromJson(Map<String, dynamic> json) {
-  return FileKeyPO(
-    json['filename'] as String,
-    (json['tags'] as Map<String, dynamic>)?.map(
-      (k, e) => MapEntry(k, e as String),
-    ),
-    json['star'] as int,
-    (json['clickTimes'] as List)?.map((e) => e == null ? null : DateTime.parse(e as String))?.toList(),
-    (json['readTimes'] as List)?.map((e) => e as int)?.toList(),
-  );
-}
-
-Map<String, dynamic> _$FileKeyPOToJson(FileKeyPO instance) => <String, dynamic>{
-      'filename': instance.filename,
-      'tags': instance.tags,
-      'star': instance.star,
-      'clickTimes': instance.clickTimes?.map((e) => e?.toIso8601String())?.toList(),
-      'readTimes': instance.readTimes,
-    };
+//FileKeyPO _$FileKeyPOFromJson(Map<String, dynamic> json) {
+//  return FileKeyPO(
+//    json['filename'] as String,
+//    (json['tags'] as Map<String, dynamic>)?.map(
+//      (k, e) => MapEntry(k, e as String),
+//    ),
+//    json['star'] as int,
+//    (json['clickTimes'] as List)?.map((e) => e == null ? null : DateTime.parse(e as String))?.toList(),
+//    (json['readTimes'] as List)?.map((e) => e as int)?.toList(),
+//  );
+//}
+//
+//Map<String, dynamic> _$FileKeyPOToJson(FileKeyPO instance) => <String, dynamic>{
+//      'filename': instance.filename,
+//      'tags': instance.tags,
+//      'star': instance.star,
+//      'clickTimes': instance.clickTimes?.map((e) => e?.toIso8601String())?.toList(),
+//      'readTimes': instance.readTimes,
+//    };

@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:raising/dao/Repository.dart';
-import 'package:raising/page/FileList.dart';
 import 'package:raising/page/rank.dart';
 import 'package:sqflite/sqflite.dart';
-
-import 'category_page.dart';
-import 'drawer.dart';
-
 
 class CrudSql extends StatefulWidget {
   final String tablename;
@@ -112,7 +107,7 @@ class _TablesSqlState extends State<TablesSql> {
     _db = Repository.db;
     List<Map<String, dynamic>> list = await _db.transaction((txn) async {
       return await txn.rawQuery("SELECT * FROM sqlite_master where type = ? ORDER BY name;", ['table']);
-      });
+    });
     return list;
   }
 
@@ -184,6 +179,36 @@ class TestPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: TablesSql());
+    List lst = [TablesSql()];
+
+    return Scaffold(
+        body: Column(
+      children: <Widget>[
+        FlatButton(
+            onPressed: () async {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => Scaffold(body: ScorePage((page, size) async {
+                          return await Repository.rankFileKey14("score14 desc", page, size);
+                        }))),
+              );
+            },
+            child: Text(
+              "rankPage",
+              style: TextStyle(fontSize: 18.0),
+            )),
+        FlatButton(
+            onPressed: () async {
+              var rankFileKey14 = await Repository.rankFileKey14("score14 desc", 0, 10);
+              print(rankFileKey14);
+            },
+            child: Text(
+              "测试数据库",
+              style: TextStyle(fontSize: 18.0),
+            )),
+        TablesSql()
+      ],
+    ));
   }
 }

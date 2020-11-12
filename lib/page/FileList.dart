@@ -224,12 +224,7 @@ class PreviewFile extends StatelessWidget {
         } else {
           content = await Utils.getWholeFile(smbVO);
         }
-        Repository.upsertFileInfo(
-          smbVO.absPath,
-          smbVO.id,
-          smbVO.nickName,
-          fileNum: content.length,
-        );
+        Repository.upsertFileInfo(smbVO.absPath, smbVO.id, smbVO.nickName, FileInfoPO()..recentReadTime = 0);
         return Image.memory(content.content, errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
           return Icon(Icons.error);
         });
