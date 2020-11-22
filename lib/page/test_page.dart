@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lpinyin/lpinyin.dart';
 import 'package:raising/dao/Repository.dart';
 import 'package:raising/page/rank.dart';
 import 'package:sqflite/sqflite.dart';
@@ -174,6 +175,24 @@ class _TablesSqlState extends State<TablesSql> {
   }
 }
 
+class Pinyin extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        body: Column(
+      children: <Widget>[
+        TextField(
+            autofocus: true,
+            onChanged: (v) {
+//              print("onChange: $v");
+              print(PinyinHelper.getShortPinyin(v));
+              print(ChineseHelper.convertToTraditionalChinese("车车"));
+            }),
+      ],
+    ));
+  }
+}
+
 class TestPage extends StatelessWidget {
   TestPage({Key key}) : super(key: key);
 
@@ -184,6 +203,17 @@ class TestPage extends StatelessWidget {
     return Scaffold(
         body: Column(
       children: <Widget>[
+        FlatButton(
+            onPressed: () async {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Pinyin()),
+              );
+            },
+            child: Text(
+              "测试拼音",
+              style: TextStyle(fontSize: 18.0),
+            )),
         FlatButton(
             onPressed: () async {
               Navigator.push(
@@ -207,7 +237,9 @@ class TestPage extends StatelessWidget {
               "测试数据库",
               style: TextStyle(fontSize: 18.0),
             )),
-        TablesSql()
+        Expanded(
+          child: TablesSql(),
+        )
       ],
     ));
   }

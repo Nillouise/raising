@@ -1,4 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:raising/channel/SmbChannel.dart';
+import 'package:raising/dao/DirectoryVO.dart';
+import 'package:raising/dao/SmbVO.dart';
+import 'package:raising/model/smb_list_model.dart';
 
 class CategoryPage extends StatefulWidget {
   CategoryPage({Key key}) : super(key: key);
@@ -32,29 +39,35 @@ class _CategoryPageState extends State<CategoryPage> {
     });
   }
 
+  var _controller = TextEditingController();
   bool _onlyBookmark = true;
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        // 底部导航
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-              icon: Icon(Icons.filter_1), title: Text("月榜")),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.filter_2), title: Text("季榜")),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.filter_3), title: Text("年榜")),
-          BottomNavigationBarItem(icon: Icon(Icons.filter), title: Text("总榜")),
-        ],
-        currentIndex: _selectedIndex,
-        fixedColor: Colors.blue,
-        onTap: _onItemTapped,
-      ),
+      body: Column(children: <Widget>[
+        TextField(
+          controller: _controller,
+          decoration: InputDecoration(
+            hintText: "Enter a message",
+            suffixIcon: IconButton(
+              onPressed: () async {
+                SmbListModel smbListModel = Provider.of<SmbListModel>(context, listen: false);
+                SmbPO smb = smbListModel.smbById("loc##~##1605007610681");
+//                Stream<List<DirectoryCO>> bfsFiles = SmbChannel.bfsFiles(SmbVO.copyFromSmbPO(smb));
+                StreamSubscription<List<DirectoryCO>> subscription;
+                subscription = SmbChannel.bfsFiles(SmbVO.copyFromSmbPO(smb)).listen((event) {
+                  event.forEach((element) {
+                    print("current" + element.filename);
+                  });
+                  subscription.cancel();
+                });
+              },
+              icon: Icon(Icons.clear),
+            ),
+          ),
+        ),
+      ]),
       floatingActionButton: FloatingActionButton(
           //悬浮按钮
           child: Icon(Icons.search),
