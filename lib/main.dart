@@ -48,13 +48,14 @@ class MyApp extends StatelessWidget {
 void onStart(SmbListModel model) async {
   await Repository.init();
   await model.loadTodos();
-  MetaPo meta = await Repository.getMetaData();
+  await MetaPo.load();
+  MetaPo meta = MetaPo.metaPo;
   Duration difference = meta.fileKeyScoreChangeDay.difference(DateTime.now());
   if (difference.inDays.abs() > 0) {
     await Repository.minFileKeyScore14(exp(-0.085 * difference.inDays.abs()));
     await Repository.minFileKeyScore60(exp(-0.02 * difference.inDays.abs()));
   }
-  await Repository.saveMetaData(meta);
+  await MetaPo.save();
 }
 
 Widget init(BuildContext context) {
@@ -78,24 +79,25 @@ Widget init(BuildContext context) {
           lazy: false,
         ),
         ChangeNotifierProvider<SmbNavigation>(create: (context) => SmbNavigation(), lazy: false),
+        ChangeNotifierProvider<SearchHistoryModel>(create: (context) => SearchHistoryModel(), lazy: false),
       ],
       child: MaterialApp(
           title: 'Infinite List Sample',
 //        home: InfList(),
-          home: Builder (builder:(context)=> Scaffold(
-            drawer: HomeDrawer(),
-            body: RaisingHome(),
-            floatingActionButton: FloatingActionButton(
-                //悬浮按钮，用于测试
-                child: Icon(Icons.search),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => TestPage()),
-                  );
-
-                }),
-          ))));
+          home: Builder(
+              builder: (context) => Scaffold(
+                    drawer: HomeDrawer(),
+                    body: RaisingHome(),
+                    floatingActionButton: FloatingActionButton(
+                        //悬浮按钮，用于测试
+                        child: Icon(Icons.search),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => TestPage()),
+                          );
+                        }),
+                  ))));
 }
 
 class MyHomePage extends StatefulWidget {

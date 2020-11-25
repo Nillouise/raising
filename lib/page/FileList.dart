@@ -9,12 +9,41 @@ import 'package:raising/dao/Repository.dart';
 import 'package:raising/dao/SmbVO.dart';
 import 'package:raising/model/smb_list_model.dart';
 import 'package:raising/model/smb_navigation.dart';
+import 'package:raising/page/searchPage.dart';
 import 'package:raising/page/viewer.dart';
 
 import '../util.dart';
 import 'drawer.dart';
 
 var logger = Logger();
+
+class PathAndSearch extends StatelessWidget {
+  final String path;
+
+  PathAndSearch(this.path);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        Text("${path ?? ""}"),
+        Expanded(
+          child: Align(
+            alignment: FractionalOffset.topRight,
+            child: FlatButton(
+                onPressed: () async {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SearchPage()),
+                  );
+                },
+                child: Icon(Icons.search)),
+          ),
+        )
+      ],
+    );
+  }
+}
 
 class Explorer extends StatefulWidget {
   @override
@@ -37,9 +66,7 @@ class ExplorerState extends State<Explorer> with AutomaticKeepAliveClientMixin<E
     return new WillPopScope(
         child: Column(
           children: <Widget>[
-            Row(
-              children: <Widget>[Text("path:${catalog.smbVO?.absPath ?? ""}")],
-            ),
+            PathAndSearch("path:${catalog.smbVO?.absPath ?? ""}"),
             Expanded(
               child: FileList(),
             )

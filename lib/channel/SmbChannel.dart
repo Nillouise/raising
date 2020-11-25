@@ -2,6 +2,7 @@ import 'dart:collection';
 
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
+import 'package:lpinyin/lpinyin.dart';
 import 'package:path/path.dart' as p;
 import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/SmbResultCO.dart';
@@ -23,7 +24,7 @@ class SmbChannel {
         var list2 = (List<Map<dynamic, dynamic>>.from(smbResult.result));
         List<DirectoryCO> list = list2.map((element) => DirectoryCO.fromJson(Map<String, dynamic>.from(element))).toList();
         return list
-          ..removeWhere((element) => ['..', '.', 'IPC\\$'].contains(element.filename))
+          ..removeWhere((element) => ['..', '.', 'IPC\$'].contains(element.filename))
           ..sort((a, b) {
             if (b.updateTime == null || a.updateTime == null) {
               return b.filename.compareTo(a.filename);
@@ -59,6 +60,32 @@ class SmbChannel {
         }
       }
       yield queryFiles;
+    }
+  }
+
+  static Stream<List<DirectoryCO>> searchFiles(SmbVO smbVO, String searchKeyword) async* {
+    String traditionalKeyword = ChineseHelper.convertToTraditionalChinese(searchKeyword);
+    Queue<SmbVO> q = Queue<SmbVO>();
+    q.add(smbVO.copy());
+    while (q.isNotEmpty) {
+      SmbVO c = q.removeFirst();
+      print("current queue" + q.length.toString());
+      List<DirectoryCO> queryFiles = await SmbChannel.queryFiles(c);
+      for (var i in queryFiles) {
+        if (i.isDirectory) {
+          var copy = c.copy();
+          copy.absPath = p.join(copy.absPath ?? "", i.filename);
+          q.add(copy);
+        }
+      }
+      //过滤含有关键字的结果
+      yield queryFiles
+        ..retainWhere((d) {
+          if (d.filename != null) {
+            return ChineseHelper.convertToTraditionalChinese(d.filename).contains(traditionalKeyword);
+          }
+          return false;
+        });
     }
   }
 

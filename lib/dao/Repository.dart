@@ -67,7 +67,7 @@ class Repository {
     });
     var res = list.map((e) => metaPoFromJson(e["content"])).toList();
     if (res.isEmpty) {
-      return MetaPo(key: "metaData", fileKeyScoreChangeDay: DateTime.now());
+      return MetaPo();
     }
     return res[0];
   }
