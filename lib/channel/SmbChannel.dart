@@ -63,7 +63,7 @@ class SmbChannel {
     }
   }
 
-  static Stream<List<DirectoryCO>> searchFiles(SmbVO smbVO, String searchKeyword) async* {
+  static Stream<List<SearchingCO>> searchFiles(SmbVO smbVO, String searchKeyword) async* {
     String traditionalKeyword = ChineseHelper.convertToTraditionalChinese(searchKeyword);
     Queue<SmbVO> q = Queue<SmbVO>();
     q.add(smbVO.copy());
@@ -79,13 +79,14 @@ class SmbChannel {
         }
       }
       //过滤含有关键字的结果
-      yield queryFiles
+      List<DirectoryCO> res = queryFiles
         ..retainWhere((d) {
           if (d.filename != null) {
             return ChineseHelper.convertToTraditionalChinese(d.filename).contains(traditionalKeyword);
           }
           return false;
         });
+      yield res.map((e) => SearchingCO(e, c)).toList();
     }
   }
 

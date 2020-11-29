@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:json_annotation/json_annotation.dart';
 import 'package:path/path.dart' as p;
+import 'package:raising/dao/SmbVO.dart';
 import 'package:raising/image/cache.dart';
 
 part 'DirectoryVO.g.dart';
@@ -22,6 +23,13 @@ class DirectoryCO {
   factory DirectoryCO.fromJson(Map<String, dynamic> json) => _$DirectoryCOFromJson(json);
 
   Map<String, dynamic> toJson() => _$DirectoryCOToJson(this);
+}
+
+class SearchingCO {
+  DirectoryCO directoryCO;
+  SmbVO smbVO;
+
+  SearchingCO(this.directoryCO, this.smbVO);
 }
 
 /**

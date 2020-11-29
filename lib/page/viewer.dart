@@ -64,11 +64,7 @@ class ViewerNavigator extends ChangeNotifier {
   void closeViewer() {
     Repository.upsertFileKey(p.basename(_smbVO.absPath),
         recentReadTime: beginTime, increReadTime: (DateTime.now().millisecondsSinceEpoch - beginTime.millisecondsSinceEpoch) ~/ 1000);
-//    Repository.upsertFileInfo(
-//      _smbVO.absPath,
-//      _smbVO.id,
-//      _smbVO.nickName,
-//    );
+    Repository.upsertFileInfo(_smbVO.absPath, _smbVO.id, _smbVO.nickName, _fileInfoPO);
   }
 
   Future<FileContentCO> getContent(int index, {forceFromSource: false}) async {
@@ -420,13 +416,13 @@ class ViewerState extends State<Viewer> {
   @override
   Widget build(BuildContext context) {
     _navigator = Provider.of<ViewerNavigator>(context, listen: false);
-      return Scaffold(
-        appBar: ViewerAppBar(),
-        body: ViewerBody(),
-        extendBodyBehindAppBar: true,
-        extendBody: true,
-        bottomNavigationBar: ViewBottom(),
-      );
+    return Scaffold(
+      appBar: ViewerAppBar(),
+      body: ViewerBody(),
+      extendBodyBehindAppBar: true,
+      extendBody: true,
+      bottomNavigationBar: ViewBottom(),
+    );
   }
 
   @override

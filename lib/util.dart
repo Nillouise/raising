@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as p;
 import 'package:raising/channel/SmbChannel.dart';
@@ -48,6 +50,7 @@ class Utils {
     }, forceFromSource: forceFromSource);
     if (f.code == CacheResult.ok) {
       if (f.source == CacheSource.originSource) {
+        putThumbnail("Thumbnail@" + smbVO.id + "@" + smbVO.absPath, await thumbNailImage(f.metaObj.content));
         return f.metaObj;
       } else {
         return FileContentCO()
@@ -65,6 +68,9 @@ class Utils {
     }, forceFromSource: forceFromSource);
     if (f.code == CacheResult.ok) {
       if (f.source == CacheSource.originSource) {
+        if (index == 0) {
+          putThumbnail("Thumbnail@" + smbVO.id + "@" + smbVO.absPath, await thumbNailImage(f.metaObj.content));
+        }
         return f.metaObj;
       } else {
         return FileContentCO()
@@ -74,6 +80,10 @@ class Utils {
     } else {
       throw SmbException("getFileFromZip error");
     }
+  }
+
+  static Future<Uint8List> getThumbnailFile(String smbId, String absPath) async {
+    return await loadThumbnail("Thumbnail@" + smbId + "@" + absPath);
   }
 
   static String joinPath(String a, String b) {

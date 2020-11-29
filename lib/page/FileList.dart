@@ -5,7 +5,6 @@ import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 import 'package:raising/constant/Constant.dart';
 import 'package:raising/dao/DirectoryVO.dart';
-import 'package:raising/dao/Repository.dart';
 import 'package:raising/dao/SmbVO.dart';
 import 'package:raising/model/smb_list_model.dart';
 import 'package:raising/model/smb_navigation.dart';
@@ -200,11 +199,10 @@ class FileListState extends State<FileList> {
                         itemCount: snapshot.data.files.length,
                         padding: const EdgeInsets.symmetric(vertical: 18),
                         itemBuilder: (context, index) {
-                          SmbListModel b = Provider.of<SmbListModel>(context);
                           SmbNavigation catalog = Provider.of<SmbNavigation>(context);
                           List<DirectoryCO> files = catalog.files;
                           return ListTile(
-                            leading: AspectRatio(aspectRatio: 1, child: PreviewFile(files[index])),
+                            leading: AspectRatio(aspectRatio: 1, child: PreviewFile(files[index], catalog.smbVO)),
                             title: Text(files[index].filename),
                             onTap: () {
                               if (files[index].isDirectory) {
@@ -232,13 +230,14 @@ class FileListState extends State<FileList> {
 
 class PreviewFile extends StatelessWidget {
   final DirectoryCO fileinfo;
+  final SmbVO _smb;
 
-  PreviewFile(this.fileinfo);
+  PreviewFile(this.fileinfo, this._smb);
 
   @override
   Widget build(BuildContext context) {
-    SmbNavigation catalog = Provider.of<SmbNavigation>(context, listen: false);
-    SmbVO smbVO = catalog.smbVO.copy();
+//    SmbNavigation catalog = Provider.of<SmbNavigation>(context, listen: false);
+    SmbVO smbVO = _smb.copy();
     smbVO.absPath = Utils.joinPath(smbVO.absPath, fileinfo.filename);
 
     return FutureBuilder<Widget>(future: () async {
@@ -251,7 +250,7 @@ class PreviewFile extends StatelessWidget {
         } else {
           content = await Utils.getWholeFile(smbVO);
         }
-        Repository.upsertFileInfo(smbVO.absPath, smbVO.id, smbVO.nickName, FileInfoPO()..recentReadTime = DateTime.now());
+//        Repository.upsertFileInfo(smbVO.absPath, smbVO.id, smbVO.nickName, FileInfoPO()..filename = p.basename(smbVO.absPath)..recentReadTime = DateTime.now());
         return Image.memory(content.content, errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
           return Icon(Icons.error);
         });
@@ -267,6 +266,47 @@ class PreviewFile extends StatelessWidget {
         }
       } else {
         return Center(child: CircularProgressIndicator());
+      }
+    });
+  }
+}
+
+class ThumbnailFile extends StatelessWidget {
+  final FileInfoPO fileinfo;
+  final SmbVO _smb;
+
+  ThumbnailFile(this.fileinfo, this._smb);
+
+  @override
+  Widget build(BuildContext context) {
+    SmbVO smbVO = _smb.copy();
+    smbVO.absPath = Utils.joinPath(smbVO.absPath, fileinfo.filename);
+
+    return FutureBuilder<Widget>(future: () async {
+      if (fileinfo.isDirectory) {
+        return Icon(Icons.folder);
+      } else if ((Constants.COMPRESS_AND_IMAGE_FILE).contains((p.extension(fileinfo.filename)))) {
+        FileContentCO content;
+        if (Utils.isCompressFile(fileinfo.filename)) {
+          content = await Utils.getFileFromZip(0, smbVO);
+        } else {
+          content = await Utils.getWholeFile(smbVO);
+        }
+        return Image.memory(content.content, errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
+          return Icon(Icons.error);
+        });
+      } else {
+        return Icon(Icons.folder_open);
+      }
+    }(), builder: (BuildContext context, AsyncSnapshot<Widget> snapshot) {
+      if (snapshot.connectionState == ConnectionState.done) {
+        if (snapshot.hasError) {
+          return Icon(Icons.error);
+        } else {
+          return snapshot.data;
+        }
+      } else {
+        return Center(child: Icon(Icons.check_box_outline_blank));
       }
     });
   }

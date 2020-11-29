@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/Repository.dart';
+import 'package:raising/util.dart';
 
 class HistoryPage extends StatefulWidget {
   @override
@@ -17,6 +20,7 @@ class _HistoryPageState extends State<HistoryPage> {
   var _data = <FileInfoPO>[_endSignal];
   static FileInfoPO _endSignal = FileInfoPO();
 
+  //TODO:这里还需要修bug，处理缓存被删的情况
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
@@ -45,7 +49,32 @@ class _HistoryPageState extends State<HistoryPage> {
             );
           }
         }
-        return ListTile(title: Text(_data[index].filename));
+
+//        return ListTile(title: Text(_data[index].filename));
+        return ListTile(
+            leading: AspectRatio(
+                aspectRatio: 1,
+                child: FutureBuilder<Widget>(
+                  future: () async {
+                    Uint8List bytes = await Utils.getThumbnailFile(_data[index].smbId, _data[index].absPath);
+                    if (bytes == null) {
+                      return Icon(Icons.check_box_outline_blank);
+                    }
+                    return Image.memory(bytes);
+                  }(),
+                  builder: (BuildContext context, AsyncSnapshot<Widget> snapshot) {
+                    if (snapshot.connectionState == ConnectionState.done) {
+                      if (snapshot.hasError) {
+                        return Text("Error: ${snapshot.error}");
+                      } else {
+                        return snapshot.data;
+                      }
+                    } else {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                  },
+                )),
+            title: Text(_data[index].filename));
       },
       separatorBuilder: (context, index) => Divider(height: .0),
     );
@@ -114,6 +143,20 @@ class _ScorePageState extends State<ScorePage> {
           }
         }
         return ListTile(title: Text(_data[index].filename));
+//        return ListTile(
+//          leading: AspectRatio(aspectRatio: 1, child: PreviewFile(files[index], catalog.smbVO)),
+//          title: Text(files[index].filename),
+//          onTap: () {
+//            if (files[index].isDirectory) {
+//              catalog.refreshPath(Utils.joinPath(catalog.smbVO.absPath, files[index].filename));
+//            } else if (Constants.COMPRESS_AND_IMAGE_FILE.contains(p.extension(files[index].filename))) {
+//              Navigator.push(
+//                context,
+//                MaterialPageRoute(builder: (context) => FutureViewerChecker(0, Utils.joinPath(catalog.smbVO.absPath, files[index].filename), files)),
+//              );
+//            }
+//          },
+//        );
       },
       separatorBuilder: (context, index) => Divider(height: .0),
     );

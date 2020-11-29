@@ -31,7 +31,6 @@ class Repository {
       await db.execute("CREATE TABLE file_key_tags (id INTEGER PRIMARY KEY, filename TEXT, tag TEXT)");
       await db.execute("CREATE INDEX file_key_tags_index ON file_key_tags(filename)");
 
-      //TODO: File info，还需要加入recentReadTime
       await db.execute(
           "CREATE TABLE file_info (id INTEGER PRIMARY KEY,smbId TEXT,smbNickName TEXT,absPath TEXT, filename TEXT, updateTime INTEGER, isDirectory INTEGER, isShare INTEGER, isCompressFile INTEGER, readLenght INTEGER, fileNum INTEGER, size INTEGER, recentReadTime INTEGER)");
       await db.execute("CREATE UNIQUE INDEX file_info_index ON file_info(smbId, absPath)");
