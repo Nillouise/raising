@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as p;
+import 'package:popup_menu/popup_menu.dart';
 import 'package:provider/provider.dart';
 import 'package:raising/constant/Constant.dart';
 import 'package:raising/dao/DirectoryVO.dart';
@@ -16,29 +17,91 @@ import 'drawer.dart';
 
 var logger = Logger();
 
-class PathAndSearch extends StatelessWidget {
+class PathAndSearch extends StatefulWidget {
   final String path;
 
   PathAndSearch(this.path);
 
   @override
+  State<StatefulWidget> createState() {
+    // TODO: implement createState
+    return PathAndSearchState();
+  }
+}
+
+class PathAndSearchState extends State<PathAndSearch> {
+
+
+
+
+  void showPopup(Offset offset) {
+    PopupMenu menu = PopupMenu(
+        // backgroundColor: Colors.teal,
+        // lineColor: Colors.tealAccent,
+        maxColumn: 3,
+        items: [
+          // MenuItem(title: 'Copy', image: Image.asset('assets/copy.png')),
+          // MenuItem(title: 'Home', image: Icon(Icons.home, color: Colors.white,)),
+          MenuItem(
+              title: 'Mail',
+              image: Icon(
+                Icons.mail,
+                color: Colors.white,
+              )),
+          MenuItem(
+              title: 'Power',
+              image: Icon(
+                Icons.power,
+                color: Colors.white,
+              )),
+          MenuItem(
+              title: 'Setting',
+              image: Icon(
+                Icons.settings,
+                color: Colors.white,
+              )),
+          MenuItem(
+              title: 'PopupMenu',
+              image: Icon(
+                Icons.menu,
+                color: Colors.white,
+              ))
+        ],
+        onClickMenu: onClickMenu,
+        stateChanged: stateChanged,
+        onDismiss: onDismiss);
+    menu.show(rect: Rect.fromPoints(offset, offset));
+  }
+
+  @override
   Widget build(BuildContext context) {
+    PopupMenu.context = context;
     return Row(
       children: <Widget>[
-        Text("${path ?? ""}"),
-        Expanded(
-          child: Align(
-            alignment: FractionalOffset.topRight,
-            child: FlatButton(
-                onPressed: () async {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => SearchPage()),
-                  );
-                },
-                child: Icon(Icons.search)),
-          ),
-        )
+        Expanded(child: Text("${widget.path ?? ""}")),
+//        new Icon(
+//          Icons.star,
+//          color: Colors.red[500],
+//        ),
+        InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => SearchPage()),
+            );
+          },
+          child: Icon(Icons.search),
+        ),
+        InkWell(
+          onTapDown: (TapDownDetails details) {
+            showPopup(details.globalPosition);
+//            print('fff');
+          },
+          onTap: () {
+            print('ok');
+          },
+          child: Icon(Icons.sort),
+        ),
       ],
     );
   }

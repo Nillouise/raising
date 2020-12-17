@@ -237,6 +237,14 @@ class TestPage extends StatelessWidget {
               "测试数据库",
               style: TextStyle(fontSize: 18.0),
             )),
+        FlatButton(
+            onPressed: () async {
+              await Repository.clearHistoryFileInfo();
+            },
+            child: Text(
+              "清空历史记录",
+              style: TextStyle(fontSize: 18.0),
+            )),
         Expanded(
           child: TablesSql(),
         )

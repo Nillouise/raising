@@ -1,9 +1,12 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/Repository.dart';
 import 'package:raising/util.dart';
+
+var logger = Logger();
 
 class HistoryPage extends StatefulWidget {
   @override
@@ -82,18 +85,22 @@ class _HistoryPageState extends State<HistoryPage> {
 
   void _retrieveData() {
     int size = 100;
-    Repository.historyFileInfo("recentReadTime desc", offset, size + 1).then((e) => {
-          setState(() {
-            if (e.length < size + 1) {
-              _data.insertAll(_data.length - 1, e);
-              isGetAllData = true;
-              offset += e.length;
-            } else {
-              _data.insertAll(_data.length - 1, e.sublist(0, size));
-              offset += size;
-            }
-          })
-        });
+    Repository.historyFileInfo(offset, size + 1)
+        .then((e) => {
+              setState(() {
+                if (e.length < size + 1) {
+                  _data.insertAll(_data.length - 1, e);
+                  isGetAllData = true;
+                  offset += e.length;
+                } else {
+                  _data.insertAll(_data.length - 1, e.sublist(0, size));
+                  offset += size;
+                }
+              })
+            })
+        .catchError((e) {
+      logger.e(e);
+    });
   }
 }
 
@@ -232,10 +239,10 @@ class _RankPageState extends State<RankPage> {
         type: BottomNavigationBarType.fixed,
         // 底部导航
         items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.filter_1), title: Text('月榜')),
-          BottomNavigationBarItem(icon: Icon(Icons.filter_2), title: Text('季榜')),
-          BottomNavigationBarItem(icon: Icon(Icons.filter_3), title: Text('年榜')),
-          BottomNavigationBarItem(icon: Icon(Icons.filter), title: Text('总榜')),
+          BottomNavigationBarItem(icon: Icon(Icons.filter_1), label: '月榜'),
+          BottomNavigationBarItem(icon: Icon(Icons.filter_2), label: '季榜'),
+          BottomNavigationBarItem(icon: Icon(Icons.filter_3), label: '历史'),
+          BottomNavigationBarItem(icon: Icon(Icons.filter), label: '总榜'),
         ],
         currentIndex: _selectedIndex,
         fixedColor: Colors.blue,

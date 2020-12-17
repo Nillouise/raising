@@ -33,8 +33,8 @@ FileInfoPO _$FileInfoPOFromJson(Map<String, dynamic> json) {
     ..smbNickName = json['smbNickName'] as String
     ..absPath = json['absPath'] as String
     ..filename = json['filename'] as String
-    ..updateTime = json['updateTime'] == null ? null : DateTime.parse(json['updateTime'] as String)
-    ..recentReadTime = json['recentReadTime'] == null ? null : DateTime.parse(json['recentReadTime'] as String)
+    ..updateTime = json['updateTime'] == null ? null : DateTime.fromMillisecondsSinceEpoch(json['updateTime'] as int)
+    ..recentReadTime = json['recentReadTime'] == null ? null : DateTime.fromMillisecondsSinceEpoch(json['recentReadTime'] as int)
     ..size = json['size'] as int
     ..isDirectory = json['isDirectory'] as bool
     ..isCompressFile = json['isComprssFile'] as bool
@@ -48,7 +48,8 @@ Map<String, dynamic> _$FileInfoPOToJson(FileInfoPO instance) => <String, dynamic
       'smbNickName': instance.smbNickName,
       'absPath': instance.absPath,
       'filename': instance.filename,
-      'updateTime': instance.updateTime?.toIso8601String(),
+      'updateTime': instance.updateTime?.millisecondsSinceEpoch,
+      'recentReadTime': instance.recentReadTime?.millisecondsSinceEpoch,
       'size': instance.size,
       'isDirectory': instance.isDirectory,
       'isComprssFile': instance.isCompressFile,

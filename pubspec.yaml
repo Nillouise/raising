@@ -36,6 +36,7 @@ dependencies:
   preload_page_view: ^0.1.4
   gallery_saver: ^2.0.1
   lpinyin: ^1.1.0
+  popup_menu: ^1.0.5
 
 dev_dependencies:
   build_runner: ^1.10.0

@@ -45,9 +45,20 @@ class Repository {
     return list.map((e) => FileKeyPO.fromJson(e)).toList();
   }
 
-  static Future<List<FileInfoPO>> historyFileInfo(String orderBy, int page, int size, {bool star = false}) async {
-    List<Map<String, dynamic>> list = await _db.query("file_info", where: star ? "star > 0" : null, orderBy: orderBy, offset: page * size, limit: size);
-    return list.map((e) => FileInfoPO.fromJson(e)).toList();
+  static Future<List<FileInfoPO>> historyFileInfo(int page, int size, {String orderBy = "recentReadTime desc", bool star = false}) async {
+    try {
+      String whereState = "recentReadTime IS NOT NULL" + (star ? "AND star > 0" : "");
+      List<Map<String, dynamic>> list = await _db.query("file_info", where: whereState, orderBy: orderBy, offset: page * size, limit: size);
+      return list.map((e) => FileInfoPO.fromJson(e)).toList();
+    } catch (e) {
+      logger.e(e);
+    }
+  }
+
+  static clearHistoryFileInfo() async {
+    await _db.transaction((txn) async {
+      txn.rawUpdate("UPDATE file_info set recentReadTime = null");
+    });
   }
 
 //  static Future<List<FileKeyPO>> rankFileKey60(int page, int size) async {
@@ -124,7 +135,8 @@ class Repository {
     fileinfo
       ..absPath = absPath
       ..smbId = smbId
-      ..smbNickName = smbNickName;
+      ..smbNickName = smbNickName
+      ..recentReadTime = DateTime.now();
     var json = fileinfo.toJson();
     json.removeWhere((key, value) => key == null || value == null);
     int res = await _db.transaction((txn) async {
