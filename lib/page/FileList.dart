@@ -30,46 +30,40 @@ class PathAndSearch extends StatefulWidget {
 }
 
 class PathAndSearchState extends State<PathAndSearch> {
-
-
-
-
   void showPopup(Offset offset) {
     PopupMenu menu = PopupMenu(
-        // backgroundColor: Colors.teal,
-        // lineColor: Colors.tealAccent,
-        maxColumn: 3,
-        items: [
-          // MenuItem(title: 'Copy', image: Image.asset('assets/copy.png')),
-          // MenuItem(title: 'Home', image: Icon(Icons.home, color: Colors.white,)),
-          MenuItem(
-              title: 'Mail',
-              image: Icon(
-                Icons.mail,
-                color: Colors.white,
-              )),
-          MenuItem(
-              title: 'Power',
-              image: Icon(
-                Icons.power,
-                color: Colors.white,
-              )),
-          MenuItem(
-              title: 'Setting',
-              image: Icon(
-                Icons.settings,
-                color: Colors.white,
-              )),
-          MenuItem(
-              title: 'PopupMenu',
-              image: Icon(
-                Icons.menu,
-                color: Colors.white,
-              ))
-        ],
-        onClickMenu: onClickMenu,
-        stateChanged: stateChanged,
-        onDismiss: onDismiss);
+      // backgroundColor: Colors.teal,
+      // lineColor: Colors.tealAccent,
+      maxColumn: 3,
+      items: [
+        // MenuItem(title: 'Copy', image: Image.asset('assets/copy.png')),
+        // MenuItem(title: 'Home', image: Icon(Icons.home, color: Colors.white,)),
+        MenuItem(
+            title: 'Mail',
+            image: Icon(
+              Icons.mail,
+              color: Colors.white,
+            )),
+        MenuItem(
+            title: 'Power',
+            image: Icon(
+              Icons.power,
+              color: Colors.white,
+            )),
+        MenuItem(
+            title: 'Setting',
+            image: Icon(
+              Icons.settings,
+              color: Colors.white,
+            )),
+        MenuItem(
+            title: 'PopupMenu',
+            image: Icon(
+              Icons.menu,
+              color: Colors.white,
+            ))
+      ],
+    );
     menu.show(rect: Rect.fromPoints(offset, offset));
   }
 

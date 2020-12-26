@@ -13,13 +13,20 @@ import com.example.raising.MethodDispatcher
 
 
 class MainActivity : FlutterActivity() {
+    companion object {
+        public lateinit var methodChannel: MethodChannel;
+    }
+
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
+
         GeneratedPluginRegistrant.registerWith(flutterEngine);
+
 
 //        val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
 //        StrictMode.setThreadPolicy(policy)
 
-        MethodChannel(flutterEngine.dartExecutor, "nil/channel").setMethodCallHandler(MethodDispatcher())
+        methodChannel = MethodChannel(flutterEngine.dartExecutor, "nil/channel");
+        methodChannel.setMethodCallHandler(MethodDispatcher())
         val formatStrategy: FormatStrategy = PrettyFormatStrategy.newBuilder()
                 .showThreadInfo(false) // (Optional) Whether to show thread info or not. Default true
                 .methodCount(0) // (Optional) How many method line to show. Default 2

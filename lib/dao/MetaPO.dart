@@ -16,7 +16,10 @@ import 'package:raising/dao/Repository.dart';
  *
  *
  */
-
+/**
+ * 此类字段会频繁变动增加，应当用dart自带的命令进行更新，而且应当尽量贴合数据库，这样dart命令更新
+ * 序列化类就不需要手动改.g文件了。
+ */
 MetaPo metaPoFromJson(String str) => MetaPo.fromJson(json.decode(str));
 
 String metaPoToJson(MetaPo data) => json.encode(data.toJson());

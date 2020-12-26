@@ -9,8 +9,27 @@ import 'package:raising/page/drawer.dart';
 import 'package:raising/page/home.dart';
 import 'package:raising/page/test_page.dart';
 
+import 'channel/SmbChannel.dart';
 import 'model/smb_list_model.dart';
 import 'model/smb_navigation.dart';
+
+//void main() {
+//  Client client = Client("http://109.131.14.238:57765/", "", "", "");
+//
+//  test('ls command', () async {
+//    List<FileInfo> list = await client.ls();
+//    for (FileInfo item in list) {
+//      print(item.path);
+//      print("     - ${item.contentType} | ${item.size},  | ${item.creationTime},  | ${item.modificationTime}");
+//    }
+//  });
+//  test('ls command', () async {
+//    Stream<List<int>> list = await client.getByRange("Snipaste_2020-12-22_10-44-46.zip", 0, 100);
+//    var r = await list.first;
+//    print('r');
+//
+//  });
+//}
 
 void main() => runApp(MyApp());
 
@@ -46,6 +65,7 @@ class MyApp extends StatelessWidget {
 }
 
 void onStart(SmbListModel model) async {
+  SmbChannel.methodChannel.setMethodCallHandler(SmbChannel.nativeCaller);
   await Repository.init();
   await model.loadTodos();
   await MetaPo.load();

@@ -9,11 +9,31 @@ import 'package:raising/dao/SmbResultCO.dart';
 import 'package:raising/dao/SmbVO.dart';
 import 'package:raising/exception/SmbException.dart';
 
+import '../client/client.dart';
+
 var logger = Logger();
 
 class SmbChannel {
   static const MethodChannel methodChannel = MethodChannel('nil/channel');
 
+  static Future<dynamic> nativeCaller(MethodCall methodCall) async {
+    logger.d("nativeCaller {}", methodCall.arguments);
+    WebDavClient client = WebDavClient("http://109.131.14.238:37536/", "", "", "");
+    //TODO:����Ҫ��Ҫ��isolate
+    switch (methodCall.method) {
+      case "streamFile":
+        Stream<List<int>> list = await client.getByRange(methodCall.arguments["recallId"] as String, methodCall.arguments["begin"] as int, methodCall.arguments["end"] as int);
+//        Stream<List<int>> list = await client.getByRange(methodCall.arguments["url"] as String, methodCall.arguments["begin"] as int, methodCall.arguments["end"] as int);
+        List<int> r = await list.first;
+        return r;
+      default:
+        throw UnimplementedError();
+    }
+  }
+
+  /**
+   * ͼƬ�Ĺ���Ӧ����SMB�㣬������Ӧ������ͼ��
+   */
   static Future<List<DirectoryCO>> queryFiles(SmbVO smbVO) async {
     try {
       SmbCO smbCO = SmbCO.copyFrom(smbVO);

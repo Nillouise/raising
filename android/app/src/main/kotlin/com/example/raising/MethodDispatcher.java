@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import com.example.raising.vo.DirectoryVO;
+import com.example.raising.vo.ExtractCO;
 import com.example.raising.vo.SmbCO;
 import com.example.raising.vo.SmbResult;
 import com.google.gson.Gson;
@@ -15,8 +16,11 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -76,8 +80,30 @@ public class MethodDispatcher implements MethodCallHandler {
 
     @Override
     public void onMethodCall(MethodCall call, @NotNull Result rawResult) {
-        Result result = new MethodResultWrapper(rawResult);
+//        executorService.submit(() -> {
+//            try {
+//                new WebDavRandomFile("test", 0, 1000).read(new byte[1000]);
+//            } catch (Exception e) {
+//                Logger.e("new WebDavRandomFile(\\"test\\",0,1000).read(new byte[1000])", e);
+//            }
+//            Logger.d("onMethodCall continue");
+//        });
 
+//        executorService.submit(() -> {
+//            try {
+//                Logger.i("ExtractChannel.INSTANCE.extract(new WebDavRandomFile(\\"test\\",0,1000)) ");
+//                ExtractChannel.INSTANCE.extract(new WebDavRandomFile("test", 0, 149390200), call.argument("indexs"));
+//
+////                result.success(res.getMap());
+//                Logger.i("ExtractChannel successful " + res.getMap().toString());
+//            } catch (Exception e) {
+//                Logger.e(e, "extract error" + ExceptionUtils.getStackTrace(e));
+////                result.error("extract", e.toString(), ExceptionUtils.getStackTrace(e));
+//            }
+//        });
+
+
+        Result result = new MethodResultWrapper(rawResult);
 
         if (call.method.equals("loadWholeFile")) {
             executorService.submit(() -> {
@@ -122,6 +148,17 @@ public class MethodDispatcher implements MethodCallHandler {
                 } catch (Exception e) {
                     Logger.e(e, "queryFiles error");
                     result.error("queryFiles", e.toString(), ExceptionUtils.getStackTrace(e));
+                }
+            });
+        } else if (call.method.equals("webdavExtract")) {
+            executorService.submit(() -> {
+                try {
+                    ExtractCO res = ExtractChannel.INSTANCE.extract(
+                            new WebDavRandomFile(call.argument("recallId"), 0, Long.valueOf((int)call.argument("fileSize"))), call.argument("index"));
+                    result.success(res.getMap());
+                } catch (Exception e) {
+                    Logger.e(e, "extract error");
+                    result.error("extract", e.toString(), ExceptionUtils.getStackTrace(e));
                 }
             });
         } else {
