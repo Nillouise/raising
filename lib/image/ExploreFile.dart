@@ -1,16 +1,17 @@
 import 'dart:typed_data';
 
 import 'package:raising/channel/SmbChannel.dart';
-import 'package:raising/client/client.dart';
+import 'package:raising/client/WebDavClient.dart';
 import 'package:raising/client/file.dart' as webdavfile;
 
 import 'ExploreCO.dart';
 import 'ExtractCO.dart';
 import 'WholeFileContentCO.dart';
+import 'dart:io';
 
 /**
- * ÏÈÇ°ÎÒÃ»ÓĞÌá¹©¸üÔ­×ÓµÄapi£¨¼´°Ñ»º´æ£¬Ñ¹Ëõ£¬»ñÈ¡ÎÄ¼şµÄapi·ÖÀë£©£¬¶øÊÇÖ±½Ó±àĞ´¸ß¼¶api£¬µ¼ÖÂÏÖÔÚ¸ÄÒ²Âé·³¡£
- * Ó¦¸ÃÏÈÓÃÔ­×ÓµÄapi×ö¶à¼¸¸ö¹¦ÄÜ£¬µÈ³öÏÖÎÊÌâÔÙÓÅ»¯¡£
+ * å…ˆå‰æˆ‘æ²¡æœ‰æä¾›æ›´åŸå­çš„apiï¼ˆå³æŠŠç¼“å­˜ï¼Œå‹ç¼©ï¼Œè·å–æ–‡ä»¶çš„apiåˆ†ç¦»ï¼‰ï¼Œè€Œæ˜¯ç›´æ¥ç¼–å†™é«˜çº§apiï¼Œå¯¼è‡´ç°åœ¨æ”¹ä¹Ÿéº»çƒ¦ã€‚
+ * åº”è¯¥å…ˆç”¨åŸå­çš„apiåšå¤šå‡ ä¸ªåŠŸèƒ½ï¼Œç­‰å‡ºç°é—®é¢˜å†ä¼˜åŒ–ã€‚
  */
 abstract class ExploreFile {
   Future<List<ExploreCO>> queryFiles(String path);
@@ -22,12 +23,12 @@ abstract class ExploreFile {
   /// Throw SmbException if get file error
   Future<ExtractCO> loadFileFromZip(String path, int index);
 
-  /// Ì«´óµÄÎÄ¼şÓ¦µ±ÉÏ²ãÅĞ¶Ï²»Òªload£¬ÒòÎªÊÇloadµ½ÄÚ´æÀï
-  Future<WholeFileContentCO> loadWholeFile(String path);
+  /// å¤ªå¤§çš„æ–‡ä»¶åº”å½“ä¸Šå±‚åˆ¤æ–­ä¸è¦loadï¼Œå› ä¸ºæ˜¯loadåˆ°å†…å­˜é‡Œ
+   Future<WholeFileContentCO> loadWholeFile(String path);
 }
 
 class WebdavExploreFile implements ExploreFile {
-  WebDavClient client = WebDavClient("http://109.131.14.238:37536/", "", "", "");
+  WebDavClient client = WebDavClient("http://192.168.1.111:4697", "", "", "");
 
   @override
   Stream<List<ExploreCO>> bfsFiles(String path) {
@@ -62,8 +63,8 @@ class WebdavExploreFile implements ExploreFile {
     lst.forEach((e) {
       res.add(ExploreCO()
         ..absPath = e.path
-        ..size = int.parse(e.size)
-        ..updateTime = DateTime.parse(e.modificationTime)
+        ..size = int.parse(e.size==""?"0":e.size)
+        ..updateTime = HttpDate.parse(e.modificationTime)
         ..createTime = e.creationTime
         ..filename = e.name
         ..isDirectory = e.isDirectory);

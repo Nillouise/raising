@@ -8,7 +8,6 @@ import 'package:raising/image/cache.dart';
 
 part 'DirectoryVO.g.dart';
 
-@JsonSerializable()
 class DirectoryCO {
   String filename;
   DateTime updateTime;
@@ -112,7 +111,6 @@ class SearchingCO {
 //      };
 //}
 
-@JsonSerializable()
 class FileInfoPO {
   String smbId;
   String smbNickName; //只用smbId可能无法恢复删除的smb链接,所以也存储一下这个nickName
@@ -157,7 +155,7 @@ class FileInfoPO {
   Map<String, dynamic> toJson() => _$FileInfoPOToJson(this);
 }
 
-@JsonSerializable()
+// @JsonSerializable()
 class FileContentCO implements CacheContent {
   String absFilename; //压缩文件名字
   String zipAbsFilename; //压缩文件内的绝对路径

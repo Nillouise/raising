@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart' as pvd;
 import 'package:raising/dao/MetaPO.dart';
 import 'package:raising/dao/Repository.dart';
 import 'package:raising/page/drawer.dart';
@@ -10,6 +10,7 @@ import 'package:raising/page/home.dart';
 import 'package:raising/page/test_page.dart';
 
 import 'channel/SmbChannel.dart';
+import 'model/ExploreNavigator.dart';
 import 'model/smb_list_model.dart';
 import 'model/smb_navigation.dart';
 
@@ -70,7 +71,7 @@ void onStart(SmbListModel model) async {
   await model.loadTodos();
   await MetaPo.load();
   MetaPo meta = MetaPo.metaPo;
-  Duration difference = meta.fileKeyScoreChangeDay.difference(DateTime.now());
+  Duration difference = DateTime.fromMillisecondsSinceEpoch(meta.fileKeyScoreChangeDay).difference(DateTime.now());
   if (difference.inDays.abs() > 0) {
     await Repository.minFileKeyScore14(exp(-0.085 * difference.inDays.abs()));
     await Repository.minFileKeyScore60(exp(-0.02 * difference.inDays.abs()));
@@ -87,9 +88,9 @@ Widget init(BuildContext context) {
     // 每隔 1 秒钟会调用一次，如果要结束调用
 //    timer.cancel();
   });
-  return MultiProvider(
+  return pvd.MultiProvider(
       providers: [
-        ChangeNotifierProvider<SmbListModel>(
+        pvd.ChangeNotifierProvider<SmbListModel>(
           create: (context) {
             var smbListModel = SmbListModel();
 //            Repository.init().then((value) => smbListModel..loadTodos());
@@ -98,8 +99,9 @@ Widget init(BuildContext context) {
           },
           lazy: false,
         ),
-        ChangeNotifierProvider<SmbNavigation>(create: (context) => SmbNavigation(), lazy: false),
-        ChangeNotifierProvider<SearchHistoryModel>(create: (context) => SearchHistoryModel(), lazy: false),
+        pvd.ChangeNotifierProvider<SmbNavigation>(create: (context) => SmbNavigation(), lazy: false),
+        pvd.ChangeNotifierProvider<ExploreNavigator>(create: (context) => ExploreNavigator(), lazy: false),
+        pvd.ChangeNotifierProvider<SearchHistoryModel>(create: (context) => SearchHistoryModel(), lazy: false),
       ],
       child: MaterialApp(
           title: 'Infinite List Sample',

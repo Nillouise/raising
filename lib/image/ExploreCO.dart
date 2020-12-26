@@ -1,8 +1,8 @@
 class ExploreCO {
-  String absPath; //总是包括filename(如果是文件夹，则包括到文件夹名），只有当没有absPath时，再去查filename字段
+  String absPath; //鎬绘槸鍖呮嫭filename(濡傛灉鏄枃浠跺す锛屽垯鍖呮嫭鍒版枃浠跺す鍚嶏級锛屽彧鏈夊綋娌℃湁absPath鏃讹紝鍐嶅幓鏌ilename瀛楁
   String filename;
   int size;
-  int fileNum; //如果是压缩文件里面有多少文件，如果是目录，里面有多少文件
+  int fileNum; //濡傛灉鏄帇缂╂枃浠堕噷闈㈡湁澶氬皯鏂囦欢锛屽鏋滄槸鐩綍锛岄噷闈㈡湁澶氬皯鏂囦欢
   bool isDirectory = false;
   DateTime createTime;
   DateTime updateTime;

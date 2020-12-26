@@ -21,9 +21,9 @@ import io.flutter.plugin.common.MethodChannel;
 public class WebDavRandomFile implements IInStream {
 
     /**
-     * ÕâÀï²»ÔÙÊ¹ÓÃÎÄ¼şÃû×÷Îª±êÊ¶£¬ÒòÎªÕâÊÇ¸ö¶ÌÔİµÄ´æÔÚ£¬·´Ö®£¬ÓÉÓÚ×ÜÊÇflutter´úÂë·¢Æğµ÷ÓÃµÄ£¬ËùÒÔflutter´úÂëÄÜ´¦ÀíÕâ¸ö±êÊ¶¼´¿É
-     * ÕâÑù¾Í¿ÉÒÔÊ¹ÓÃÁ¬½Ó³ØÖ®ÀàµÄ¼¼Êõ¡£
-     * Èç¹û²»ÊÇflutter·¢ÆğµÄµ÷ÓÃ£¬±ÈÈçÊÇsmbµÄµ÷ÓÃ£¬Ôò²»Ê¹ÓÃ´ËÀà¡£
+     * è¿™é‡Œä¸å†ä½¿ç”¨æ–‡ä»¶åä½œä¸ºæ ‡è¯†ï¼Œå› ä¸ºè¿™æ˜¯ä¸ªçŸ­æš‚çš„å­˜åœ¨ï¼Œåä¹‹ï¼Œç”±äºæ€»æ˜¯flutterä»£ç å‘èµ·è°ƒç”¨çš„ï¼Œæ‰€ä»¥flutterä»£ç èƒ½å¤„ç†è¿™ä¸ªæ ‡è¯†å³å¯
+     * è¿™æ ·å°±å¯ä»¥ä½¿ç”¨è¿æ¥æ± ä¹‹ç±»çš„æŠ€æœ¯ã€‚
+     * å¦‚æœä¸æ˜¯flutterå‘èµ·çš„è°ƒç”¨ï¼Œæ¯”å¦‚æ˜¯smbçš„è°ƒç”¨ï¼Œåˆ™ä¸ä½¿ç”¨æ­¤ç±»ã€‚
      */
     private String recallId;
     private volatile AtomicLong offset;
@@ -105,7 +105,7 @@ public class WebDavRandomFile implements IInStream {
 //        } catch (InterruptedException e) {
 //            throw new SevenZipException("countDownLatch Intterupted!");
         } catch (Exception e) {
-            Logger.e("invokeMethod(\\"testFoo" + ExceptionUtils.getStackTrace(e));
+            Logger.e("invokeMethod(\"testFoo" + ExceptionUtils.getStackTrace(e));
             throw new SevenZipException("get range error");
         }
 //        Logger.i("buffer %d byte",data.length);

@@ -6,24 +6,23 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
+import 'package:json_annotation/json_annotation.dart';
 import 'package:raising/dao/Repository.dart';
+
+part 'MetaPO.g.dart';
+
 /**
  * 使用https://app.quicktype.io/生成：
     {
     "key":"value",
     "fileKeyScoreChangeDay":"2018-09-06 15:03:48"
     }
- *
- *
  */
 /**
  * 此类字段会频繁变动增加，应当用dart自带的命令进行更新，而且应当尽量贴合数据库，这样dart命令更新
  * 序列化类就不需要手动改.g文件了。
  */
-MetaPo metaPoFromJson(String str) => MetaPo.fromJson(json.decode(str));
-
-String metaPoToJson(MetaPo data) => json.encode(data.toJson());
-
+@JsonSerializable()
 class MetaPo {
   static MetaPo metaPo;
 
@@ -33,22 +32,22 @@ class MetaPo {
   });
 
   String key;
-  DateTime fileKeyScoreChangeDay;
+  int fileKeyScoreChangeDay;
   List<SearchHistory> searchHistory;
+  List<WebDavHost> webDavHosts;
 
-  factory MetaPo.fromJson(Map<String, dynamic> json) => MetaPo(
-        key: json["key"],
-        fileKeyScoreChangeDay: DateTime.parse(json["fileKeyScoreChangeDay"]),
-      );
+  //不同的类使用不同的mixin即可
+  factory MetaPo.fromJson(Map<String, dynamic> json) => _$MetaPoFromJson(json);
 
-  Map<String, dynamic> toJson() => {
-        "key": key,
-        "fileKeyScoreChangeDay": fileKeyScoreChangeDay.toIso8601String(),
-      };
+  Map<String, dynamic> toJson() => _$MetaPoToJson(this);
 
-  static Future<void> load() async {
+  static Future<MetaPo> load() async {
     MetaPo metaData = await Repository.getMetaData();
     metaPo = metaData;
+    if(metaPo.fileKeyScoreChangeDay == null){
+      metaPo.fileKeyScoreChangeDay = DateTime.now().microsecondsSinceEpoch;
+    }
+    return metaPo;
   }
 
   static Future<void> save() async {
@@ -56,9 +55,49 @@ class MetaPo {
   }
 }
 
+@JsonSerializable()
 class SearchHistory {
   String keyword;
-  DateTime searchTime;
+  int searchTime;
+
+  SearchHistory(this.keyword, this.searchTime); //不同的类使用不同的mixin即可
+
+  factory SearchHistory.fromJson(Map<String, dynamic> json) =>
+      _$SearchHistoryFromJson(json);
+
+  Map<String, dynamic> toJson() => _$SearchHistoryToJson(this);
+}
+
+@JsonSerializable()
+class WebDavHost {
+  String id;
+  String _nickName;
+  String hostname; //maybe include the path, port,protocol
+
+  String username;
+  String password;
+
+  WebDavHost(this.id, this.hostname, this.username, this.password);
+
+  String get nickName {
+    if (_nickName == null) {
+      if (id == null) {
+        return "error id";
+      } else {
+        _nickName = id.split("##~##")[0];
+      }
+    }
+    return _nickName;
+  }
+
+  set nickName(String x) {
+    _nickName = x;
+  }
+
+  factory WebDavHost.fromJson(Map<String, dynamic> json) =>
+      _$WebDavHostFromJson(json);
+
+  Map<String, dynamic> toJson() => _$WebDavHostToJson(this);
 }
 
 class SearchHistoryModel extends ChangeNotifier {
@@ -85,7 +124,8 @@ class SearchHistoryModel extends ChangeNotifier {
   }
 
   void delete(SearchHistory history) {
-    MetaPo.metaPo.searchHistory.removeWhere((element) => element.keyword == history.keyword);
+    MetaPo.metaPo.searchHistory
+        .removeWhere((element) => element.keyword == history.keyword);
     set(MetaPo.metaPo.searchHistory);
   }
 }

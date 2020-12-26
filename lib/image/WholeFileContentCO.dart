@@ -3,7 +3,7 @@ import 'dart:typed_data';
 class WholeFileContentCO {
   String msg;
   String error;
-  String absPath; //总是包括filename(如果是文件夹，则包括到文件夹名），只有当没有absPath时，再去查filename字段
+  String absPath; //鎬绘槸鍖呮嫭filename(濡傛灉鏄枃浠跺す锛屽垯鍖呮嫭鍒版枃浠跺す鍚嶏級锛屽彧鏈夊綋娌℃湁absPath鏃讹紝鍐嶅幓鏌ilename瀛楁
   String filename;
   Uint8List content;
   int size;

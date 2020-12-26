@@ -15,11 +15,6 @@ class SmbNavigation extends ChangeNotifier {
 
   double scroll_speed;
 
-  void refresh(BuildContext context, String share, String path, String smbId, String smbNickName) async {
-    _title = path;
-    notifyListeners();
-  }
-
   void refreshSmbPo(SmbPO po) async {
     smbVO = SmbVO.copyFromSmbPO(po);
     notifyListeners();

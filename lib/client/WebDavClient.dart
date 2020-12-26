@@ -201,7 +201,7 @@ class WebDavClient {
 
   /// download [remotePath] and store the response file contents
   Future<Stream<List<int>>> getByRange(String remotePath, int begin, int end) async {
-    HttpClientResponse response = await this._send(\'GET\', remotePath, [200, 206], headers: {"Range": "bytes=" + begin.toString() + "-" + end.toString()});
+    HttpClientResponse response = await this._send('GET', remotePath, [200, 206], headers: {"Range": "bytes=" + begin.toString() + "-" + end.toString()});
     return response;
   }
 

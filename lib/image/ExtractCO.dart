@@ -3,18 +3,18 @@ import 'dart:typed_data';
 class ExtractCO {
   String msg;
   String error;
-  String absPath; //×ÜÊÇ°üÀ¨filename(Èç¹ûÊÇÎÄ¼ş¼Ğ£¬Ôò°üÀ¨µ½ÎÄ¼ş¼ĞÃû£©£¬Ö»ÓĞµ±Ã»ÓĞabsPathÊ±£¬ÔÙÈ¥²éfilename×Ö¶Î
+  String absPath; //æ€»æ˜¯åŒ…æ‹¬filename(å¦‚æœæ˜¯æ–‡ä»¶å¤¹ï¼Œåˆ™åŒ…æ‹¬åˆ°æ–‡ä»¶å¤¹åï¼‰ï¼Œåªæœ‰å½“æ²¡æœ‰absPathæ—¶ï¼Œå†å»æŸ¥filenameå­—æ®µ
   String filename;
   int size;
-  int fileNum; //Èç¹ûÊÇÑ¹ËõÎÄ¼şÀïÃæÓĞ¶àÉÙÎÄ¼ş£¬Èç¹ûÊÇÄ¿Â¼£¬ÀïÃæÓĞ¶àÉÙÎÄ¼ş
+  int fileNum; //å¦‚æœæ˜¯å‹ç¼©æ–‡ä»¶é‡Œé¢æœ‰å¤šå°‘æ–‡ä»¶ï¼Œå¦‚æœæ˜¯ç›®å½•ï¼Œé‡Œé¢æœ‰å¤šå°‘æ–‡ä»¶
   bool isDirectory = false;
   bool isCompressFile = false;
   DateTime createTime;
   DateTime updateTime;
   String compressFormat;
 
-  //index °´ÎÄ¼şÃû£¨°üÀ¨Â·¾¶ÅÅĞò£¬µÚ¼¸¸öÎÄ¼ş£¬Ìø¹ıÎÄ¼ş¼Ğ£©µÄÅÅĞòĞòºÅ£¬´Ó0¿ªÊ¼¡£
-  Map<int, String> indexPath; //Ñ¹ËõÎÄ¼şÄÚµÄ¾ø¶ÔÂ·¾¶
+  //index æŒ‰æ–‡ä»¶åï¼ˆåŒ…æ‹¬è·¯å¾„æ’åºï¼Œç¬¬å‡ ä¸ªæ–‡ä»¶ï¼Œè·³è¿‡æ–‡ä»¶å¤¹ï¼‰çš„æ’åºåºå·ï¼Œä»0å¼€å§‹ã€‚
+  Map<int, String> indexPath; //å‹ç¼©æ–‡ä»¶å†…çš„ç»å¯¹è·¯å¾„
   Map<int, Uint8List> indexContent;
 
   factory ExtractCO.fromJson(Map<String, dynamic> json) {

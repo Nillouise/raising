@@ -101,29 +101,30 @@ class SearchResultState extends State<SearchResult> {
   @override
   Widget build(BuildContext context) {
     //TODO:这里有个引起PreviewFile刷新的功能没搞定，应该是因为directorys重新插入，然后被重新build了导致的
-    return Expanded(
-        child: ListView.builder(
-            scrollDirection: Axis.vertical,
-            shrinkWrap: true,
-            itemCount: widget.directorys.length,
-            itemBuilder: (context, index) {
-              final item = widget.directorys[index];
-//                      return ListTile(title: Text('${item.directoryCO.filename}'), trailing: Icon(Icons.remove), onTap: () {});
-              return ListTile(
-                leading: AspectRatio(aspectRatio: 1, child: PreviewFile(item.directoryCO, item.smbVO)),
-                title: Text(item.directoryCO.filename),
-                onTap: () {
-                  if (item.directoryCO.isDirectory) {
-//                            catalog.refreshPath(Utils.joinPath(catalog._smb.absPath, files[index].filename));
-                  } else if (Constants.COMPRESS_AND_IMAGE_FILE.contains(p.extension(item.directoryCO.filename))) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => FutureViewerChecker(0, Utils.joinPath(item.smbVO.absPath, item.directoryCO.filename), List())),
-                    );
-                  }
-                },
-              );
-            }));
+    return null;
+//     return Expanded(
+//         child: ListView.builder(
+//             scrollDirection: Axis.vertical,
+//             shrinkWrap: true,
+//             itemCount: widget.directorys.length,
+//             itemBuilder: (context, index) {
+//               final item = widget.directorys[index];
+// //                      return ListTile(title: Text('${item.directoryCO.filename}'), trailing: Icon(Icons.remove), onTap: () {});
+//               return ListTile(
+//                 leading: AspectRatio(aspectRatio: 1, child: PreviewFile(item.directoryCO, item.smbVO)),
+//                 title: Text(item.directoryCO.filename),
+//                 onTap: () {
+//                   if (item.directoryCO.isDirectory) {
+// //                            catalog.refreshPath(Utils.joinPath(catalog._smb.absPath, files[index].filename));
+//                   } else if (Constants.COMPRESS_AND_IMAGE_FILE.contains(p.extension(item.directoryCO.filename))) {
+//                     Navigator.push(
+//                       context,
+//                       MaterialPageRoute(builder: (context) => FutureViewerChecker(0, Utils.joinPath(item.smbVO.absPath, item.directoryCO.filename), List())),
+//                     );
+//                   }
+//                 },
+//               );
+//             }));
   }
 }
 

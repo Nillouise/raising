@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ffi';
 import 'dart:math';
+import 'dart:convert';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:raising/dao/DirectoryVO.dart';
@@ -17,7 +18,7 @@ class Repository {
   static Database get db => _db;
 
   static Future<void> init() async {
-    _db = await openDatabase((await getApplicationDocumentsDirectory()).path + "/sqlite2.db", version: 1, onCreate: (Database db, int version) async {
+    _db = await openDatabase((await getApplicationDocumentsDirectory()).path + "/sqlit3.db", version: 1, onCreate: (Database db, int version) async {
       await db.execute("CREATE TABLE meta_data (keyname TEXT PRIMARY KEY, content TEXT)");
 
       await db.execute("CREATE TABLE smb_manage (id TEXT PRIMARY KEY, _nickName TEXT, hostname TEXT,domain TEXT,username TEXT,password TEXT)");
@@ -75,7 +76,7 @@ class Repository {
     List<Map<String, dynamic>> list = await _db.transaction((txn) async {
       return await txn.rawQuery("select * from meta_data");
     });
-    var res = list.map((e) => metaPoFromJson(e["content"])).toList();
+    var res = list.map((e) => MetaPo.fromJson( json.decode(e["content"]))).toList();
     if (res.isEmpty) {
       return MetaPo();
     }
@@ -84,7 +85,7 @@ class Repository {
 
   static Future saveMetaData(MetaPo po) async {
     await _db.transaction((txn) async {
-      return await txn.insert("meta_data", {"keyname": po.key, "content": metaPoToJson(po)}, conflictAlgorithm: ConflictAlgorithm.replace);
+      return await txn.insert("meta_data", {"keyname": po.key, "content": json.encode(po.toJson())}, conflictAlgorithm: ConflictAlgorithm.replace);
     });
   }
 

@@ -7,6 +7,11 @@ import 'package:provider/provider.dart';
 import 'package:raising/constant/Constant.dart';
 import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/SmbVO.dart';
+import 'package:raising/image/ExploreCO.dart';
+import 'package:raising/image/ExploreFile.dart';
+import 'package:raising/image/ExtractCO.dart';
+import 'package:raising/image/WholeFileContentCO.dart';
+import 'package:raising/model/ExploreNavigator.dart';
 import 'package:raising/model/smb_list_model.dart';
 import 'package:raising/model/smb_navigation.dart';
 import 'package:raising/page/searchPage.dart';
@@ -116,13 +121,12 @@ class ExplorerState extends State<Explorer> with AutomaticKeepAliveClientMixin<E
 
   @override
   Widget build(BuildContext context) {
-    SmbNavigation catalog = Provider.of<SmbNavigation>(context);
-    String displayPath = catalog.smbVO?.absPath;
+    ExploreNavigator catalog = Provider.of<ExploreNavigator>(context);
 
     return new WillPopScope(
         child: Column(
           children: <Widget>[
-            PathAndSearch("path:${catalog.smbVO?.absPath ?? ""}"),
+            PathAndSearch("path:${catalog.title ?? ""}"),
             Expanded(
               child: FileList(),
             )
@@ -130,12 +134,12 @@ class ExplorerState extends State<Explorer> with AutomaticKeepAliveClientMixin<E
         ),
         onWillPop: () async {
           //退出应用
-          SmbNavigation catalog = Provider.of<SmbNavigation>(context, listen: false);
-          if (p.rootPrefix(catalog.smbVO.absPath) == catalog.smbVO.absPath && (catalog.smbVO.absPath?.isEmpty ?? true)) {
+          ExploreNavigator catalog = Provider.of<ExploreNavigator>(context, listen: false);
+          if (catalog.isRoot()) {
             return true;
           } else {
             //返回上一级目录
-            catalog.refreshPath(_dirname(catalog.smbVO.absPath));
+            catalog.refreshPath(_dirname(catalog.absPath));
             return false;
           }
         });
@@ -158,7 +162,7 @@ class FileList extends StatefulWidget {
 class FileListState extends State<FileList> {
   double _pixels;
   int _timestamp = 0;
-  Future<SmbNavigation> future;
+  Future<ExploreNavigator> future;
 
   @override
   void initState() {
@@ -168,7 +172,7 @@ class FileListState extends State<FileList> {
   @override
   Widget build(BuildContext context) {
     SmbListModel listModel = Provider.of<SmbListModel>(context);
-    SmbNavigation catalog = Provider.of<SmbNavigation>(context);
+    ExploreNavigator catalog = Provider.of<ExploreNavigator>(context);
     if (listModel.smbs.length == 0) {
       //处理没有smb的情况
       return Center(
@@ -185,7 +189,8 @@ class FileListState extends State<FileList> {
           showDialog(context: context, child: SmbManage());
         },
       ));
-    } else if (catalog.smbVO == null) {
+    // } else if (!catalog.isSelectHost()) {
+    } else if (false) {
       //处理没选SMB的情况
       SmbListModel smbListModel = Provider.of<SmbListModel>(context);
       return ListView.builder(
@@ -223,18 +228,20 @@ class FileListState extends State<FileList> {
             );
           });
     } else {
-      return FutureBuilder<SmbNavigation>(
+      return FutureBuilder<bool>(
         future: () {
-          SmbNavigation catalog = Provider.of<SmbNavigation>(context);
+          ExploreNavigator catalog = Provider.of<ExploreNavigator>(context);
+          catalog.exploreFile = WebdavExploreFile();
           return catalog.awaitSelf();
         }(),
-        builder: (BuildContext context, AsyncSnapshot<SmbNavigation> snapshot) {
+        builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
           // 请求已结束
           if (snapshot.connectionState == ConnectionState.done) {
             if (snapshot.hasError) {
               // 请求失败，显示错误
               return Text("Error: ${snapshot.error}");
             } else {
+              ExploreNavigator catalog = Provider.of<ExploreNavigator>(context);
               // 请求成功，显示数据
               return Center(
                   child: NotificationListener<ScrollNotification>(
@@ -253,21 +260,20 @@ class FileListState extends State<FileList> {
                         return false;
                       },
                       child: ListView.builder(
-                        itemCount: snapshot.data.files.length,
+                        itemCount: catalog.files.length,
                         padding: const EdgeInsets.symmetric(vertical: 18),
                         itemBuilder: (context, index) {
-                          SmbNavigation catalog = Provider.of<SmbNavigation>(context);
-                          List<DirectoryCO> files = catalog.files;
+                          List<ExploreCO> files = catalog.files;
                           return ListTile(
-                            leading: AspectRatio(aspectRatio: 1, child: PreviewFile(files[index], catalog.smbVO)),
+                            leading: AspectRatio(aspectRatio: 1, child: PreviewFile(files[index].absPath, null,catalog.exploreFile)),
                             title: Text(files[index].filename),
                             onTap: () {
                               if (files[index].isDirectory) {
-                                catalog.refreshPath(Utils.joinPath(catalog.smbVO.absPath, files[index].filename));
+                                catalog.refreshPath(Utils.joinPath(catalog.absPath, files[index].filename));
                               } else if (Constants.COMPRESS_AND_IMAGE_FILE.contains(p.extension(files[index].filename))) {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => FutureViewerChecker(0, Utils.joinPath(catalog.smbVO.absPath, files[index].filename), files)),
+                                  MaterialPageRoute(builder: (context) => FutureViewerChecker(0, Utils.joinPath(catalog.absPath, files[index].filename), null)),
                                 );
                               }
                             },
@@ -286,31 +292,33 @@ class FileListState extends State<FileList> {
 }
 
 class PreviewFile extends StatelessWidget {
+  final String absPath;
   final DirectoryCO fileinfo;
-  final SmbVO _smb;
+  final ExploreFile exploreFile;
 
-  PreviewFile(this.fileinfo, this._smb);
+  PreviewFile(this.absPath,this.fileinfo, this.exploreFile);
 
   @override
   Widget build(BuildContext context) {
 //    SmbNavigation catalog = Provider.of<SmbNavigation>(context, listen: false);
-    SmbVO smbVO = _smb.copy();
-    smbVO.absPath = Utils.joinPath(smbVO.absPath, fileinfo.filename);
 
     return FutureBuilder<Widget>(future: () async {
       if (fileinfo.isDirectory) {
         return Icon(Icons.folder);
       } else if ((Constants.COMPRESS_AND_IMAGE_FILE).contains((p.extension(fileinfo.filename)))) {
-        FileContentCO content;
-        if (Utils.isCompressFile(fileinfo.filename)) {
-          content = await Utils.getFileFromZip(0, smbVO);
-        } else {
-          content = await Utils.getWholeFile(smbVO);
-        }
+
 //        Repository.upsertFileInfo(smbVO.absPath, smbVO.id, smbVO.nickName, FileInfoPO()..filename = p.basename(smbVO.absPath)..recentReadTime = DateTime.now());
-        return Image.memory(content.content, errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
-          return Icon(Icons.error);
-        });
+        if (Utils.isCompressFile(fileinfo.filename)) {
+          ExtractCO content = await exploreFile.loadFileFromZip (absPath, 0);
+          return Image.memory(content.indexContent[0], errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
+            return Icon(Icons.error);
+          });
+        } else {
+          WholeFileContentCO content = await exploreFile.loadWholeFile(absPath);
+          return Image.memory(content.content, errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
+            return Icon(Icons.error);
+          });
+        }
       } else {
         return Icon(Icons.folder_open);
       }

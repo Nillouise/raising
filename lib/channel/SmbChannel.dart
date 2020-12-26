@@ -9,7 +9,7 @@ import 'package:raising/dao/SmbResultCO.dart';
 import 'package:raising/dao/SmbVO.dart';
 import 'package:raising/exception/SmbException.dart';
 
-import '../client/client.dart';
+import '../client/WebDavClient.dart';
 
 var logger = Logger();
 
@@ -18,8 +18,8 @@ class SmbChannel {
 
   static Future<dynamic> nativeCaller(MethodCall methodCall) async {
     logger.d("nativeCaller {}", methodCall.arguments);
-    WebDavClient client = WebDavClient("http://109.131.14.238:37536/", "", "", "");
-    //TODO:����Ҫ��Ҫ��isolate
+    WebDavClient client = WebDavClient("http://192.168.1.111:4697/", "", "", "");
+    //TODO:看看要不要做isolate
     switch (methodCall.method) {
       case "streamFile":
         Stream<List<int>> list = await client.getByRange(methodCall.arguments["recallId"] as String, methodCall.arguments["begin"] as int, methodCall.arguments["end"] as int);
@@ -32,7 +32,7 @@ class SmbChannel {
   }
 
   /**
-   * ͼƬ�Ĺ���Ӧ����SMB�㣬������Ӧ������ͼ��
+   *这里应该清楚smb的特定文件，但不处理排序，排序在view层处理。
    */
   static Future<List<DirectoryCO>> queryFiles(SmbVO smbVO) async {
     try {

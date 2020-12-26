@@ -2,7 +2,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'SmbResultCO.g.dart';
 
-@JsonSerializable()
 class SmbResultCO {
   String msg;
   dynamic result;
