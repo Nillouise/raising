@@ -26,7 +26,7 @@ class RaisingHome extends StatelessWidget {
         drawer: HomeDrawer(),
         body: TabBarView(
           children: [
-            Center(child: Explorer()),
+            Center(child: ExplorerWidget()),
             Center(child: RankPage()),
             Center(child: CategoryPage()),
           ],

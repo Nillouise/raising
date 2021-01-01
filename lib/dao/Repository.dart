@@ -1,7 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ffi';
 import 'dart:math';
-import 'dart:convert';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:raising/dao/DirectoryVO.dart';
@@ -22,6 +22,9 @@ class Repository {
       await db.execute("CREATE TABLE meta_data (keyname TEXT PRIMARY KEY, content TEXT)");
 
       await db.execute("CREATE TABLE smb_manage (id TEXT PRIMARY KEY, _nickName TEXT, hostname TEXT,domain TEXT,username TEXT,password TEXT)");
+
+      await db.execute("CREATE TABLE cache (cacheKey TEXT PRIMARY KEY, content Text)");
+
       //TODO:处理一下recentReadTime
       await db.execute("CREATE TABLE file_key (filename TEXT PRIMARY KEY, star INTEGER, recentReadTime INTEGER, score14 REAL, score60 REAL)");
       await db.execute("CREATE INDEX score14_index ON file_key(score14)");
@@ -76,7 +79,7 @@ class Repository {
     List<Map<String, dynamic>> list = await _db.transaction((txn) async {
       return await txn.rawQuery("select * from meta_data");
     });
-    var res = list.map((e) => MetaPo.fromJson( json.decode(e["content"]))).toList();
+    var res = list.map((e) => MetaPo.fromJson(json.decode(e["content"]))).toList();
     if (res.isEmpty) {
       return MetaPo();
     }

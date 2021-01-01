@@ -4,6 +4,9 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:logger/logger.dart';
 
+import 'ExtractCO.dart';
+import 'WholeFileContentCO.dart';
+
 var logger = Logger();
 enum CacheResult {
   ok,
@@ -75,3 +78,35 @@ Future<Uint8List> loadThumbnail(String key) async {
 Future<void> putThumbnail(String key, Uint8List thumbnail) async {
   await DefaultCacheManager().putFile(key, thumbnail);
 }
+
+String getWholeFileCacheKey(String exploreFileId, String absPath) {
+  String res = "img$exploreFileId#$absPath";
+  return res;
+}
+
+String getExtractCacheKey(String exploreFileId, String absPath, int index) {
+  String res = "zip$exploreFileId#$absPath#index";
+  return res;
+}
+
+Future<WholeFileContentCO> getWholeFileCache(String exploreFileId, String absPath) async {
+  var wholeFileCacheKey = getWholeFileCacheKey(exploreFileId, absPath);
+  FileInfo fileInfo = await DefaultCacheManager().getFileFromCache(wholeFileCacheKey);
+  if (fileInfo == null) {
+    //TODO：删除数据库对应的数据
+    return null;
+  }
+  Uint8List uint8list = await fileInfo.file.readAsBytes();
+}
+
+Future<ExtractCO> getExtractFileCO(String exploreFileId, String absPath, int index) async {
+  var extractCacheKey = getExtractCacheKey(exploreFileId, absPath, index);
+  FileInfo fileInfo = await DefaultCacheManager().getFileFromCache(extractCacheKey);
+  if (fileInfo == null) {
+    //TODO：删除数据库对应的数据
+    return null;
+  }
+  Uint8List uint8list = await fileInfo.file.readAsBytes();
+}
+
+//TODO：还需要做一个脏缓存的检查，比如监控ExploreFile的切换。

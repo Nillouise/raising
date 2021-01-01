@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:json_annotation/json_annotation.dart';
+
 class ExtractCO {
   String msg;
   String error;
@@ -15,6 +17,7 @@ class ExtractCO {
 
   //index 按文件名（包括路径排序，第几个文件，跳过文件夹）的排序序号，从0开始。
   Map<int, String> indexPath; //压缩文件内的绝对路径
+  @JsonKey(ignore: true)
   Map<int, Uint8List> indexContent;
 
   factory ExtractCO.fromJson(Map<String, dynamic> json) {

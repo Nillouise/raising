@@ -1,53 +1,57 @@
 import 'dart:async';
-import 'dart:collection';
-import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:logger/logger.dart';
+import 'package:path/path.dart' as p;
 import 'package:raising/image/ExploreCO.dart';
 import 'package:raising/image/ExploreFile.dart';
 
-import 'package:path/path.dart' as p;
 var logger = Logger();
+
+/**
+ * notify之后的_files数据不一定是最新的，因为本来就可能不会显示queryFiles里的file，比如说
+ * 之后做一个功能，先选中host，再搜索，但这其实根本就不会需要awaitQueryFiles。
+ */
 
 class ExploreNavigator extends ChangeNotifier {
   ExploreFile exploreFile;
   String title;
   String absPath;
-  List<ExploreCO> files = List<ExploreCO>();
+  List<ExploreCO> _files = List<ExploreCO>();
+
+  List<ExploreCO> get files => _files;
+
+  set files(List<ExploreCO> files) {
+    _files = files;
+  }
 
   void refresh(ExploreFile exploreFile, String absPath) async {
     this.exploreFile = exploreFile;
     this.absPath = absPath;
-    awaitSelf();
     notifyListeners();
   }
 
   void refreshPath(String absPath) {
-    absPath = absPath;
-    awaitSelf();
+    this.absPath = absPath;
     notifyListeners();
   }
 
-  void refreshTitle(String title) {
+  void setTitle(String title) {
     this.title = title;
-    notifyListeners();
   }
 
-  Future<bool> awaitSelf() async {
+  Future<ExploreNavigator> awaitQueryFiles() async {
     List<ExploreCO> list = await exploreFile.queryFiles(absPath);
     files = list;
-    return true;
+    return this;
   }
 
-  bool isRoot(){
+  bool isRoot() {
     return p.rootPrefix(absPath) == absPath && (absPath?.isEmpty ?? true);
     // return false;
   }
 
-  bool isSelectHost(){
+  bool isSelectHost() {
     return exploreFile != null;
   }
-
-
 }

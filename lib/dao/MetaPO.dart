@@ -3,11 +3,11 @@
 //     final metaPo = metaPoFromJson(jsonString);
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:raising/dao/Repository.dart';
+import 'package:raising/model/HostModel.dart';
 
 part 'MetaPO.g.dart';
 
@@ -35,6 +35,7 @@ class MetaPo {
   int fileKeyScoreChangeDay;
   List<SearchHistory> searchHistory;
   List<WebDavHost> webDavHosts;
+  List<HostPO> hosts;
 
   //不同的类使用不同的mixin即可
   factory MetaPo.fromJson(Map<String, dynamic> json) => _$MetaPoFromJson(json);
@@ -44,7 +45,7 @@ class MetaPo {
   static Future<MetaPo> load() async {
     MetaPo metaData = await Repository.getMetaData();
     metaPo = metaData;
-    if(metaPo.fileKeyScoreChangeDay == null){
+    if (metaPo.fileKeyScoreChangeDay == null) {
       metaPo.fileKeyScoreChangeDay = DateTime.now().microsecondsSinceEpoch;
     }
     return metaPo;
@@ -62,8 +63,7 @@ class SearchHistory {
 
   SearchHistory(this.keyword, this.searchTime); //不同的类使用不同的mixin即可
 
-  factory SearchHistory.fromJson(Map<String, dynamic> json) =>
-      _$SearchHistoryFromJson(json);
+  factory SearchHistory.fromJson(Map<String, dynamic> json) => _$SearchHistoryFromJson(json);
 
   Map<String, dynamic> toJson() => _$SearchHistoryToJson(this);
 }
@@ -94,8 +94,7 @@ class WebDavHost {
     _nickName = x;
   }
 
-  factory WebDavHost.fromJson(Map<String, dynamic> json) =>
-      _$WebDavHostFromJson(json);
+  factory WebDavHost.fromJson(Map<String, dynamic> json) => _$WebDavHostFromJson(json);
 
   Map<String, dynamic> toJson() => _$WebDavHostToJson(this);
 }
@@ -124,8 +123,7 @@ class SearchHistoryModel extends ChangeNotifier {
   }
 
   void delete(SearchHistory history) {
-    MetaPo.metaPo.searchHistory
-        .removeWhere((element) => element.keyword == history.keyword);
+    MetaPo.metaPo.searchHistory.removeWhere((element) => element.keyword == history.keyword);
     set(MetaPo.metaPo.searchHistory);
   }
 }

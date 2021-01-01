@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:raising/channel/SmbChannel.dart';
 import 'package:raising/dao/SmbVO.dart';
+import 'package:raising/image/ExploreFile.dart';
+import 'package:raising/model/ExploreNavigator.dart';
 import 'package:raising/model/smb_list_model.dart';
-import 'package:raising/model/smb_navigation.dart';
 
 class SmbManage extends StatefulWidget {
   final String smbId;
@@ -299,10 +301,14 @@ class _SmbDrawerState extends State<SmbDrawer> {
                         ));
                   }),
               onTap: () {
-                SmbListModel smbListModel = Provider.of<SmbListModel>(context, listen: false);
-                SmbPO smb = smbListModel.smbById(item.id);
-                SmbNavigation smbNavigation = Provider.of<SmbNavigation>(context, listen: false);
-                smbNavigation.refreshSmbPo(smb);
+                ExploreNavigator catalog = Provider.of<ExploreNavigator>(context, listen: false);
+                var webdavExploreFile = WebdavExploreFile();
+                SmbChannel.explorefiles = [webdavExploreFile];
+                catalog.refresh(webdavExploreFile, "");
+//                SmbListModel smbListModel = Provider.of<SmbListModel>(context, listen: false);
+//                SmbPO smb = smbListModel.smbById(item.id);
+//                SmbNavigation smbNavigation = Provider.of<SmbNavigation>(context, listen: false);
+//                smbNavigation.refreshSmbPo(smb);
                 Navigator.of(context).pop();
 //                smbListModel.
 //                Smb.pushConfig(item.id, hostname, shareName, domain, username, password, path, searchPattern)

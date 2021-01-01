@@ -8,24 +8,26 @@ import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/SmbResultCO.dart';
 import 'package:raising/dao/SmbVO.dart';
 import 'package:raising/exception/SmbException.dart';
-
-import '../client/WebDavClient.dart';
+import 'package:raising/image/ExploreFile.dart';
 
 var logger = Logger();
 
 class SmbChannel {
   static const MethodChannel methodChannel = MethodChannel('nil/channel');
 
+  static List<ExploreFile> explorefiles;
+
+  static ExploreFile nativeGetExploreFile(String recallId) {
+    return explorefiles[0];
+  }
+
   static Future<dynamic> nativeCaller(MethodCall methodCall) async {
     logger.d("nativeCaller {}", methodCall.arguments);
-    WebDavClient client = WebDavClient("http://192.168.1.111:4697/", "", "", "");
     //TODO:看看要不要做isolate
     switch (methodCall.method) {
       case "streamFile":
-        Stream<List<int>> list = await client.getByRange(methodCall.arguments["recallId"] as String, methodCall.arguments["begin"] as int, methodCall.arguments["end"] as int);
-//        Stream<List<int>> list = await client.getByRange(methodCall.arguments["url"] as String, methodCall.arguments["begin"] as int, methodCall.arguments["end"] as int);
-        List<int> r = await list.first;
-        return r;
+        ExploreFile explore = nativeGetExploreFile(methodCall.arguments["recallId"] as String);
+        return explore.randomRange(methodCall.arguments["recallId"] as String, methodCall.arguments["begin"] as int, methodCall.arguments["end"] as int);
       default:
         throw UnimplementedError();
     }
