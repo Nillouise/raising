@@ -84,6 +84,13 @@ dependencies {
 //    implementation group: 'net.sf.sevenzipjbinding', name: 'sevenzipjbinding-all-platforms', version: '16.02-2.01'
     // https://mvnrepository.com/artifact/com.google.guava/guava
 //    implementation group: 'com.google.guava', name: 'guava', version: '11.0.2'
+// https://mvnrepository.com/artifact/com.github.lookfirst/sardine
+//    compile group: 'org.apache.httpcomponents' , name: 'httpclient-android' , version: '4.3.5.1'
+//    compile group: 'com.github.lookfirst', name: 'sardine', version: '5.10'
+    // https://mvnrepository.com/artifact/com.thegrizzlylabs.sardine-android/sardine-android
+    compile group: 'com.thegrizzlylabs.sardine-android', name: 'sardine-android', version: '0.7'
+
+
     implementation 'com.google.code.gson:gson:2.8.6'
     compileOnly 'org.projectlombok:lombok:1.18.12'
     annotationProcessor 'org.projectlombok:lombok:1.18.12' //or v. 1.16.2 in your case.

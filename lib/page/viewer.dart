@@ -324,7 +324,7 @@ class ViewerBody extends StatelessWidget {
       child: GestureDetector(
         child: Container(
             child: PreloadPageView.builder(
-          preloadPagesCount: 5,
+          preloadPagesCount: 1,
           itemCount: viewerNavigator.getLength(),
           itemBuilder: (BuildContext context, int index) => FutureImage(index),
           controller: viewerNavigator.getController(),

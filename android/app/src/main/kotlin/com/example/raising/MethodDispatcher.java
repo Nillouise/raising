@@ -16,11 +16,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.TreeMap;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -154,7 +150,7 @@ public class MethodDispatcher implements MethodCallHandler {
             executorService.submit(() -> {
                 try {
                     ExtractCO res = ExtractChannel.INSTANCE.extract(
-                            new WebDavRandomFile(call.argument("recallId"), 0, Long.valueOf((int)call.argument("fileSize"))), call.argument("index"));
+                            new NativeWebDavRandomFile(call.argument("recallId"), 0, Long.valueOf((int)call.argument("fileSize"))), call.argument("index"));
                     result.success(res.getMap());
                 } catch (Exception e) {
                     Logger.e(e, "extract error");
