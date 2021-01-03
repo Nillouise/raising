@@ -150,7 +150,13 @@ public class MethodDispatcher implements MethodCallHandler {
             executorService.submit(() -> {
                 try {
                     ExtractCO res = ExtractChannel.INSTANCE.extract(
-                            new NativeWebDavRandomFile(call.argument("recallId"), 0, Long.valueOf((int)call.argument("fileSize"))), call.argument("index"));
+                            new NativeWebDavRandomFile(
+                                    call.argument("absPath"),
+                                    call.argument("username"),
+                                    call.argument("password"),
+                                    0,
+                                    Long.valueOf((int) call.argument("fileSize"))),
+                            call.argument("index"));
                     result.success(res.getMap());
                 } catch (Exception e) {
                     Logger.e(e, "extract error");

@@ -18,6 +18,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import io.flutter.plugin.common.MethodChannel;
 
+
+/**
+ * 这个回调使用了flutter的webdav，用了性能测试分析发现序列化的性能太低了，不能用在这么频繁调用的数据传输中，
+ * 但代码不应该被删除，只是用{@link NativeWebDavRandomFile}代替了，之后改回来只需要小幅改动。
+ * 当然，测试没那么严谨，可能也是别的问题导致的
+ */
 public class WebDavRandomFile implements IInStream {
 
     /**

@@ -9,6 +9,8 @@ import 'ExploreCO.dart';
 import 'ExtractCO.dart';
 import 'WholeFileContentCO.dart';
 
+import 'package:path/path.dart' as p;
+
 /**
  * 先前我没有提供更原子的api（即把缓存，压缩，获取文件的api分离），而是直接编写高级api，导致现在改也麻烦。
  * 应该先用原子的api做多几个功能，等出现问题再优化。
@@ -63,10 +65,19 @@ class WebdavExploreFile implements ExploreFile {
    * TODO：fileSize这里应当被缓存起来，不然之后可能会有麻烦。
    */
   @override
-  Future<ExtractCO> loadFileFromZip(String absPath, int index, {int fileSize}) async {
+  Future<ExtractCO> loadFileFromZip(String absPath, int index,
+      {int fileSize}) async {
 //    final Map<dynamic, dynamic> result = await SmbChannel.methodChannel.invokeMethod("webdavExtract", {"recallId": path, "fileSize": fileSize, "index": index});
     int curFileSize = getFileSizeCache(absPath, fileSize);
-    final Map<dynamic, dynamic> result = await SmbChannel.methodChannel.invokeMethod("webdavExtract", {"recallId": absPath, "fileSize": curFileSize, "index": index});
+    var arguments = {
+      "absPath": client.baseUrl+ absPath,
+      "username": client.username,
+      "password": client.password,
+      "fileSize": curFileSize,
+      "index": index
+    };
+    final Map<dynamic, dynamic> result =
+        await SmbChannel.methodChannel.invokeMethod("webdavExtract", arguments);
     ExtractCO extractCO = ExtractCO.fromJson(Map<String, dynamic>.from(result));
     if (extractCO.msg == "OK") {
       return extractCO;
@@ -78,7 +89,8 @@ class WebdavExploreFile implements ExploreFile {
   @override
   Future<WholeFileContentCO> loadWholeFile(String path) async {
     var content = await client.downloadToBinary(path);
-    return WholeFileContentCO()..content = Uint8List.fromList(await content.first);
+    return WholeFileContentCO()
+      ..content = Uint8List.fromList(await content.first);
   }
 
   List<ExploreCO> convertExploreCO(List<webdavfile.FileInfo> lst) {

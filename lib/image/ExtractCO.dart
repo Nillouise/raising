@@ -33,6 +33,7 @@ class ExtractCO {
       ..createTime = json['createTime'] == null ? null : DateTime.fromMillisecondsSinceEpoch(json['createTime'])
       ..updateTime = json['updateTime'] == null ? null : DateTime.fromMillisecondsSinceEpoch(json['updateTime'])
       ..compressFormat = json['compressFormat'] as String
+      //TODO:注意这里没有处理为null的情况，会抛出异常。
       ..indexPath = new Map<int, String>.from(json['indexPath'])
       ..indexContent = new Map<int, Uint8List>.from(json['indexContent']);
   }
