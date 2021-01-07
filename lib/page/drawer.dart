@@ -2,23 +2,22 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:raising/channel/SmbChannel.dart';
-import 'package:raising/dao/SmbVO.dart';
 import 'package:raising/image/ExploreFile.dart';
 import 'package:raising/model/ExploreNavigator.dart';
-import 'package:raising/model/smb_list_model.dart';
+import 'package:raising/model/HostModel.dart';
 
-class SmbManage extends StatefulWidget {
-  final String smbId;
+class HostManage extends StatefulWidget {
+  final String hostId;
 
   @override
-  _SmbManageState createState() => _SmbManageState();
+  _HostManageState createState() => _HostManageState();
 
-  SmbManage({this.smbId});
+  HostManage({this.hostId});
 }
 
-class _SmbManageState extends State<SmbManage> {
-  TextEditingController _smbnameController = new TextEditingController();
-  TextEditingController _smbIpController = new TextEditingController();
+class _HostManageState extends State<HostManage> {
+  TextEditingController _nickController = new TextEditingController();
+  TextEditingController _hostnameController = new TextEditingController();
   TextEditingController _usernameController = new TextEditingController();
   TextEditingController _pwdController = new TextEditingController();
   bool pwdShow = false; //密码是否显示明文
@@ -27,55 +26,52 @@ class _SmbManageState extends State<SmbManage> {
 
   @override
   Widget build(BuildContext context) {
-//    SmbListModel smbListModel =
-//        Provider.of<SmbListModel>(context, listen: false);
-//    String initSmbName = "SMB#" + (smbListModel.smbs.length + 1).toString();
-//    _smbnameController.text = initSmbName;
-//    var gm = GmLocalizations.of(context);
-    if (widget.smbId != null) {
-      SmbListModel smbListModel = Provider.of<SmbListModel>(context, listen: false);
-      SmbPO smbById = smbListModel.smbById(widget.smbId);
-      _smbnameController.text = smbById.nickName;
-      _smbIpController.text = smbById.hostname;
-      _usernameController.text = smbById.username;
-      _pwdController.text = smbById.password;
+    if (widget.hostId != null) {
+      HostModel hostModel = Provider.of<HostModel>(context, listen: false);
+      HostPO host = hostModel.searchById(widget.hostId);
+      if (host != null) {
+        _nickController.text = host.nickName;
+        _hostnameController.text = host.hostname;
+        _usernameController.text = host.username;
+        _pwdController.text = host.password;
+      }
     }
 
     return Scaffold(
-        appBar: AppBar(title: Text("添加Smb")),
+        appBar: AppBar(title: Text("添加Host")),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Form(
             key: _formKey,
-            autovalidate: true,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             child: Column(
               children: <Widget>[
                 TextFormField(
                     autofocus: _nameAutoFocus,
-                    controller: _smbnameController,
+                    controller: _nickController,
 //                    initialValue: initSmbName,
                     decoration: InputDecoration(
-                      labelText: "SMB昵称",
-                      hintText: "命名本SMB的昵称",
+                      labelText: "昵称",
+                      hintText: "命名服务器的昵称",
                       prefixIcon: Icon(Icons.person),
                     ),
                     validator: (v) {
                       if (v.trim().isEmpty) {
                         return "必填";
                       }
-                      SmbListModel smbListModel = Provider.of<SmbListModel>(context, listen: false);
-                      smbListModel.checkDuplicate(_smbnameController.text);
-                      if (smbListModel.checkDuplicate(v)) {
-                        return "跟现有Smb链接重复";
+                      HostModel hostname = Provider.of<HostModel>(context, listen: false);
+                      hostname.checkDuplicate(_nickController.text);
+                      if (hostname.checkDuplicate(v)) {
+                        return "跟现有昵称重复";
                       }
                       return null;
                     }),
                 TextFormField(
-                    controller: _smbIpController,
+                    controller: _hostnameController,
 //                    initialValue: initSmbName,
                     decoration: InputDecoration(
                       labelText: "Host",
-                      hintText: "Smb ip 地址",
+                      hintText: "Host ip 地址",
                       prefixIcon: Icon(Icons.person),
                     ),
                     validator: (v) {
@@ -139,30 +135,25 @@ class _SmbManageState extends State<SmbManage> {
     // 提交前，先验证各个表单字段是否合法
     if ((_formKey.currentState as FormState).validate()) {
 //      showLoading(context);
-
-      if (widget.smbId != null) {
-        //修改smb
-        SmbListModel smbListModel = Provider.of<SmbListModel>(context, listen: false);
-
-        smbListModel.replaceSmb(SmbPO()
-          ..id = widget.smbId
-          ..nickName = _smbnameController.text
-          ..hostname = _smbIpController.text
+      HostModel hostModel = Provider.of<HostModel>(context, listen: false);
+      if (widget.hostId != null) {
+        //修复host
+        hostModel.replace(HostPO()
+          ..id = widget.hostId
+          ..nickName = _nickController.text
+          ..hostname = _hostnameController.text
           ..username = _usernameController.text
           ..password = _pwdController.text);
-        Navigator.of(context).pop();
       } else {
-        SmbListModel smbListModel = Provider.of<SmbListModel>(context, listen: false);
-
-        smbListModel.addSmb(SmbPO()
-          ..id = _smbnameController.text + "##~##" + (new DateTime.now().millisecondsSinceEpoch).toString()
-          ..nickName = _smbnameController.text
-          ..hostname = _smbIpController.text
+        //添加host
+        hostModel.insert(HostPO()
+          ..id = _nickController.text + "##~##" + (new DateTime.now().millisecondsSinceEpoch).toString()
+          ..nickName = _nickController.text
+          ..hostname = _hostnameController.text
           ..username = _usernameController.text
           ..password = _pwdController.text);
-        Navigator.of(context).pop();
-//      }
       }
+      Navigator.of(context).pop();
     }
   }
 }
@@ -240,10 +231,10 @@ class HomeDrawer extends StatelessWidget {
                   leading: const Icon(Icons.settings),
                   title: const Text('添加Smb链接'),
                   onTap: () {
-                    showDialog(context: context, child: SmbManage());
+                    showDialog(context: context, child: HostManage());
                   },
                 ),
-                SmbDrawer(),
+                HostListDrawer(),
               ],
             ),
           ),
@@ -253,24 +244,24 @@ class HomeDrawer extends StatelessWidget {
   }
 }
 
-class SmbDrawer extends StatefulWidget {
+class HostListDrawer extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
     // TODO: implement createState
-    return _SmbDrawerState();
+    return _HostListDrawerState();
   }
 }
 
-class _SmbDrawerState extends State<SmbDrawer> {
+class _HostListDrawerState extends State<HostListDrawer> {
   @override
   Widget build(BuildContext context) {
-    SmbListModel smbListModel = Provider.of<SmbListModel>(context);
+    HostModel hostsModel = Provider.of<HostModel>(context);
     return ListView.builder(
         scrollDirection: Axis.vertical,
         shrinkWrap: true,
-        itemCount: smbListModel.smbs.length,
+        itemCount: hostsModel.hosts.length,
         itemBuilder: (context, index) {
-          final item = smbListModel.smbs[index];
+          final item = hostsModel.hosts[index];
 
           return Dismissible(
             // Each Dismissible must contain a Key. Keys allow Flutter to
@@ -281,7 +272,7 @@ class _SmbDrawerState extends State<SmbDrawer> {
             onDismissed: (direction) {
               // Remove the item from the data source.
               setState(() {
-                smbListModel.removeSmb(item.id);
+                hostsModel.remove(index);
               });
 
               // Then show a snackbar.
@@ -296,22 +287,17 @@ class _SmbDrawerState extends State<SmbDrawer> {
                   onPressed: () {
                     showDialog(
                         context: context,
-                        child: SmbManage(
-                          smbId: item.id,
+                        child: HostManage(
+                          hostId: item.id,
                         ));
                   }),
               onTap: () {
+                //TODO: 改成host的分类
                 ExploreNavigator catalog = Provider.of<ExploreNavigator>(context, listen: false);
-                var webdavExploreFile = WebdavExploreFile();
+                var webdavExploreFile = WebdavExploreFile(item);
                 SmbChannel.explorefiles = [webdavExploreFile];
                 catalog.refresh(webdavExploreFile, "");
-//                SmbListModel smbListModel = Provider.of<SmbListModel>(context, listen: false);
-//                SmbPO smb = smbListModel.smbById(item.id);
-//                SmbNavigation smbNavigation = Provider.of<SmbNavigation>(context, listen: false);
-//                smbNavigation.refreshSmbPo(smb);
                 Navigator.of(context).pop();
-//                smbListModel.
-//                Smb.pushConfig(item.id, hostname, shareName, domain, username, password, path, searchPattern)
               },
             ),
           );

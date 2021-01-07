@@ -20,13 +20,10 @@ class SmbNavigation extends ChangeNotifier {
     notifyListeners();
   }
 
-  void refreshPath(String absPath){
+  void refreshPath(String absPath) {
     smbVO.absPath = absPath;
     notifyListeners();
-
   }
-
-
 
   void refreshTitle(String title) {
     _title = title;

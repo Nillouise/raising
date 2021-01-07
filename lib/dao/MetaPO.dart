@@ -34,7 +34,6 @@ class MetaPo {
   String key;
   int fileKeyScoreChangeDay;
   List<SearchHistory> searchHistory;
-  List<WebDavHost> webDavHosts;
   List<HostPO> hosts;
 
   //不同的类使用不同的mixin即可
@@ -66,37 +65,6 @@ class SearchHistory {
   factory SearchHistory.fromJson(Map<String, dynamic> json) => _$SearchHistoryFromJson(json);
 
   Map<String, dynamic> toJson() => _$SearchHistoryToJson(this);
-}
-
-@JsonSerializable()
-class WebDavHost {
-  String id;
-  String _nickName;
-  String hostname; //maybe include the path, port,protocol
-
-  String username;
-  String password;
-
-  WebDavHost(this.id, this.hostname, this.username, this.password);
-
-  String get nickName {
-    if (_nickName == null) {
-      if (id == null) {
-        return "error id";
-      } else {
-        _nickName = id.split("##~##")[0];
-      }
-    }
-    return _nickName;
-  }
-
-  set nickName(String x) {
-    _nickName = x;
-  }
-
-  factory WebDavHost.fromJson(Map<String, dynamic> json) => _$WebDavHostFromJson(json);
-
-  Map<String, dynamic> toJson() => _$WebDavHostToJson(this);
 }
 
 class SearchHistoryModel extends ChangeNotifier {

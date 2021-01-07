@@ -147,78 +147,79 @@ class SmbViewerNavigator extends ViewerNavigator {
   }
 }
 
-class ImageViewerNavigator extends SmbViewerNavigator {
-  List<DirectoryCO> _iterFiles;
-
-  SmbVO getSmbByIndex(int index) {
-    if (index >= 0 && index < _iterFiles.length) {
-      return _smbVO.copy()..absPath = Utils.joinPath(p.dirname(_smbVO.absPath), _iterFiles[index].filename);
-    } else {
-      throw Exception("getSmbByIndex ${index} out of bound");
-    }
-  }
-
-  String getFilename(int index) {
-    return _iterFiles[index].filename;
-  }
-
-  @override
-  Future<void> saveCurImage(BuildContext context) async {
-    var content = await getContent(getCurIndex(), forceFromSource: true);
-    try {
-      String dir = (await getTemporaryDirectory()).path;
-      await new Directory('$dir/raising').create();
-      var pa = '$dir/raising/${_getCurSmbVO().absPath}${getCurIndex()}T${DateTime.now().millisecondsSinceEpoch}.${p.extension(content.absFilename)}';
-      File file = new File(pa);
-      file.writeAsBytes(content.content);
-      var bool = await GallerySaver.saveImage(pa);
-      if (bool) {
-        Scaffold.of(context).showSnackBar(SnackBar(content: Text("save image successful")));
-      } else {
-        Scaffold.of(context).showSnackBar(SnackBar(content: Text("save image failed")));
-      }
-    } catch (e) {
-      logger.e(e);
-      Scaffold.of(context).showSnackBar(SnackBar(content: Text("save image failed" + e)));
-    }
-  }
-
-  @override
-  int getLength() {
-    return _iterFiles.length;
-  }
-
-  @override
-  SmbVO _getCurSmbVO() {
-    return _smbVO;
-  }
-
-  @override
-  Future<void> starCurFile(int star) {
-    Repository.upsertFileKey(getFilename(getCurIndex()), star: star);
-    notifyListeners();
-  }
-
-  @override
-  void closeViewer() {
-    Repository.upsertFileKey(getFilename(getCurIndex()),
-        recentReadTime: beginTime, increReadTime: (DateTime.now().millisecondsSinceEpoch - beginTime.millisecondsSinceEpoch) ~/ 1000);
-  }
-
-  @override
-  Future<FileContentCO> getContent(int index, {forceFromSource: false}) async {
-    var copy = _smbVO.copy();
-    copy.absPath = p.join(p.dirname(copy.absPath), _iterFiles[index].filename);
-    return await Utils.getWholeFile(copy, forceFromSource: forceFromSource);
-  }
-
-  @override
-  String getCurFilename() {
-    return getFilename(getCurIndex());
-  }
-
-  ImageViewerNavigator(bool detailToggle, int index, SmbVO smbVO, FileInfoPO fileInfoPO, this._iterFiles) : super(detailToggle, index, smbVO, fileInfoPO);
-}
+//TODO：需要做新的ImageViewerNavigator
+//class ImageViewerNavigator extends SmbViewerNavigator {
+//  List<DirectoryCO> _iterFiles;
+//
+//  SmbVO getSmbByIndex(int index) {
+//    if (index >= 0 && index < _iterFiles.length) {
+//      return _smbVO.copy()..absPath = Utils.joinPath(p.dirname(_smbVO.absPath), _iterFiles[index].filename);
+//    } else {
+//      throw Exception("getSmbByIndex ${index} out of bound");
+//    }
+//  }
+//
+//  String getFilename(int index) {
+//    return _iterFiles[index].filename;
+//  }
+//
+//  @override
+//  Future<void> saveCurImage(BuildContext context) async {
+//    var content = await getContent(getCurIndex(), forceFromSource: true);
+//    try {
+//      String dir = (await getTemporaryDirectory()).path;
+//      await new Directory('$dir/raising').create();
+//      var pa = '$dir/raising/${_getCurSmbVO().absPath}${getCurIndex()}T${DateTime.now().millisecondsSinceEpoch}.${p.extension(content.absFilename)}';
+//      File file = new File(pa);
+//      file.writeAsBytes(content.content);
+//      var bool = await GallerySaver.saveImage(pa);
+//      if (bool) {
+//        Scaffold.of(context).showSnackBar(SnackBar(content: Text("save image successful")));
+//      } else {
+//        Scaffold.of(context).showSnackBar(SnackBar(content: Text("save image failed")));
+//      }
+//    } catch (e) {
+//      logger.e(e);
+//      Scaffold.of(context).showSnackBar(SnackBar(content: Text("save image failed" + e)));
+//    }
+//  }
+//
+//  @override
+//  int getLength() {
+//    return _iterFiles.length;
+//  }
+//
+//  @override
+//  SmbVO _getCurSmbVO() {
+//    return _smbVO;
+//  }
+//
+//  @override
+//  Future<void> starCurFile(int star) {
+//    Repository.upsertFileKey(getFilename(getCurIndex()), star: star);
+//    notifyListeners();
+//  }
+//
+//  @override
+//  void closeViewer() {
+//    Repository.upsertFileKey(getFilename(getCurIndex()),
+//        recentReadTime: beginTime, increReadTime: (DateTime.now().millisecondsSinceEpoch - beginTime.millisecondsSinceEpoch) ~/ 1000);
+//  }
+//
+//  @override
+//  Future<FileContentCO> getContent(int index, {forceFromSource: false}) async {
+//    var copy = _smbVO.copy();
+//    copy.absPath = p.join(p.dirname(copy.absPath), _iterFiles[index].filename);
+//    return await Utils.getWholeFile(copy, forceFromSource: forceFromSource);
+//  }
+//
+//  @override
+//  String getCurFilename() {
+//    return getFilename(getCurIndex());
+//  }
+//
+//  ImageViewerNavigator(bool detailToggle, int index, SmbVO smbVO, FileInfoPO fileInfoPO, this._iterFiles) : super(detailToggle, index, smbVO, fileInfoPO);
+//}
 
 class ZipNavigator extends ViewerNavigator {
   final ExploreNavigator exploreNavigator;
@@ -229,7 +230,6 @@ class ZipNavigator extends ViewerNavigator {
 
 //  WebDavClient client = WebDavClient("http://109.131.14.238:37536/", "", "", "");
   int _index;
-  FileInfoPO _fileInfoPO;
   int fileNum;
   FileKeyPO fileKeyPO;
   String absPath;
@@ -261,10 +261,6 @@ class ZipNavigator extends ViewerNavigator {
     //         1000);
     // Repository.upsertFileInfo(
     //     _smbVO.absPath, _smbVO.id, _smbVO.nickName, _fileInfoPO);
-  }
-
-  Future<FileContentCO> getContent(int index, {forceFromSource: false}) async {
-    throw UnimplementedError();
   }
 
   void jumpTo(int index) {
@@ -555,7 +551,7 @@ enum Area { lef, right, middle }
 class FutureViewerChecker extends StatelessWidget {
   final int readPages; //看到第几页。
   final String absPath;
-  final List<DirectoryCO> pwdFiles;
+//  final List<DirectoryCO> pwdFiles;
   final ExploreNavigator exploreNavigator;
 
   @override
@@ -563,7 +559,6 @@ class FutureViewerChecker extends StatelessWidget {
     return FutureBuilder<Widget>(
       future: () async {
         if (Utils.isCompressOrImageFile(absPath)) {
-          FileContentCO content;
           ExtractCO zip;
           if (Utils.isCompressFile(absPath)) {
             zip = await exploreNavigator.exploreFile.getFileNums(absPath);
@@ -581,11 +576,13 @@ class FutureViewerChecker extends StatelessWidget {
 //                  return SmbViewerNavigator(false, 0, pageSmbVO, filePo);
                   return ZipNavigator(exploreNavigator, zip.fileNum, absPath, readPages);
                 } else if (Utils.isImageFile(absPath)) {
-                  List<DirectoryCO> filterDirectory = pwdFiles.where((element) {
-                    return element.isDirectory == false && Utils.isImageFile(element.filename);
-                  }).toList();
-//                  return ImageViewerNavigator(false, 0, pageSmbVO, filePo, filterDirectory);
-                  return ImageViewerNavigator(false, 0, null, null, filterDirectory);
+                  //TODO:需要做新的ImageViewerNavigator
+                  return null;
+//                  List<DirectoryCO> filterDirectory = pwdFiles.where((element) {
+//                    return element.isDirectory == false && Utils.isImageFile(element.filename);
+//                  }).toList();
+////                  return ImageViewerNavigator(false, 0, pageSmbVO, filePo, filterDirectory);
+//                  return ImageViewerNavigator(false, 0, null, null, filterDirectory);
                 } else {
                   throw Exception("Invalid file");
                 }
@@ -612,7 +609,7 @@ class FutureViewerChecker extends StatelessWidget {
     );
   }
 
-  FutureViewerChecker(this.readPages, this.absPath, this.pwdFiles, this.exploreNavigator);
+  FutureViewerChecker(this.readPages, this.absPath, this.exploreNavigator);
 }
 
 class FutureImage extends StatelessWidget {

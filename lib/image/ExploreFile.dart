@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:raising/channel/SmbChannel.dart';
 import 'package:raising/client/WebDavClient.dart';
 import 'package:raising/client/file.dart' as webdavfile;
+import 'package:raising/model/HostModel.dart';
 
 import 'ExploreCO.dart';
 import 'ExtractCO.dart';
@@ -35,8 +36,16 @@ abstract class ExploreFile {
 }
 
 class WebdavExploreFile implements ExploreFile {
-  WebDavClient client = WebDavClient("http://192.168.1.111:9016", "", "", "");
+//  WebDavClient client = WebDavClient("http://109.131.14.238:57203/", "", "", "");
+  WebDavClient client;
   Map<String, int> fileSizeCache = Map<String, int>();
+
+  HostPO hostPO;
+
+  WebdavExploreFile(this.hostPO) {
+    //TODO:还需要完善
+    client = WebDavClient(hostPO.hostname, "", "", "");
+  }
 
   int getFileSizeCache(String absPath, int forceFileSize) {
     if (absPath?.isEmpty ?? true) {
@@ -65,8 +74,7 @@ class WebdavExploreFile implements ExploreFile {
    * TODO：fileSize这里应当被缓存起来，不然之后可能会有麻烦。
    */
   @override
-  Future<ExtractCO> loadFileFromZip(String absPath, int index,
-      {int fileSize}) async {
+  Future<ExtractCO> loadFileFromZip(String absPath, int index, {int fileSize}) async {
 //    final Map<dynamic, dynamic> result = await SmbChannel.methodChannel.invokeMethod("webdavExtract", {"recallId": path, "fileSize": fileSize, "index": index});
     int curFileSize = getFileSizeCache(absPath, fileSize);
     var arguments = {
@@ -89,8 +97,7 @@ class WebdavExploreFile implements ExploreFile {
   @override
   Future<WholeFileContentCO> loadWholeFile(String path) async {
     var content = await client.downloadToBinary(path);
-    return WholeFileContentCO()
-      ..content = Uint8List.fromList(await content.first);
+    return WholeFileContentCO()..content = Uint8List.fromList(await content.first);
   }
 
   List<ExploreCO> convertExploreCO(List<webdavfile.FileInfo> lst) {

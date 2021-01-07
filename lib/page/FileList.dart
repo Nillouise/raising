@@ -180,7 +180,7 @@ class FileListState extends State<FileList> {
           ],
         ),
         onTap: () {
-          showDialog(context: context, child: SmbManage());
+          showDialog(context: context, child: HostManage());
         },
       ));
       // } else if (!catalog.isSelectHost()) {
@@ -271,7 +271,7 @@ class FileListState extends State<FileList> {
                               } else if (Constants.COMPRESS_AND_IMAGE_FILE.contains(p.extension(files[index].filename))) {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => FutureViewerChecker(0, files[index].absPath, null, catalog)),
+                                  MaterialPageRoute(builder: (context) => FutureViewerChecker(0, files[index].absPath, catalog)),
                                 );
                               }
                             },

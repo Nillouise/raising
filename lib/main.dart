@@ -11,6 +11,7 @@ import 'package:raising/page/test_page.dart';
 
 import 'channel/SmbChannel.dart';
 import 'model/ExploreNavigator.dart';
+import 'model/HostModel.dart';
 import 'model/smb_list_model.dart';
 import 'model/smb_navigation.dart';
 
@@ -100,6 +101,7 @@ Widget init(BuildContext context) {
           lazy: false,
         ),
         pvd.ChangeNotifierProvider<SmbNavigation>(create: (context) => SmbNavigation(), lazy: false),
+        pvd.ChangeNotifierProvider<HostModel>(create: (context) => HostModel(), lazy: false),
         pvd.ChangeNotifierProvider<ExploreNavigator>(create: (context) => ExploreNavigator(), lazy: false),
         pvd.ChangeNotifierProvider<SearchHistoryModel>(create: (context) => SearchHistoryModel(), lazy: false),
       ],

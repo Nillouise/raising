@@ -4,16 +4,29 @@ import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:raising/dao/MetaPO.dart';
 
-abstract class HostPO {
-  String id;
-  String nickName;
-}
+part 'HostModel.g.dart';
 
 @JsonSerializable()
-class WebdavHostPO extends HostPO {
-  String hostname; // include the path
+class HostPO {
+  String id;
+  String nickName;
+  String hostname; //maybe include the path
+  String domain;
   String username;
   String password;
+  String type; //用来标记是哪种服务器，转成对应的VO
+  //不同的类使用不同的mixin即可
+  factory HostPO.fromJson(Map<String, dynamic> json) => _$HostPOFromJson(json);
+
+  Map<String, dynamic> toJson() => _$HostPOToJson(this);
+
+  HostPO();
+}
+
+class WebDavHostVO extends HostPO {
+  String get type {
+    throw UnimplementedError("un support function");
+  }
 }
 
 class HostModel extends ChangeNotifier {
@@ -26,6 +39,10 @@ class HostModel extends ChangeNotifier {
   }
 
   UnmodifiableListView<HostPO> get hosts => UnmodifiableListView(_hosts);
+
+  HostPO searchById(String id) {
+    return _hosts.firstWhere((it) => it.id == id, orElse: () => null);
+  }
 
   bool remove(int index) {
     if (index >= hosts.length) {

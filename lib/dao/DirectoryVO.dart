@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:json_annotation/json_annotation.dart';
 import 'package:path/path.dart' as p;
 import 'package:raising/dao/SmbVO.dart';
 import 'package:raising/image/cache.dart';

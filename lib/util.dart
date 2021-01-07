@@ -6,8 +6,6 @@ import 'package:raising/channel/SmbChannel.dart';
 import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/SmbVO.dart';
 import 'package:raising/exception/SmbException.dart';
-import 'package:raising/image/ExploreFile.dart';
-import 'package:raising/image/ExtractCO.dart';
 
 import 'constant/Constant.dart';
 import 'image/cache.dart';
@@ -65,27 +63,23 @@ class Utils {
   }
 
   static Future<FileContentCO> getFileFromZip(int index, SmbVO smbVO, {bool forceFromSource = false}) async {
-    ExtractCO extractCO = await WebdavExploreFile().loadFileFromZip("Snipaste_2020-12-22_10-44-46.zip", 0);
-    return FileContentCO()
-      ..absFilename = smbVO.absPath
-      ..content = extractCO.indexContent[0];
-//    CacheVO<FileContentCO> f = await loadFromCache<FileContentCO>("fileFromZip@" + smbVO.id + "@" + smbVO.absPath + "@$index", () {
-//      return SmbChannel.loadFileFromZip(index, smbVO);
-//    }, forceFromSource: forceFromSource);
-//    if (f.code == CacheResult.ok) {
-//      if (f.source == CacheSource.originSource) {
-//        if (index == 0) {
-//          putThumbnail("Thumbnail@" + smbVO.id + "@" + smbVO.absPath, await thumbNailImage(f.metaObj.content));
-//        }
-//        return f.metaObj;
-//      } else {
-//        return FileContentCO()
-//          ..absFilename = smbVO.absPath
-//          ..content = f.file;
-//      }
-//    } else {
-//      throw SmbException("getFileFromZip error");
-//    }
+    CacheVO<FileContentCO> f = await loadFromCache<FileContentCO>("fileFromZip@" + smbVO.id + "@" + smbVO.absPath + "@$index", () {
+      return SmbChannel.loadFileFromZip(index, smbVO);
+    }, forceFromSource: forceFromSource);
+    if (f.code == CacheResult.ok) {
+      if (f.source == CacheSource.originSource) {
+        if (index == 0) {
+          putThumbnail("Thumbnail@" + smbVO.id + "@" + smbVO.absPath, await thumbNailImage(f.metaObj.content));
+        }
+        return f.metaObj;
+      } else {
+        return FileContentCO()
+          ..absFilename = smbVO.absPath
+          ..content = f.file;
+      }
+    } else {
+      throw SmbException("getFileFromZip error");
+    }
   }
 
   static Future<Uint8List> getThumbnailFile(String smbId, String absPath) async {
