@@ -5,6 +5,7 @@ import 'package:raising/page/rank.dart';
 import 'category_page.dart';
 import 'drawer.dart';
 
+//此类相当稳定了
 class RaisingHome extends StatelessWidget {
   RaisingHome({Key key}) : super(key: key);
 

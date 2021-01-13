@@ -1,16 +1,13 @@
-import 'package:json_annotation/json_annotation.dart';
-
-part 'SmbResultCO.g.dart';
-
+//还没能配合SmbChannel，java代码层弃用
 class SmbResultCO {
   String msg;
   dynamic result;
 
   SmbResultCO();
 
-  factory SmbResultCO.fromJson(Map<String, dynamic> json) => _$SmbResultCOFromJson(json);
+  factory SmbResultCO.fromJson(Map<String, dynamic> json) => throw UnimplementedError();
 
-  Map<String, dynamic> toJson() => _$SmbResultCOToJson(this);
+  Map<String, dynamic> toJson() => throw UnimplementedError();
 
   static String successful = "successful";
   static String emptyIndex = "empty indexs";

@@ -12,6 +12,7 @@ import 'package:raising/image/ExploreFile.dart';
 import 'package:raising/image/ExtractCO.dart';
 import 'package:raising/image/WholeFileContentCO.dart';
 import 'package:raising/model/ExploreNavigator.dart';
+import 'package:raising/model/HostModel.dart';
 import 'package:raising/model/smb_list_model.dart';
 import 'package:raising/model/smb_navigation.dart';
 import 'package:raising/page/searchPage.dart';
@@ -23,6 +24,7 @@ import 'drawer.dart';
 
 var logger = Logger();
 
+//此类还没重构完成
 class PathAndSearch extends StatefulWidget {
   final String path;
 
@@ -166,8 +168,9 @@ class FileListState extends State<FileList> {
   @override
   Widget build(BuildContext context) {
     SmbListModel listModel = Provider.of<SmbListModel>(context);
+    HostModel hostModel = Provider.of<HostModel>(context);
     ExploreNavigator catalog = Provider.of<ExploreNavigator>(context);
-    if (listModel.smbs.length == 0) {
+    if (hostModel.hosts.length == 0) {
       //处理没有smb的情况
       return Center(
           child: GestureDetector(

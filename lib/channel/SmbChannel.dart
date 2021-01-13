@@ -9,7 +9,9 @@ import 'package:raising/dao/SmbResultCO.dart';
 import 'package:raising/dao/SmbVO.dart';
 import 'package:raising/exception/SmbException.dart';
 import 'package:raising/image/ExploreFile.dart';
+import 'package:raising/image/ExtractCO.dart';
 
+//代码设计检查完成
 var logger = Logger();
 
 class SmbChannel {
@@ -36,15 +38,16 @@ class SmbChannel {
   /**
    *这里应该清楚smb的特定文件，但不处理排序，排序在view层处理。
    */
-  static Future<List<DirectoryCO>> queryFiles(SmbVO smbVO) async {
+  static Future<List<ExtractCO>> queryFiles(SmbVO smbVO) async {
     try {
       SmbCO smbCO = SmbCO.copyFrom(smbVO);
       await methodChannel.invokeMethod("queryFiles", {"smbCO": smbCO.toMap()});
       Map<dynamic, dynamic> result = await methodChannel.invokeMethod("queryFiles", {"smbCO": smbCO.toMap()});
+      //TODO: 这里还要看看要不要把SmbResultCO改掉
       SmbResultCO smbResult = SmbResultCO.fromJson(Map<String, dynamic>.from(result));
       if (smbResult.msg == SmbResultCO.successful) {
         var list2 = (List<Map<dynamic, dynamic>>.from(smbResult.result));
-        List<DirectoryCO> list = list2.map((element) => DirectoryCO.fromJson(Map<String, dynamic>.from(element))).toList();
+        List<ExtractCO> list = list2.map((element) => ExtractCO.fromJson(Map<String, dynamic>.from(element))).toList();
         return list
           ..removeWhere((element) => ['..', '.', 'IPC\$'].contains(element.filename))
           ..sort((a, b) {
@@ -66,13 +69,13 @@ class SmbChannel {
     }
   }
 
-  static Stream<List<DirectoryCO>> bfsFiles(SmbVO smbVO) async* {
+  static Stream<List<ExtractCO>> bfsFiles(SmbVO smbVO) async* {
     Queue<SmbVO> q = Queue<SmbVO>();
     q.add(smbVO.copy());
     while (q.isNotEmpty) {
       SmbVO c = q.removeFirst();
       print("current queue" + q.length.toString());
-      List<DirectoryCO> queryFiles = await SmbChannel.queryFiles(c);
+      List<ExtractCO> queryFiles = await SmbChannel.queryFiles(c);
 //      yield* SmbChannel.queryFiles(c);
       for (var i in queryFiles) {
         if (i.isDirectory) {
@@ -92,7 +95,7 @@ class SmbChannel {
     while (q.isNotEmpty) {
       SmbVO c = q.removeFirst();
       print("current queue" + q.length.toString());
-      List<DirectoryCO> queryFiles = await SmbChannel.queryFiles(c);
+      List<ExtractCO> queryFiles = await SmbChannel.queryFiles(c);
       for (var i in queryFiles) {
         if (i.isDirectory) {
           var copy = c.copy();
@@ -101,14 +104,14 @@ class SmbChannel {
         }
       }
       //过滤含有关键字的结果
-      List<DirectoryCO> res = queryFiles
+      List<ExtractCO> res = queryFiles
         ..retainWhere((d) {
           if (d.filename != null) {
             return ChineseHelper.convertToTraditionalChinese(d.filename).contains(traditionalKeyword);
           }
           return false;
         });
-      yield res.map((e) => SearchingCO(e, c)).toList();
+      yield res.map((e) => SearchingCO(e, c.toHostPO())).toList();
     }
   }
 

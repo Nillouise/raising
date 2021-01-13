@@ -6,6 +6,7 @@ import 'package:logger/logger.dart';
 import 'package:raising/dao/Repository.dart';
 import 'package:raising/dao/SmbVO.dart';
 
+//弃用还没处理完成
 var logger = Logger();
 
 class SmbListModel extends ChangeNotifier {

@@ -5,8 +5,10 @@ import 'package:provider/provider.dart';
 import 'package:raising/channel/SmbChannel.dart';
 import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/SmbVO.dart';
+import 'package:raising/image/ExtractCO.dart';
 import 'package:raising/model/smb_list_model.dart';
 
+//此类目前基本还没进入开发进程，忽略
 class CategoryPage extends StatefulWidget {
   CategoryPage({Key key}) : super(key: key);
 
@@ -55,7 +57,7 @@ class _CategoryPageState extends State<CategoryPage> {
                 SmbListModel smbListModel = Provider.of<SmbListModel>(context, listen: false);
                 SmbPO smb = smbListModel.smbById("loc##~##1605007610681");
 //                Stream<List<DirectoryCO>> bfsFiles = SmbChannel.bfsFiles(SmbVO.copyFromSmbPO(smb));
-                StreamSubscription<List<DirectoryCO>> subscription;
+                StreamSubscription<List<ExtractCO>> subscription;
                 subscription = SmbChannel.bfsFiles(SmbVO.copyFromSmbPO(smb)).listen((event) {
                   event.forEach((element) {
                     print("current" + element.filename);

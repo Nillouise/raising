@@ -5,13 +5,15 @@ import 'package:logger/logger.dart';
 import 'package:raising/channel/SmbChannel.dart';
 import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/SmbVO.dart';
+import 'package:raising/image/ExtractCO.dart';
 
+//弃用还没处理完成
 var logger = Logger();
 
 class SmbNavigation extends ChangeNotifier {
   String _title;
   SmbVO smbVO;
-  List<DirectoryCO> _files;
+  List<ExtractCO> _files;
 
   double scroll_speed;
 
@@ -30,7 +32,7 @@ class SmbNavigation extends ChangeNotifier {
     notifyListeners();
   }
 
-  void refreshDirectoryInfo(List<DirectoryCO> files) {
+  void refreshDirectoryInfo(List<ExtractCO> files) {
     _files = files;
     notifyListeners();
   }
@@ -42,7 +44,7 @@ class SmbNavigation extends ChangeNotifier {
     });
   }
 
-  List<DirectoryCO> get files => _files;
+  List<ExtractCO> get files => _files;
 
   String get title => _title;
 }

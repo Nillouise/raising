@@ -6,10 +6,13 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:raising/common/JsonConverter.dart';
 import 'package:raising/dao/Repository.dart';
 import 'package:raising/model/HostModel.dart';
 
 part 'MetaPO.g.dart';
+
+//代码设计未完成，这个po还没能存到数据库
 
 /**
  * 使用https://app.quicktype.io/生成：
@@ -23,18 +26,16 @@ part 'MetaPO.g.dart';
  * 序列化类就不需要手动改.g文件了。
  */
 @JsonSerializable()
+@CustomDateTimeConverter()
 class MetaPo {
   static MetaPo metaPo;
 
-  MetaPo({
-    this.key,
-    this.fileKeyScoreChangeDay,
-  });
+  MetaPo();
 
-  String key;
-  int fileKeyScoreChangeDay;
-  List<SearchHistory> searchHistory;
-  List<HostPO> hosts;
+  String key = "MetaPo";
+  DateTime fileKeyScoreChangeDay;
+  List<SearchHistory> searchHistory = List();
+  List<HostPO> hosts = List();
 
   //不同的类使用不同的mixin即可
   factory MetaPo.fromJson(Map<String, dynamic> json) => _$MetaPoFromJson(json);
@@ -44,9 +45,14 @@ class MetaPo {
   static Future<MetaPo> load() async {
     MetaPo metaData = await Repository.getMetaData();
     metaPo = metaData;
-    if (metaPo.fileKeyScoreChangeDay == null) {
-      metaPo.fileKeyScoreChangeDay = DateTime.now().microsecondsSinceEpoch;
+    if (metaPo.key == null) {
+      metaPo.key = "MetaPo";
     }
+
+    if (metaPo.fileKeyScoreChangeDay == null) {
+      metaPo.fileKeyScoreChangeDay = DateTime.now();
+    }
+
     return metaPo;
   }
 
@@ -56,9 +62,10 @@ class MetaPo {
 }
 
 @JsonSerializable()
+@CustomDateTimeConverter()
 class SearchHistory {
   String keyword;
-  int searchTime;
+  DateTime searchTime;
 
   SearchHistory(this.keyword, this.searchTime); //不同的类使用不同的mixin即可
 

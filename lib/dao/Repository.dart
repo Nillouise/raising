@@ -10,6 +10,7 @@ import 'package:raising/dao/SmbVO.dart';
 import 'package:raising/rank/rankAlgorithm.dart';
 import 'package:sqflite/sqflite.dart';
 
+//字段设计需要重构，而且也需要添加缓存表
 class Repository {
   static Database _cache_db;
 
@@ -18,8 +19,8 @@ class Repository {
   static Database get db => _db;
 
   static Future<void> init() async {
-    _db = await openDatabase((await getApplicationDocumentsDirectory()).path + "/sqlit3.db", version: 1, onCreate: (Database db, int version) async {
-      await db.execute("CREATE TABLE meta_data (keyname TEXT PRIMARY KEY, content TEXT)");
+    _db = await openDatabase((await getApplicationDocumentsDirectory()).path + "/sqlit7.db", version: 1, onCreate: (Database db, int version) async {
+      await db.execute("CREATE TABLE meta_data (meta_key TEXT PRIMARY KEY, content TEXT)");
 
       await db.execute("CREATE TABLE smb_manage (id TEXT PRIMARY KEY, _nickName TEXT, hostname TEXT,domain TEXT,username TEXT,password TEXT)");
 
@@ -88,7 +89,7 @@ class Repository {
 
   static Future saveMetaData(MetaPo po) async {
     await _db.transaction((txn) async {
-      return await txn.insert("meta_data", {"keyname": po.key, "content": json.encode(po.toJson())}, conflictAlgorithm: ConflictAlgorithm.replace);
+      return await txn.insert("meta_data", {"meta_key": po.key, "content": json.encode(po.toJson())}, conflictAlgorithm: ConflictAlgorithm.replace);
     });
   }
 
@@ -138,8 +139,8 @@ class Repository {
   static Future<bool> upsertFileInfo(String absPath, String smbId, String smbNickName, FileInfoPO fileinfo) async {
     fileinfo
       ..absPath = absPath
-      ..smbId = smbId
-      ..smbNickName = smbNickName
+      ..hostId = smbId
+      ..hostNickName = smbNickName
       ..recentReadTime = DateTime.now();
     var json = fileinfo.toJson();
     json.removeWhere((key, value) => key == null || value == null);

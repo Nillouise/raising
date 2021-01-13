@@ -6,6 +6,7 @@ import 'package:raising/image/ExploreFile.dart';
 import 'package:raising/model/ExploreNavigator.dart';
 import 'package:raising/model/HostModel.dart';
 
+//此类还没重构完成
 class HostManage extends StatefulWidget {
   final String hostId;
 
@@ -24,11 +25,19 @@ class _HostManageState extends State<HostManage> {
   GlobalKey _formKey = new GlobalKey<FormState>();
   bool _nameAutoFocus = true;
 
+  HostPO getCurrentHostPO(HostModel hostModel, String hostId) {
+    return hostModel.searchById(hostId);
+  }
+
+  bool checkHostNickNameDuplicate(HostModel hostModel, String hostNickName) {
+    return hostModel.checkDuplicate(hostNickName);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.hostId != null) {
       HostModel hostModel = Provider.of<HostModel>(context, listen: false);
-      HostPO host = hostModel.searchById(widget.hostId);
+      HostPO host = getCurrentHostPO(hostModel, widget.hostId);
       if (host != null) {
         _nickController.text = host.nickName;
         _hostnameController.text = host.hostname;
@@ -59,9 +68,9 @@ class _HostManageState extends State<HostManage> {
                       if (v.trim().isEmpty) {
                         return "必填";
                       }
-                      HostModel hostname = Provider.of<HostModel>(context, listen: false);
-                      hostname.checkDuplicate(_nickController.text);
-                      if (hostname.checkDuplicate(v)) {
+                      HostModel hostModel = Provider.of<HostModel>(context, listen: false);
+//                      hostname.checkDuplicate(_nickController.text);
+                      if (checkHostNickNameDuplicate(hostModel, v)) {
                         return "跟现有昵称重复";
                       }
                       return null;
@@ -132,6 +141,7 @@ class _HostManageState extends State<HostManage> {
   }
 
   void _onSubmit() async {
+    //TODO:这里漏了服务器的种类。
     // 提交前，先验证各个表单字段是否合法
     if ((_formKey.currentState as FormState).validate()) {
 //      showLoading(context);
@@ -143,7 +153,8 @@ class _HostManageState extends State<HostManage> {
           ..nickName = _nickController.text
           ..hostname = _hostnameController.text
           ..username = _usernameController.text
-          ..password = _pwdController.text);
+          ..password = _pwdController.text
+          ..type = "webdav");
       } else {
         //添加host
         hostModel.insert(HostPO()
@@ -151,7 +162,8 @@ class _HostManageState extends State<HostManage> {
           ..nickName = _nickController.text
           ..hostname = _hostnameController.text
           ..username = _usernameController.text
-          ..password = _pwdController.text);
+          ..password = _pwdController.text
+          ..type = "webdav");
       }
       Navigator.of(context).pop();
     }
@@ -247,7 +259,6 @@ class HomeDrawer extends StatelessWidget {
 class HostListDrawer extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
-    // TODO: implement createState
     return _HostListDrawerState();
   }
 }
@@ -294,7 +305,7 @@ class _HostListDrawerState extends State<HostListDrawer> {
               onTap: () {
                 //TODO: 改成host的分类
                 ExploreNavigator catalog = Provider.of<ExploreNavigator>(context, listen: false);
-                var webdavExploreFile = WebdavExploreFile(item);
+                WebdavExploreFile webdavExploreFile = WebdavExploreFile(item);
                 SmbChannel.explorefiles = [webdavExploreFile];
                 catalog.refresh(webdavExploreFile, "");
                 Navigator.of(context).pop();

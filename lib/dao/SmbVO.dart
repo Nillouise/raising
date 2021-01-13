@@ -1,6 +1,7 @@
 import 'package:logger/logger.dart';
-import 'package:raising/util.dart';
+import 'package:raising/model/HostModel.dart';
 
+//这几个vo还没能清楚相关使用
 var logger = Logger();
 
 class SmbPO {
@@ -85,10 +86,22 @@ class SmbVO extends SmbPO {
     SmbPO.copySmbPO(po, res);
     return res;
   }
-  SmbVO copy(){
+
+  SmbVO copy() {
     var vo = copyFromSmbPO(this);
     vo.absPath = this.absPath;
     return vo;
+  }
+
+  HostPO toHostPO() {
+    return HostPO()
+      ..id = id
+      ..nickName = _nickName
+      ..hostname = hostname
+      ..domain = domain
+      ..username = username
+      ..password = password
+      ..type = "smb";
   }
 }
 

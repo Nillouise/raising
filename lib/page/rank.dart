@@ -6,6 +6,8 @@ import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/Repository.dart';
 import 'package:raising/util.dart';
 
+//此类还没完成
+
 var logger = Logger();
 
 class HistoryPage extends StatefulWidget {
@@ -59,7 +61,7 @@ class _HistoryPageState extends State<HistoryPage> {
                 aspectRatio: 1,
                 child: FutureBuilder<Widget>(
                   future: () async {
-                    Uint8List bytes = await Utils.getThumbnailFile(_data[index].smbId, _data[index].absPath);
+                    Uint8List bytes = await Utils.getThumbnailFile(_data[index].hostId, _data[index].absPath);
                     if (bytes == null) {
                       return Icon(Icons.check_box_outline_blank);
                     }

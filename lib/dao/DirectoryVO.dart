@@ -1,33 +1,18 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:path/path.dart' as p;
-import 'package:raising/dao/SmbVO.dart';
+import 'package:json_annotation/json_annotation.dart';
+import 'package:raising/common/JsonConverter.dart';
+import 'package:raising/image/ExtractCO.dart';
 import 'package:raising/image/cache.dart';
+import 'package:raising/model/HostModel.dart';
 
 part 'DirectoryVO.g.dart';
 
-class DirectoryCO {
-  String filename;
-  DateTime updateTime;
-  int size;
-  bool isDirectory;
-  bool isComprssFile;
-  bool isShare;
-  int fileNum;
-
-  DirectoryCO();
-
-  factory DirectoryCO.fromJson(Map<String, dynamic> json) => _$DirectoryCOFromJson(json);
-
-  Map<String, dynamic> toJson() => _$DirectoryCOToJson(this);
-}
-
 class SearchingCO {
-  DirectoryCO directoryCO;
-  SmbVO smbVO;
+  ExtractCO directoryCO;
+  HostPO hostPO;
 
-  SearchingCO(this.directoryCO, this.smbVO);
+  SearchingCO(this.directoryCO, this.hostPO);
 }
 
 /**
@@ -110,9 +95,15 @@ class SearchingCO {
 //      };
 //}
 
+//stackoverflow.com/questions/52789217/flutter-parsing-json-with-datetime-from-golang-rfc3339-formatexception-invalid
+//转换datetime
+//TODO: 明天修复这个问题。
+@JsonSerializable()
+@CustomDateTimeConverter()
 class FileInfoPO {
-  String smbId;
-  String smbNickName; //只用smbId可能无法恢复删除的smb链接,所以也存储一下这个nickName
+  String fileId; // 现在应当使用fileId来查找文件，将来用md5，filename之类的确认一个文件，目前fileId = filename
+  String hostId;
+  String hostNickName; //只用smbId可能无法恢复删除的smb链接,所以也存储一下这个nickName
   String absPath; //include filename
   String filename;
   DateTime updateTime;
@@ -127,34 +118,35 @@ class FileInfoPO {
 
   FileInfoPO();
 
-  FileInfoPO copyFromFileContentCO(FileContentCO co) {
-    this
-      ..absPath = co.absFilename
-      ..size = co.wholeFileSize
-      ..fileNum = co.length
-      ..filename = p.basename(co.absFilename ?? "");
-  }
-
-  FileInfoPO.create(
-      {this.smbId,
-      this.smbNickName,
-      this.absPath,
-      this.filename,
-      this.updateTime,
-      this.size,
-      this.isDirectory,
-      this.isCompressFile,
-      this.isShare,
-      this.readLenght,
-      this.fileNum,
-      this.recentReadTime});
-
   factory FileInfoPO.fromJson(Map<String, dynamic> json) => _$FileInfoPOFromJson(json);
 
   Map<String, dynamic> toJson() => _$FileInfoPOToJson(this);
 }
 
-// @JsonSerializable()
+@JsonSerializable()
+@CustomDateTimeConverter()
+class FileKeyPO {
+  FileKeyPO({
+    this.fileId,
+    this.filename,
+    this.star,
+    this.score14,
+    this.score60,
+    this.recentReadTime,
+  });
+
+  String fileId; // 现在应当使用fileId来查找文件，将来用md5，filename之类的确认一个文件，目前fileId = filename
+  String filename;
+  int star;
+  double score14;
+  double score60;
+  DateTime recentReadTime;
+
+  factory FileKeyPO.fromJson(Map<String, dynamic> json) => _$FileKeyPOFromJson(json);
+
+  Map<String, dynamic> toJson() => _$FileKeyPOToJson(this);
+}
+
 class FileContentCO implements CacheContent {
   String absFilename; //压缩文件名字
   String zipAbsFilename; //压缩文件内的绝对路径
@@ -165,9 +157,9 @@ class FileContentCO implements CacheContent {
 
   FileContentCO();
 
-  factory FileContentCO.fromJson(Map<String, dynamic> json) => _$ZipFileContentCOFromJson(json);
+  factory FileContentCO.fromJson(Map<String, dynamic> json) => throw UnimplementedError();
 
-  Map<String, dynamic> toJson() => _$ZipFileContentCOToJson(this);
+  Map<String, dynamic> toJson() => throw UnimplementedError();
 
   @override
   Uint8List getCacheFile() {
@@ -175,52 +167,6 @@ class FileContentCO implements CacheContent {
   }
 }
 
-/**
-    {
-    "filename":"value",
-    "star":5,
-    "score14":5.1,
-    "score60":5.1,
-    "recentReadTime":"2018-09-06 15:03:48"
-    }
- */
-
-FileKeyPO fileKeyPoFromJson(String str) => FileKeyPO.fromJson(json.decode(str));
-
-String fileKeyPoToJson(FileKeyPO data) => json.encode(data.toJson());
-
-class FileKeyPO {
-  FileKeyPO({
-    this.filename,
-    this.star,
-    this.score14,
-    this.score60,
-    this.recentReadTime,
-  });
-
-  String filename;
-  int star;
-  double score14;
-  double score60;
-  DateTime recentReadTime;
-  factory FileKeyPO.fromJson(Map<String, dynamic> json) => FileKeyPO(
-        filename: json["filename"],
-        star: json["star"],
-        score14: json["score14"],
-        score60: json["score60"],
-        recentReadTime: DateTime.fromMillisecondsSinceEpoch(json["recentReadTime"] ?? 0),
-      );
-
-  Map<String, dynamic> toJson() => {
-        "filename": filename,
-        "star": star,
-        "score14": score14,
-        "score60": score60,
-        "recentReadTime": recentReadTime.millisecondsSinceEpoch,
-      };
-}
-
-//@JsonSerializable()
 //class FileKeyPO {
 //  String filename; //唯一索引，以后可能会加上md5之类的文件唯一标识
 //  Map<String, String> tags;

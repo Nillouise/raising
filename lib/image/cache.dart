@@ -7,6 +7,8 @@ import 'package:logger/logger.dart';
 import 'ExtractCO.dart';
 import 'WholeFileContentCO.dart';
 
+//重构代码后需要的新cache还没做出来。
+
 var logger = Logger();
 enum CacheResult {
   ok,

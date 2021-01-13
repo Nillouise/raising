@@ -6,6 +6,8 @@ import 'package:raising/dao/MetaPO.dart';
 
 part 'HostModel.g.dart';
 
+//此类还没能持久化到数据库
+
 @JsonSerializable()
 class HostPO {
   String id;
@@ -30,48 +32,46 @@ class WebDavHostVO extends HostPO {
 }
 
 class HostModel extends ChangeNotifier {
-  List<HostPO> _hosts;
-
   void insert(HostPO host, {int index: 0}) {
-    _hosts.insert(index, host);
+    MetaPo.metaPo.hosts.insert(index, host);
     _uploadItems();
     notifyListeners();
   }
 
-  UnmodifiableListView<HostPO> get hosts => UnmodifiableListView(_hosts);
+  UnmodifiableListView<HostPO> get hosts => UnmodifiableListView(MetaPo.metaPo.hosts);
 
   HostPO searchById(String id) {
-    return _hosts.firstWhere((it) => it.id == id, orElse: () => null);
+    return MetaPo.metaPo.hosts.firstWhere((it) => it.id == id, orElse: () => null);
   }
 
   bool remove(int index) {
     if (index >= hosts.length) {
       return false;
     }
-    _hosts.removeAt(index);
+    MetaPo.metaPo.hosts.removeAt(index);
     _uploadItems();
     notifyListeners();
     return true;
   }
 
   bool replace(HostPO host) {
-    int replaceIndex = _hosts.indexWhere((it) => it.id == host.id);
+    int replaceIndex = MetaPo.metaPo.hosts.indexWhere((it) => it.id == host.id);
     if (replaceIndex == -1) {
       return false;
     }
-    _hosts.replaceRange(replaceIndex, replaceIndex + 1, [host]);
+    MetaPo.metaPo.hosts.replaceRange(replaceIndex, replaceIndex + 1, [host]);
     _uploadItems();
     notifyListeners();
     return true;
   }
 
   void _uploadItems() async {
-    MetaPo.metaPo.hosts = _hosts;
+    MetaPo.metaPo.hosts = MetaPo.metaPo.hosts;
     await MetaPo.save();
   }
 
   bool checkDuplicate(String id) {
-    int index = _hosts.indexWhere((it) => it.id == id);
-    return index == -1;
+    int index = MetaPo.metaPo.hosts.indexWhere((it) => it.id == id);
+    return index != -1;
   }
 }
