@@ -24,7 +24,7 @@ ExtractCO _$ExtractCOFromJson(Map json) {
     ..indexPath = (json['indexPath'] as Map)?.map(
       (k, e) => MapEntry(int.parse(k as String), e as String),
     )
-    ..indexContent = const MapIntStringConverter()
+    ..indexContent = const MapIntUint8listConverter()
         .fromJson(json['indexContent'] as Map<int, Uint8List>);
 }
 
@@ -42,5 +42,5 @@ Map<String, dynamic> _$ExtractCOToJson(ExtractCO instance) => <String, dynamic>{
       'compressFormat': instance.compressFormat,
       'indexPath': instance.indexPath?.map((k, e) => MapEntry(k.toString(), e)),
       'indexContent':
-          const MapIntStringConverter().toJson(instance.indexContent),
+          const MapIntUint8listConverter().toJson(instance.indexContent),
     };

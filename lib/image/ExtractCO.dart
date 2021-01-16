@@ -8,7 +8,7 @@ part 'ExtractCO.g.dart';
 
 @JsonSerializable()
 @CustomDateTimeConverter()
-@MapIntStringConverter()
+@MapIntUint8listConverter()
 class ExtractCO {
   String msg;
   String error;

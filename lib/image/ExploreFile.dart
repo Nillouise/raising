@@ -122,6 +122,10 @@ class WebdavExploreFile implements ExploreFile {
     return res;
   }
 
+  List<ExploreCO> filterUselessWebdavFile(List<ExploreCO> lst){
+    return lst.where((i)=>i.absPath != "/").toList();
+  }
+
   @override
   Future<List<ExploreCO>> queryFiles(String path) async {
     List<webdavfile.FileInfo> rec = await client.ls(path: path, depth: 1);
@@ -129,7 +133,7 @@ class WebdavExploreFile implements ExploreFile {
     cos.forEach((element) {
       fileSizeCache[element.absPath] = element.size;
     });
-    return cos;
+    return filterUselessWebdavFile(cos);
   }
 
   @override

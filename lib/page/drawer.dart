@@ -8,7 +8,7 @@ import 'package:raising/model/HostModel.dart';
 
 //此类还没重构完成
 class HostManage extends StatefulWidget {
-  final String hostId;
+  final HostPO hostId;
 
   @override
   _HostManageState createState() => _HostManageState();
@@ -39,19 +39,20 @@ class _HostManageState extends State<HostManage> {
     return hostModel.checkDuplicate(hostNickName);
   }
 
+
+  @override
+  void initState() {
+    if (widget.hostId != null) {
+      _nickController.text = widget.hostId.nickName;
+      _hostnameController.text = widget.hostId.hostname;
+      _usernameController.text = widget.hostId.username;
+      _pwdController.text = widget.hostId.password;
+      needAccount = widget.hostId.needAccount;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (widget.hostId != null) {
-      HostModel hostModel = Provider.of<HostModel>(context, listen: false);
-      host = getCurrentHostPO(hostModel, widget.hostId);
-      if (host != null) {
-        _nickController.text = host.nickName;
-        _hostnameController.text = host.hostname;
-        _usernameController.text = host.username;
-        _pwdController.text = host.password;
-        needAccount = host.needAccount;
-      }
-    }
 
     return Scaffold(
         appBar: AppBar(title: Text("添加Host")),
@@ -95,7 +96,7 @@ class _HostManageState extends State<HostManage> {
                               Provider.of<HostModel>(context, listen: false);
 //                      hostname.checkDuplicate(_nickController.text);
                           if (checkHostNickNameDuplicate(hostModel, v)) {
-                            if (widget.hostId != null && host.nickName == v) {
+                            if (widget.hostId != null && widget.hostId.nickName == v) {
                               return null;
                             }
                             return "跟现有昵称重复";
@@ -214,7 +215,7 @@ class _HostManageState extends State<HostManage> {
 
       if (widget.hostId != null) {
         //修复host
-        hostModel.replace(po..id = widget.hostId);
+        hostModel.replace(po..id = widget.hostId.id);
       } else {
         //添加host
         hostModel.insert(po
@@ -357,7 +358,7 @@ class _HostListDrawerState extends State<HostListDrawer> {
                     showDialog(
                         context: context,
                         child: HostManage(
-                          hostId: item.id,
+                          hostId: item,
                         ));
                   }),
               onTap: () {
