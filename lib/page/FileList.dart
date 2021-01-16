@@ -4,6 +4,7 @@ import 'package:logger/logger.dart';
 import 'package:path/path.dart' as p;
 import 'package:popup_menu/popup_menu.dart';
 import 'package:provider/provider.dart';
+import 'package:raising/channel/SmbChannel.dart';
 import 'package:raising/constant/Constant.dart';
 import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/SmbVO.dart';
@@ -171,7 +172,7 @@ class FileListState extends State<FileList> {
     HostModel hostModel = Provider.of<HostModel>(context);
     ExploreNavigator catalog = Provider.of<ExploreNavigator>(context);
     if (hostModel.hosts.length == 0) {
-      //处理没有smb的情况
+      //处理没有配置任何一个host的情况
       return Center(
           child: GestureDetector(
         child: Row(
@@ -186,16 +187,14 @@ class FileListState extends State<FileList> {
           showDialog(context: context, child: HostManage());
         },
       ));
-      // } else if (!catalog.isSelectHost()) {
-    } else if (false) {
-      //处理没选SMB的情况
-      SmbListModel smbListModel = Provider.of<SmbListModel>(context);
+    } else if (!catalog.isSelectHost()) {
+      //处理没选host的情况
       return ListView.builder(
           scrollDirection: Axis.vertical,
           shrinkWrap: true,
-          itemCount: smbListModel.smbs.length,
+          itemCount: hostModel.hosts.length,
           itemBuilder: (context, index) {
-            final item = smbListModel.smbs[index];
+            final item = hostModel.hosts[index];
 
             return Dismissible(
               // Each Dismissible must contain a Key. Keys allow Flutter to
@@ -206,7 +205,7 @@ class FileListState extends State<FileList> {
               onDismissed: (direction) {
                 // Remove the item from the data source.
                 setState(() {
-                  smbListModel.removeSmb(item.id);
+                  hostModel.remove(index);
                 });
                 // Then show a snackbar.
                 Scaffold.of(context).showSnackBar(SnackBar(content: Text("$item dismissed")));
@@ -216,10 +215,9 @@ class FileListState extends State<FileList> {
               child: ListTile(
                 title: Text('${item.nickName}'),
                 onTap: () {
-                  SmbListModel smbListModel = Provider.of<SmbListModel>(context, listen: false);
-                  var smb = smbListModel.smbById(item.id);
-                  SmbNavigation smbNavigation = Provider.of<SmbNavigation>(context, listen: false);
-                  smbNavigation.refreshSmbPo(smb);
+                  WebdavExploreFile webdavExploreFile = WebdavExploreFile(item);
+                  SmbChannel.explorefiles = [webdavExploreFile];
+                  catalog.refresh(webdavExploreFile, "");
                 },
               ),
             );
@@ -229,8 +227,6 @@ class FileListState extends State<FileList> {
         future: () async {
           ExploreNavigator catalog = Provider.of<ExploreNavigator>(context, listen: false);
           await catalog.awaitQueryFiles();
-//          catalog.exploreFile = WebdavExploreFile();
-//          await catalog.refresh(WebdavExploreFile(), "");
 
           return true;
         }(),

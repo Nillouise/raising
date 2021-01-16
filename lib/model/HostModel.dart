@@ -70,8 +70,8 @@ class HostModel extends ChangeNotifier {
     await MetaPo.save();
   }
 
-  bool checkDuplicate(String id) {
-    int index = MetaPo.metaPo.hosts.indexWhere((it) => it.id == id);
+  bool checkDuplicate(String nickName) {
+    int index = MetaPo.metaPo.hosts.indexWhere((it) => it.nickName == nickName);
     return index != -1;
   }
 }

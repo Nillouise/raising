@@ -36,7 +36,7 @@ import 'model/smb_navigation.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   //call the initial config method
-  onStart();
+  await onStart();
   runApp(MyApp());
 }
 

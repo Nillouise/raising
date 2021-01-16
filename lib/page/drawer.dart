@@ -25,6 +25,11 @@ class _HostManageState extends State<HostManage> {
   GlobalKey _formKey = new GlobalKey<FormState>();
   bool _nameAutoFocus = true;
 
+  static const List<String> _HostTypeDrawList = ['WebDav', 'Samba'];
+  String _selectedHostType = "WebDav";
+
+  bool needAccount = true;
+
   HostPO getCurrentHostPO(HostModel hostModel, String hostId) {
     return hostModel.searchById(hostId);
   }
@@ -49,95 +54,140 @@ class _HostManageState extends State<HostManage> {
     return Scaffold(
         appBar: AppBar(title: Text("添加Host")),
         body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            child: Column(
-              children: <Widget>[
-                TextFormField(
-                    autofocus: _nameAutoFocus,
-                    controller: _nickController,
-//                    initialValue: initSmbName,
-                    decoration: InputDecoration(
-                      labelText: "昵称",
-                      hintText: "命名服务器的昵称",
-                      prefixIcon: Icon(Icons.person),
+            padding: const EdgeInsets.all(16.0),
+            child: SingleChildScrollView(
+              child: Form(
+                key: _formKey,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                child: Column(
+                  children: <Widget>[
+                    DropdownButton(
+//                      hint: Text('Please choose a location'), // Not necessary for Option 1
+                      value: _selectedHostType,
+                      onChanged: (newValue) {
+                        setState(() {
+                          _selectedHostType = newValue;
+                        });
+                      },
+                      items: _HostTypeDrawList.map((location) {
+                        return DropdownMenuItem(
+                          child: new Text(location),
+                          value: location,
+                        );
+                      }).toList(),
                     ),
-                    validator: (v) {
-                      if (v.trim().isEmpty) {
-                        return "必填";
-                      }
-                      HostModel hostModel = Provider.of<HostModel>(context, listen: false);
+                    TextFormField(
+                        autofocus: _nameAutoFocus,
+                        controller: _nickController,
+//                    initialValue: initSmbName,
+                        decoration: InputDecoration(
+                          labelText: "昵称",
+                          hintText: "命名服务器的昵称",
+                          prefixIcon: Icon(Icons.person),
+                        ),
+                        validator: (v) {
+                          if (v.trim().isEmpty) {
+                            return "必填";
+                          }
+                          HostModel hostModel = Provider.of<HostModel>(context, listen: false);
 //                      hostname.checkDuplicate(_nickController.text);
-                      if (checkHostNickNameDuplicate(hostModel, v)) {
-                        return "跟现有昵称重复";
-                      }
-                      return null;
-                    }),
-                TextFormField(
-                    controller: _hostnameController,
+                          if (checkHostNickNameDuplicate(hostModel, v)) {
+                            return "跟现有昵称重复";
+                          }
+                          return null;
+                        }),
+                    TextFormField(
+                        controller: _hostnameController,
 //                    initialValue: initSmbName,
-                    decoration: InputDecoration(
-                      labelText: "Host",
-                      hintText: "Host ip 地址",
-                      prefixIcon: Icon(Icons.person),
+                        decoration: InputDecoration(
+                          labelText: "Host",
+                          hintText: "Host ip 地址",
+                          prefixIcon: Icon(Icons.person),
+                        ),
+                        validator: (v) {
+                          if (v.trim().isEmpty) {
+                            return "必填";
+                          }
+                          return null;
+                        }),
+                    TextFormField(
+                        autofocus: _nameAutoFocus,
+                        controller: _usernameController,
+                        readOnly: !needAccount,
+                        style: needAccount
+                            ? null
+                            : TextStyle(
+                                decoration: TextDecoration.lineThrough,
+                                decorationColor: const Color(0xff000000),
+                              ),
+                        decoration: InputDecoration(
+                            labelText: "用户名",
+                            hintText: "提示",
+                            prefixIcon: Icon(Icons.person),
+                            suffixIcon: TextButton(
+//                              icon: Icon(pwdShow ? Icons.visibility_off : Icons.visibility),
+                              child: Text("无需账号"),
+                              onPressed: () {
+                                setState(() {
+//                                  pwdShow = !pwdShow;
+                                  needAccount = !needAccount;
+                                });
+                              },
+                            )),
+                        // 校验用户名（不能为空）
+                        validator: (v) {
+                          if (!needAccount) {
+                            return null;
+                          }
+                          return v.trim().isNotEmpty ? null : "用户名";
+                        }),
+                    TextFormField(
+                      controller: _pwdController,
+                      autofocus: !_nameAutoFocus,
+                      readOnly: !needAccount,
+                      style: needAccount
+                          ? null
+                          : TextStyle(
+                              decoration: TextDecoration.lineThrough,
+                              decorationColor: const Color(0xff000000),
+                            ),
+                      decoration: InputDecoration(
+                          labelText: "密码",
+                          hintText: "Smb密码",
+                          prefixIcon: Icon(Icons.lock),
+                          suffixIcon: IconButton(
+                            icon: Icon(pwdShow ? Icons.visibility_off : Icons.visibility),
+                            onPressed: () {
+                              setState(() {
+                                pwdShow = !pwdShow;
+                              });
+                            },
+                          )),
+                      obscureText: !pwdShow,
+                      //校验密码（不能为空）
+                      validator: (v) {
+                        if (!needAccount) {
+                          return null;
+                        }
+                        return v.trim().isNotEmpty ? null : "必填";
+                      },
                     ),
-                    validator: (v) {
-                      if (v.trim().isEmpty) {
-                        return "必填";
-                      }
-                      return null;
-                    }),
-                TextFormField(
-                    autofocus: _nameAutoFocus,
-                    controller: _usernameController,
-                    decoration: InputDecoration(
-                      labelText: "用户名",
-                      hintText: "提示",
-                      prefixIcon: Icon(Icons.person),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 25),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints.expand(height: 55.0),
+                        child: RaisedButton(
+                          color: Theme.of(context).primaryColor,
+                          onPressed: _onSubmit,
+                          textColor: Colors.white,
+                          child: Text("确认"),
+                        ),
+                      ),
                     ),
-                    // 校验用户名（不能为空）
-                    validator: (v) {
-                      return v.trim().isNotEmpty ? null : "用户名";
-                    }),
-                TextFormField(
-                  controller: _pwdController,
-                  autofocus: !_nameAutoFocus,
-                  decoration: InputDecoration(
-                      labelText: "密码",
-                      hintText: "Smb密码",
-                      prefixIcon: Icon(Icons.lock),
-                      suffixIcon: IconButton(
-                        icon: Icon(pwdShow ? Icons.visibility_off : Icons.visibility),
-                        onPressed: () {
-                          setState(() {
-                            pwdShow = !pwdShow;
-                          });
-                        },
-                      )),
-                  obscureText: !pwdShow,
-                  //校验密码（不能为空）
-                  validator: (v) {
-                    return v.trim().isNotEmpty ? null : "必填";
-                  },
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 25),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints.expand(height: 55.0),
-                    child: RaisedButton(
-                      color: Theme.of(context).primaryColor,
-                      onPressed: _onSubmit,
-                      textColor: Colors.white,
-                      child: Text("确认"),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ));
+              ),
+            )));
   }
 
   void _onSubmit() async {
@@ -154,7 +204,7 @@ class _HostManageState extends State<HostManage> {
           ..hostname = _hostnameController.text
           ..username = _usernameController.text
           ..password = _pwdController.text
-          ..type = "webdav");
+          ..type = _selectedHostType);
       } else {
         //添加host
         hostModel.insert(HostPO()
@@ -163,7 +213,7 @@ class _HostManageState extends State<HostManage> {
           ..hostname = _hostnameController.text
           ..username = _usernameController.text
           ..password = _pwdController.text
-          ..type = "webdav");
+          ..type = _selectedHostType);
       }
       Navigator.of(context).pop();
     }
