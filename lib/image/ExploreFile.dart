@@ -74,11 +74,12 @@ class WebdavExploreFile implements ExploreFile {
    * TODO：fileSize这里应当被缓存起来，不然之后可能会有麻烦。
    */
   @override
-  Future<ExtractCO> loadFileFromZip(String absPath, int index, {int fileSize}) async {
+  Future<ExtractCO> loadFileFromZip(String absPath, int index,
+      {int fileSize}) async {
 //    final Map<dynamic, dynamic> result = await SmbChannel.methodChannel.invokeMethod("webdavExtract", {"recallId": path, "fileSize": fileSize, "index": index});
     int curFileSize = getFileSizeCache(absPath, fileSize);
     var arguments = {
-      "absPath": client.baseUrl+ absPath,
+      "absPath": client.baseUrl + absPath,
       "username": client.username,
       "password": client.password,
       "fileSize": curFileSize,
@@ -86,7 +87,13 @@ class WebdavExploreFile implements ExploreFile {
     };
     final Map<dynamic, dynamic> result =
         await SmbChannel.methodChannel.invokeMethod("webdavExtract", arguments);
-    ExtractCO extractCO = ExtractCO.fromJson(Map<String, dynamic>.from(result));
+    var map = Map<String, dynamic>.from(result);
+    map["indexPath"] = (Map<int, String>.from(map["indexPath"]))
+        ?.map((k, e) => MapEntry((k).toString(), e as String));
+    map["indexContent"] = (Map<int, Uint8List>.from(map["indexContent"]))
+        ?.map((k, e) => MapEntry(k as int, e as Uint8List));
+
+    ExtractCO extractCO = ExtractCO.fromJson(map);
     if (extractCO.msg == "OK") {
       return extractCO;
     } else {
@@ -97,7 +104,8 @@ class WebdavExploreFile implements ExploreFile {
   @override
   Future<WholeFileContentCO> loadWholeFile(String path) async {
     var content = await client.downloadToBinary(path);
-    return WholeFileContentCO()..content = Uint8List.fromList(await content.first);
+    return WholeFileContentCO()
+      ..content = Uint8List.fromList(await content.first);
   }
 
   List<ExploreCO> convertExploreCO(List<webdavfile.FileInfo> lst) {

@@ -1,4 +1,4 @@
-//还没能配合SmbChannel，java代码层弃用
+//还没能配合SmbChannel，java代码层弃用，但在dart层已经弃用完成（只要删除smbchannel即可）
 class SmbResultCO {
   String msg;
   dynamic result;

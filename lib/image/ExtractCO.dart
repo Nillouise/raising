@@ -1,7 +1,14 @@
 import 'dart:typed_data';
 
 import 'package:json_annotation/json_annotation.dart';
+import 'package:raising/common/JsonConverter.dart';
 
+
+part 'ExtractCO.g.dart';
+
+@JsonSerializable()
+@CustomDateTimeConverter()
+@MapIntStringConverter()
 class ExtractCO {
   String msg;
   String error;
@@ -17,26 +24,11 @@ class ExtractCO {
 
   //index 按文件名（包括路径排序，第几个文件，跳过文件夹）的排序序号，从0开始。
   Map<int, String> indexPath; //压缩文件内的绝对路径
-  @JsonKey(ignore: true)
   Map<int, Uint8List> indexContent;
 
-  factory ExtractCO.fromJson(Map<String, dynamic> json) {
-    return ExtractCO()
-      ..msg = json['msg'] as String
-      ..error = json['error'] as String
-      ..absPath = json['absPath'] as String
-      ..filename = json['filename'] as String
-      ..size = json['size'] as int
-      ..fileNum = json['fileNum'] as int
-      ..isDirectory = json['isDirectory'] as bool
-      ..isCompressFile = json['isCompressFile'] as bool
-      ..createTime = json['createTime'] == null ? null : DateTime.fromMillisecondsSinceEpoch(json['createTime'])
-      ..updateTime = json['updateTime'] == null ? null : DateTime.fromMillisecondsSinceEpoch(json['updateTime'])
-      ..compressFormat = json['compressFormat'] as String
-      //TODO:注意这里没有处理为null的情况，会抛出异常。
-      ..indexPath = new Map<int, String>.from(json['indexPath'])
-      ..indexContent = new Map<int, Uint8List>.from(json['indexContent']);
-  }
+  factory ExtractCO.fromJson(Map<String, dynamic> json) => _$ExtractCOFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ExtractCOToJson(this);
 
   ExtractCO();
 }

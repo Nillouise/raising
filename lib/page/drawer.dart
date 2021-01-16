@@ -25,6 +25,7 @@ class _HostManageState extends State<HostManage> {
   GlobalKey _formKey = new GlobalKey<FormState>();
   bool _nameAutoFocus = true;
 
+  HostPO host;
   static const List<String> _HostTypeDrawList = ['WebDav', 'Samba'];
   String _selectedHostType = "WebDav";
 
@@ -42,12 +43,13 @@ class _HostManageState extends State<HostManage> {
   Widget build(BuildContext context) {
     if (widget.hostId != null) {
       HostModel hostModel = Provider.of<HostModel>(context, listen: false);
-      HostPO host = getCurrentHostPO(hostModel, widget.hostId);
+      host = getCurrentHostPO(hostModel, widget.hostId);
       if (host != null) {
         _nickController.text = host.nickName;
         _hostnameController.text = host.hostname;
         _usernameController.text = host.username;
         _pwdController.text = host.password;
+        needAccount = host.needAccount;
       }
     }
 
@@ -89,9 +91,13 @@ class _HostManageState extends State<HostManage> {
                           if (v.trim().isEmpty) {
                             return "必填";
                           }
-                          HostModel hostModel = Provider.of<HostModel>(context, listen: false);
+                          HostModel hostModel =
+                              Provider.of<HostModel>(context, listen: false);
 //                      hostname.checkDuplicate(_nickController.text);
                           if (checkHostNickNameDuplicate(hostModel, v)) {
+                            if (widget.hostId != null && host.nickName == v) {
+                              return null;
+                            }
                             return "跟现有昵称重复";
                           }
                           return null;
@@ -156,7 +162,9 @@ class _HostManageState extends State<HostManage> {
                           hintText: "Smb密码",
                           prefixIcon: Icon(Icons.lock),
                           suffixIcon: IconButton(
-                            icon: Icon(pwdShow ? Icons.visibility_off : Icons.visibility),
+                            icon: Icon(pwdShow
+                                ? Icons.visibility_off
+                                : Icons.visibility),
                             onPressed: () {
                               setState(() {
                                 pwdShow = !pwdShow;
@@ -196,24 +204,23 @@ class _HostManageState extends State<HostManage> {
     if ((_formKey.currentState as FormState).validate()) {
 //      showLoading(context);
       HostModel hostModel = Provider.of<HostModel>(context, listen: false);
+      HostPO po = HostPO()
+        ..nickName = _nickController.text
+        ..hostname = _hostnameController.text
+        ..username = needAccount ? _usernameController.text : ""
+        ..password = needAccount ? _pwdController.text : ""
+        ..needAccount = needAccount
+        ..type = _selectedHostType;
+
       if (widget.hostId != null) {
         //修复host
-        hostModel.replace(HostPO()
-          ..id = widget.hostId
-          ..nickName = _nickController.text
-          ..hostname = _hostnameController.text
-          ..username = _usernameController.text
-          ..password = _pwdController.text
-          ..type = _selectedHostType);
+        hostModel.replace(po..id = widget.hostId);
       } else {
         //添加host
-        hostModel.insert(HostPO()
-          ..id = _nickController.text + "##~##" + (new DateTime.now().millisecondsSinceEpoch).toString()
-          ..nickName = _nickController.text
-          ..hostname = _hostnameController.text
-          ..username = _usernameController.text
-          ..password = _pwdController.text
-          ..type = _selectedHostType);
+        hostModel.insert(po
+          ..id = _nickController.text +
+              "##~##" +
+              (new DateTime.now().millisecondsSinceEpoch).toString());
       }
       Navigator.of(context).pop();
     }
@@ -337,7 +344,8 @@ class _HostListDrawerState extends State<HostListDrawer> {
               });
 
               // Then show a snackbar.
-              Scaffold.of(context).showSnackBar(SnackBar(content: Text("$item dismissed")));
+              Scaffold.of(context)
+                  .showSnackBar(SnackBar(content: Text("$item dismissed")));
             },
             // Show a red background as the item is swiped away.
             background: Container(color: Colors.red),
@@ -354,7 +362,8 @@ class _HostListDrawerState extends State<HostListDrawer> {
                   }),
               onTap: () {
                 //TODO: 改成host的分类
-                ExploreNavigator catalog = Provider.of<ExploreNavigator>(context, listen: false);
+                ExploreNavigator catalog =
+                    Provider.of<ExploreNavigator>(context, listen: false);
                 WebdavExploreFile webdavExploreFile = WebdavExploreFile(item);
                 SmbChannel.explorefiles = [webdavExploreFile];
                 catalog.refresh(webdavExploreFile, "");

@@ -1,7 +1,7 @@
 import 'package:logger/logger.dart';
 import 'package:raising/model/HostModel.dart';
 
-//这几个vo还没能清楚相关使用
+//这几个vo还没能清楚相关使用，，但在dart层已经弃用完成（只要删除smbchannel，repository即可）,这里已经可以不管了
 var logger = Logger();
 
 class SmbPO {
@@ -126,6 +126,4 @@ class SmbCO {
   }
 }
 
-class SmbSearchPO extends SmbVO {
-  String searchPattern;
-}
+

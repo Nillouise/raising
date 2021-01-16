@@ -6,6 +6,27 @@ part of 'DirectoryVO.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+SearchingCO _$SearchingCOFromJson(Map json) {
+  return SearchingCO(
+    json['directoryCO'] == null
+        ? null
+        : ExtractCO.fromJson((json['directoryCO'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
+    json['hostPO'] == null
+        ? null
+        : HostPO.fromJson((json['hostPO'] as Map)?.map(
+            (k, e) => MapEntry(k as String, e),
+          )),
+  );
+}
+
+Map<String, dynamic> _$SearchingCOToJson(SearchingCO instance) =>
+    <String, dynamic>{
+      'directoryCO': instance.directoryCO,
+      'hostPO': instance.hostPO,
+    };
+
 FileInfoPO _$FileInfoPOFromJson(Map json) {
   return FileInfoPO()
     ..fileId = json['fileId'] as String

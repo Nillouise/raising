@@ -2,6 +2,7 @@ import 'dart:collection';
 
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:raising/common/JsonConverter.dart';
 import 'package:raising/dao/MetaPO.dart';
 
 part 'HostModel.g.dart';
@@ -9,6 +10,7 @@ part 'HostModel.g.dart';
 //此类还没能持久化到数据库
 
 @JsonSerializable()
+@CustomDateTimeConverter()
 class HostPO {
   String id;
   String nickName;
@@ -16,6 +18,7 @@ class HostPO {
   String domain;
   String username;
   String password;
+  bool needAccount;
   String type; //用来标记是哪种服务器，转成对应的VO
   //不同的类使用不同的mixin即可
   factory HostPO.fromJson(Map<String, dynamic> json) => _$HostPOFromJson(json);

@@ -14,6 +14,7 @@ HostPO _$HostPOFromJson(Map json) {
     ..domain = json['domain'] as String
     ..username = json['username'] as String
     ..password = json['password'] as String
+    ..needAccount = json['needAccount'] as bool
     ..type = json['type'] as String;
 }
 
@@ -24,5 +25,6 @@ Map<String, dynamic> _$HostPOToJson(HostPO instance) => <String, dynamic>{
       'domain': instance.domain,
       'username': instance.username,
       'password': instance.password,
+      'needAccount': instance.needAccount,
       'type': instance.type,
     };

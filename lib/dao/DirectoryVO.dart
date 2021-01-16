@@ -8,6 +8,9 @@ import 'package:raising/model/HostModel.dart';
 
 part 'DirectoryVO.g.dart';
 
+
+@JsonSerializable()
+@CustomDateTimeConverter()
 class SearchingCO {
   ExtractCO directoryCO;
   HostPO hostPO;
@@ -153,6 +156,7 @@ class FileContentCO implements CacheContent {
   int index;
   int length; //整个压缩文件内的文件的数量。
   int wholeFileSize; // 整个文件，而不是压缩文件内的文件，的大小
+
   dynamic content;
 
   FileContentCO();
