@@ -39,7 +39,6 @@ class _HostManageState extends State<HostManage> {
     return hostModel.checkDuplicate(hostNickName);
   }
 
-
   @override
   void initState() {
     if (widget.hostId != null) {
@@ -53,7 +52,6 @@ class _HostManageState extends State<HostManage> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
         appBar: AppBar(title: Text("添加Host")),
         body: Padding(
@@ -96,7 +94,8 @@ class _HostManageState extends State<HostManage> {
                               Provider.of<HostModel>(context, listen: false);
 //                      hostname.checkDuplicate(_nickController.text);
                           if (checkHostNickNameDuplicate(hostModel, v)) {
-                            if (widget.hostId != null && widget.hostId.nickName == v) {
+                            if (widget.hostId != null &&
+                                widget.hostId.nickName == v) {
                               return null;
                             }
                             return "跟现有昵称重复";
@@ -363,10 +362,11 @@ class _HostListDrawerState extends State<HostListDrawer> {
                   }),
               onTap: () {
                 //TODO: 改成host的分类
-                ExploreNavigator catalog =
-                    Provider.of<ExploreNavigator>(context, listen: false);
+
                 WebdavExploreFile webdavExploreFile = WebdavExploreFile(item);
                 SmbChannel.explorefiles = [webdavExploreFile];
+                ExploreNavigator catalog =
+                    Provider.of<ExploreNavigator>(context, listen: false);
                 catalog.refresh(webdavExploreFile, "");
                 Navigator.of(context).pop();
               },

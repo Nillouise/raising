@@ -228,17 +228,14 @@ class ZipNavigator extends ViewerNavigator {
   var _preloadPageController = PreloadPageController(initialPage: 0);
   DateTime beginTime;
 
-//  WebDavClient client = WebDavClient("http://109.131.14.238:37536/", "", "", "");
   int _index;
   int fileNum;
-  FileKeyPO fileKeyPO;
   String absPath;
 
   ZipNavigator(this.exploreNavigator, this.fileNum, this.absPath, this._index);
 
   @override
   Future<void> refreshView() async {
-    fileKeyPO = await Repository.getFileKey(getCurFilename());
   }
 
   int getCurIndex() {

@@ -40,7 +40,7 @@ FileInfoPO _$FileInfoPOFromJson(Map json) {
     ..isDirectory = json['isDirectory'] as bool
     ..isCompressFile = json['isCompressFile'] as bool
     ..isShare = json['isShare'] as bool
-    ..readLenght = json['readLenght'] as int
+    ..readLength = json['readLength'] as int
     ..fileNum = json['fileNum'] as int
     ..recentReadTime =
         const CustomDateTimeConverter().fromJson(json['recentReadTime'] as int);
@@ -58,7 +58,7 @@ Map<String, dynamic> _$FileInfoPOToJson(FileInfoPO instance) =>
       'isDirectory': instance.isDirectory,
       'isCompressFile': instance.isCompressFile,
       'isShare': instance.isShare,
-      'readLenght': instance.readLenght,
+      'readLength': instance.readLength,
       'fileNum': instance.fileNum,
       'recentReadTime':
           const CustomDateTimeConverter().toJson(instance.recentReadTime),

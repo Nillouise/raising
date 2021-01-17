@@ -17,6 +17,9 @@ import 'package:path/path.dart' as p;
  * 应该先用原子的api做多几个功能，等出现问题再优化。
  */
 abstract class ExploreFile {
+
+  HostPO getHost();
+
   Future<List<ExploreCO>> queryFiles(String path);
 
   Stream<List<ExploreCO>> bfsFiles(String path);
@@ -153,5 +156,10 @@ class WebdavExploreFile implements ExploreFile {
   @override
   Future<ExtractCO> getFileNums(String absPath, {int fileSize}) {
     return loadFileFromZip(absPath, 0);
+  }
+
+  @override
+  HostPO getHost() {
+    return hostPO;
   }
 }

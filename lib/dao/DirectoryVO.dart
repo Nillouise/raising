@@ -115,7 +115,7 @@ class FileInfoPO {
   bool isCompressFile;
   bool isShare;
 
-  int readLenght; //已经看了多少页
+  int readLength; //已经看了多少页
   int fileNum;
   DateTime recentReadTime;
 

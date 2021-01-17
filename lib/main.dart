@@ -87,8 +87,8 @@ Future<void> onStart() async {
 
 Widget init(BuildContext context) {
   // 方法二
-  // Timer.periodic(Duration(milliseconds: 30000), (timer) async {
-  //   await Repository.getAllInfo();
+  Timer.periodic(Duration(milliseconds: 30000), (timer) async {
+    await Repository.getAllInfo();
 
 //    print('一秒钟后输出');
     // 每隔 1 秒钟会调用一次，如果要结束调用
