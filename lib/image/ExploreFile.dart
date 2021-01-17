@@ -105,17 +105,23 @@ class WebdavExploreFile implements ExploreFile {
   }
 
   @override
-  Future<WholeFileContentCO> loadWholeFile(String path) async {
-    var content = await client.downloadToBinary(path);
+  Future<WholeFileContentCO> loadWholeFile(String absPath) async {
+    var content = await client.downloadToBinary(absPath);
     return WholeFileContentCO()
       ..content = Uint8List.fromList(await content.first);
   }
 
   List<ExploreCO> convertExploreCO(List<webdavfile.FileInfo> lst) {
     List<ExploreCO> res = List<ExploreCO>();
+
     lst.forEach((e) {
+      var encodeFull = Uri.encodeFull( Uri.decodeFull(e.path));
+      if(encodeFull!=e.path){
+        print(encodeFull);
+      }
+
       res.add(ExploreCO()
-        ..absPath = e.path
+        ..absPath = e.path//注意这里是个url编码的，而且还不能解码，因为解码再编码就跟原来的不一样，导致请求不了webdav服务器
         ..size = int.parse(e.size == "" ? "0" : e.size)
         ..updateTime = HttpDate.parse(e.modificationTime)
         ..createTime = e.creationTime
@@ -126,7 +132,8 @@ class WebdavExploreFile implements ExploreFile {
   }
 
   List<ExploreCO> filterUselessWebdavFile(List<ExploreCO> lst){
-    return lst.where((i)=>i.absPath != "/").toList();
+    return lst.sublist(1);
+    // return lst.where((i)=>i.absPath != "/").toList();
   }
 
   @override

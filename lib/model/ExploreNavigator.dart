@@ -20,7 +20,13 @@ var logger = Logger();
 
 class ExploreNavigator extends ChangeNotifier {
   ExploreFile exploreFile;
-  String title;
+  String _title;
+
+  String get title => absPath;
+
+  set title(String title) {
+    _title = title;
+  }
   String absPath;
   List<ExploreCO> _files = List<ExploreCO>();
 
@@ -60,10 +66,6 @@ class ExploreNavigator extends ChangeNotifier {
   void refreshPath(String absPath) {
     this.absPath = absPath;
     notifyListeners();
-  }
-
-  void setTitle(String title) {
-    this.title = title;
   }
 
   Future<ExploreNavigator> awaitQueryFiles() async {
