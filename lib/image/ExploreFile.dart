@@ -17,7 +17,6 @@ import 'package:path/path.dart' as p;
  * 应该先用原子的api做多几个功能，等出现问题再优化。
  */
 abstract class ExploreFile {
-
   HostPO getHost();
 
   Future<List<ExploreCO>> queryFiles(String path);
@@ -115,13 +114,9 @@ class WebdavExploreFile implements ExploreFile {
     List<ExploreCO> res = List<ExploreCO>();
 
     lst.forEach((e) {
-      var encodeFull = Uri.encodeFull( Uri.decodeFull(e.path));
-      if(encodeFull!=e.path){
-        print(encodeFull);
-      }
-
       res.add(ExploreCO()
-        ..absPath = e.path//注意这里是个url编码的，而且还不能解码，因为解码再编码就跟原来的不一样，导致请求不了webdav服务器
+        ..absPath =
+            e.path //注意这里是个url编码的，而且还不能解码，因为解码再编码就跟原来的不一样，导致请求不了webdav服务器
         ..size = int.parse(e.size == "" ? "0" : e.size)
         ..updateTime = HttpDate.parse(e.modificationTime)
         ..createTime = e.creationTime
@@ -131,7 +126,7 @@ class WebdavExploreFile implements ExploreFile {
     return res;
   }
 
-  List<ExploreCO> filterUselessWebdavFile(List<ExploreCO> lst){
+  List<ExploreCO> filterUselessWebdavFile(List<ExploreCO> lst) {
     return lst.sublist(1);
     // return lst.where((i)=>i.absPath != "/").toList();
   }
