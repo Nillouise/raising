@@ -69,13 +69,25 @@ class Repository {
     return list.map((e) => FileKeyPO.fromJson(e)).toList();
   }
 
+  static Map convertBoolToIntMap(Map map) {
+    for (var a in map.entries){
+      if(a.value is bool){
+        map[a.key] = a.value?1:0;
+      }
+    }
+    return map;
+  }
+
+
+
+
   static Future<List<FileInfoPO>> historyFileInfo(int page, int size,
       {String orderBy = "recentReadTime desc", bool star = false}) async {
     String whereState =
         "recentReadTime IS NOT NULL" + (star ? "AND star > 0" : "");
     List<Map<String, dynamic>> list = await _db.query("file_info",
         where: whereState, orderBy: orderBy, offset: page * size, limit: size);
-    return list.map((e) => FileInfoPO.fromJson(e)).toList();
+    return list.map((e) => FileInfoPO.fromIntJson(e)).toList();
   }
 
   static clearHistoryFileInfo() async {
@@ -153,18 +165,17 @@ class Repository {
           [hostId, absPath]);
     });
     if (list.length > 0) {
-      return FileInfoPO.fromJson(list[0]);
+      return FileInfoPO.fromIntJson(list[0]);
     } else {
       return null;
     }
   }
 
   static Future<bool> upsertFileInfoNew(FileInfoPO fileinfo) async {
-    var json = fileinfo.toJson();
+    var json = fileinfo.toIntJson();
     json.removeWhere((key, value) => key == null || value == null);
 
     int res = await _db.transaction((txn) async {
-
       return await txn.insert("file_info", json,
           conflictAlgorithm: ConflictAlgorithm.replace);
     });
@@ -178,7 +189,7 @@ class Repository {
       ..hostId = hostId
       ..hostNickName = hostNickName
       ..recentReadTime = DateTime.now();
-    var json = fileinfo.toJson();
+    var json = fileinfo.toIntJson();
     json.removeWhere((key, value) => key == null || value == null);
     int res = await _db.transaction((txn) async {
       if ((await txn.query("file_info",

@@ -8,7 +8,6 @@ import 'package:raising/model/HostModel.dart';
 
 part 'DirectoryVO.g.dart';
 
-
 @JsonSerializable()
 @CustomDateTimeConverter()
 class SearchingCO {
@@ -104,7 +103,8 @@ class SearchingCO {
 @JsonSerializable()
 @CustomDateTimeConverter()
 class FileInfoPO {
-  String fileId; // 现在应当使用fileId来查找文件，将来用md5，filename之类的确认一个文件，目前fileId = filename
+  String
+      fileId; // 现在应当使用fileId来查找文件，将来用md5，filename之类的确认一个文件，目前fileId = filename
   String hostId;
   String hostNickName; //只用smbId可能无法恢复删除的smb链接,所以也存储一下这个nickName
   String absPath; //include filename
@@ -121,10 +121,39 @@ class FileInfoPO {
 
   FileInfoPO();
 
-  factory FileInfoPO.fromJson(Map<String, dynamic> json) => _$FileInfoPOFromJson(json);
+  factory FileInfoPO.fromJson(Map<String, dynamic> json) =>
+      _$FileInfoPOFromJson(json);
 
   Map<String, dynamic> toJson() => _$FileInfoPOToJson(this);
+
+  Map<String, dynamic> toIntJson() {
+    Map map = this.toJson();
+    for (var a in map.entries) {
+      if (a.value is bool) {
+        map[a.key] = a.value ? 1 : 0;
+      }
+    }
+    return map;
+  }
+
+  factory FileInfoPO.fromIntJson(Map<String, dynamic> json) {
+    if (json["isDirectory"] != null) {
+      json["isDirectory"] = json["isDirectory"] == 1;
+    }
+
+    if (json["isCompressFile"] != null) {
+      json["isCompressFile"] = json["isCompressFile"] == 1;
+    }
+
+    if (json["isShare"] != null) {
+      json["isShare"] = json["isShare"] == 1;
+    }
+
+    return FileInfoPO.fromJson(json);
+  }
 }
+
+
 
 @JsonSerializable()
 @CustomDateTimeConverter()
@@ -138,14 +167,16 @@ class FileKeyPO {
     this.recentReadTime,
   });
 
-  String fileId; // 现在应当使用fileId来查找文件，将来用md5，filename之类的确认一个文件，目前fileId = filename
+  String
+      fileId; // 现在应当使用fileId来查找文件，将来用md5，filename之类的确认一个文件，目前fileId = filename
   String filename;
   int star;
   double score14;
   double score60;
   DateTime recentReadTime;
 
-  factory FileKeyPO.fromJson(Map<String, dynamic> json) => _$FileKeyPOFromJson(json);
+  factory FileKeyPO.fromJson(Map<String, dynamic> json) =>
+      _$FileKeyPOFromJson(json);
 
   Map<String, dynamic> toJson() => _$FileKeyPOToJson(this);
 }
@@ -161,7 +192,8 @@ class FileContentCO implements CacheContent {
 
   FileContentCO();
 
-  factory FileContentCO.fromJson(Map<String, dynamic> json) => throw UnimplementedError();
+  factory FileContentCO.fromJson(Map<String, dynamic> json) =>
+      throw UnimplementedError();
 
   Map<String, dynamic> toJson() => throw UnimplementedError();
 
