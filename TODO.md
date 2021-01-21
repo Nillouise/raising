@@ -25,7 +25,12 @@ tiwei浏览器
 
 空安全改造：flutter 的空安全还在beta，不好改
 
+bug:
+公司的电脑上的模拟器出bug了：SevenZipJBinding wasn't initialized successfully last time
+不过等app启动后过几分钟再重新调用函数，这个问题就消失了
+回家得测测有没有问题
 
+需要处理webdav无法获取ranges数据的问题，但这个优先级很小
 
 home:
 广告 废弃，直接收费

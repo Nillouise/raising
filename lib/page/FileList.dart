@@ -14,8 +14,6 @@ import 'package:raising/image/ExtractCO.dart';
 import 'package:raising/image/WholeFileContentCO.dart';
 import 'package:raising/model/ExploreNavigator.dart';
 import 'package:raising/model/HostModel.dart';
-import 'package:raising/model/smb_list_model.dart';
-import 'package:raising/model/smb_navigation.dart';
 import 'package:raising/page/searchPage.dart';
 import 'package:raising/page/viewer.dart';
 
@@ -116,8 +114,7 @@ class ExplorerWidget extends StatefulWidget {
   }
 }
 
-class ExplorerWidgetState extends State<ExplorerWidget>
-    with AutomaticKeepAliveClientMixin<ExplorerWidget> {
+class ExplorerWidgetState extends State<ExplorerWidget> with AutomaticKeepAliveClientMixin<ExplorerWidget> {
   String _dirname(String path) {
     var dirname = p.dirname(path);
     return dirname == '.' ? "" : dirname;
@@ -138,8 +135,7 @@ class ExplorerWidgetState extends State<ExplorerWidget>
         ),
         onWillPop: () async {
           //退出应用
-          ExploreNavigator catalog =
-              Provider.of<ExploreNavigator>(context, listen: false);
+          ExploreNavigator catalog = Provider.of<ExploreNavigator>(context, listen: false);
           if (catalog.isRoot()) {
             return true;
           } else {
@@ -165,16 +161,12 @@ class FileList extends StatefulWidget {
 }
 
 class FileListState extends State<FileList> {
-  double _pixels;
-  int _timestamp = 0;
-
   @override
   Widget build(BuildContext context) {
-    SmbListModel listModel = Provider.of<SmbListModel>(context);
     HostModel hostModel = Provider.of<HostModel>(context);
-    ExploreNavigator catalog = Provider.of<ExploreNavigator>(context);
+    ExploreNavigator exploreNavigator = Provider.of<ExploreNavigator>(context);
     if (hostModel.hosts.length == 0) {
-      //处理没有配置任何一个host的情况
+      ///处理没有配置任何一个host的情况，即需要加入新的host
       return Center(
           child: GestureDetector(
         child: Row(
@@ -182,26 +174,25 @@ class FileListState extends State<FileList> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Icon(Icons.settings),
-            const Text('添加Smb链接'),
+            const Text('添加Host'),
           ],
         ),
         onTap: () {
           showDialog(context: context, child: HostManage());
         },
       ));
-    } else if (!catalog.isSelectHost()) {
-      //处理没选host的情况
+    } else if (!exploreNavigator.isSelectHost()) {
+      ///处理没选host的情况，即开始打开host
       return ListView.builder(
           scrollDirection: Axis.vertical,
           shrinkWrap: true,
           itemCount: hostModel.hosts.length,
           itemBuilder: (context, index) {
-            final item = hostModel.hosts[index];
-
+            final currentHost = hostModel.hosts[index];
             return Dismissible(
               // Each Dismissible must contain a Key. Keys allow Flutter to
               // uniquely identify widgets.
-              key: Key(item.id),
+              key: Key(currentHost.id),
               // Provide a function that tells the app
               // what to do after an item has been swiped away.
               onDismissed: (direction) {
@@ -210,91 +201,59 @@ class FileListState extends State<FileList> {
                   hostModel.remove(index);
                 });
                 // Then show a snackbar.
-                Scaffold.of(context)
-                    .showSnackBar(SnackBar(content: Text("$item dismissed")));
+                Scaffold.of(context).showSnackBar(SnackBar(content: Text("$currentHost dismissed")));
               },
               // Show a red background as the item is swiped away.
               background: Container(color: Colors.red),
               child: ListTile(
-                title: Text('${item.nickName}'),
+                title: Text('${currentHost.nickName}'),
                 onTap: () {
-                  WebdavExploreFile webdavExploreFile = WebdavExploreFile(item);
+                  //TODO:这里需要处理选择的是SMB的情况。
+                  WebdavExploreFile webdavExploreFile = WebdavExploreFile(currentHost);
                   SmbChannel.explorefiles = [webdavExploreFile];
-                  catalog.refresh(webdavExploreFile, "");
+                  exploreNavigator.refresh(webdavExploreFile, "");
                 },
               ),
             );
           });
     } else {
+      ///打开文件夹或文件。
       return FutureBuilder<bool>(
         future: () async {
-          ExploreNavigator catalog =
-              Provider.of<ExploreNavigator>(context, listen: false);
+          ExploreNavigator catalog = Provider.of<ExploreNavigator>(context, listen: false);
           await catalog.awaitQueryFiles();
-
           return true;
         }(),
         builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
-          // 请求已结束
           if (snapshot.connectionState == ConnectionState.done) {
             if (snapshot.hasError) {
-              // 请求失败，显示错误
               return Text("Error: ${snapshot.error}");
             } else {
-              ExploreNavigator catalog =
-                  Provider.of<ExploreNavigator>(context, listen: false);
-              // 请求成功，显示数据
+              ExploreNavigator exploreNavigator = Provider.of<ExploreNavigator>(context, listen: false);
               return Center(
-                  child: NotificationListener<ScrollNotification>(
-                      onNotification: (scrollNotification) {
-                        //这里的逻辑其实用不着，但目前就先不删了
-                        SmbNavigation smbNavigation =
-                            Provider.of<SmbNavigation>(context, listen: false);
-                        double pixels = scrollNotification.metrics.pixels;
-                        int timestamp = DateTime.now().millisecondsSinceEpoch;
-                        if (timestamp - this._timestamp == 0) {
-                          smbNavigation.scroll_speed = 0;
-                        } else if (this._pixels != null) {
-                          final double velocity = (pixels - this._pixels) /
-                              (timestamp - this._timestamp);
-                          smbNavigation.scroll_speed = velocity;
-                        }
-                        this._pixels = pixels;
-                        this._timestamp = timestamp;
-                        return false;
-                      },
-                      child: ListView.builder(
-                        itemCount: catalog.files.length,
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        itemBuilder: (context, index) {
-                          List<ExploreCO> files = catalog.files;
-                          return ListTile(
-                            leading: AspectRatio(
-                                aspectRatio: 1,
-                                child: PreviewFile(files[index].absPath,
-                                    files[index], catalog)),
-                            title: Text(files[index].filename),
-                            onTap: () {
-                              if (files[index].isDirectory) {
-                                catalog.refreshPath(Utils.joinPath(
-                                    catalog.absPath, files[index].filename));
-                              } else if (Constants.COMPRESS_AND_IMAGE_FILE
-                                  .contains(
-                                      p.extension(files[index].filename))) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => FutureViewerChecker(
-                                          0, files[index].absPath, catalog)),
-                                );
-                              }
-                            },
-                          );
-                        },
-                      )));
+                  child: ListView.builder(
+                itemCount: exploreNavigator.files.length,
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                itemBuilder: (context, index) {
+                  List<ExploreCO> files = exploreNavigator.files;
+                  return ListTile(
+                    leading: AspectRatio(aspectRatio: 1, child: PreviewFile(files[index].absPath, files[index], exploreNavigator)),
+                    title: Text(files[index].filename),
+                    onTap: () {
+                      if (files[index].isDirectory) {
+                        exploreNavigator.refreshPath(Utils.joinPath(exploreNavigator.absPath, files[index].filename));
+                      } else if (Constants.COMPRESS_AND_IMAGE_FILE.contains(p.extension(files[index].filename))) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => FutureViewerChecker(0, files[index].absPath, exploreNavigator)),
+                        );
+                      }
+                    },
+                  );
+                },
+              ));
             }
           } else {
-            // 请求未结束，显示loading
             return Center(child: CircularProgressIndicator());
           }
         },
@@ -307,7 +266,7 @@ class FileListState extends State<FileList> {
  * 应该改成先返回缓存的内容，然后后台查询真正的图，再替换。
  */
 class PreviewFile extends StatelessWidget {
-  final String absPath;
+  final String absPath; //这个字段应当是能用来请求文件，因为fileinfo 里的信息的absPath可能不准（比如说少路径了，或者加了http://前缀之类）
   final ExploreCO fileinfo;
   final ExploreNavigator exploreNavigator;
 
@@ -318,15 +277,12 @@ class PreviewFile extends StatelessWidget {
     return FutureBuilder<Widget>(future: () async {
       if (fileinfo.isDirectory) {
         return Icon(Icons.folder);
-      } else if ((Constants.COMPRESS_AND_IMAGE_FILE)
-          .contains((p.extension(fileinfo.filename)))) {
+      } else if ((Constants.COMPRESS_AND_IMAGE_FILE).contains((p.extension(fileinfo.filename)))) {
         if (Utils.isCompressFile(fileinfo.filename)) {
-          ExtractCO content = await exploreNavigator.exploreFile
-              .loadFileFromZip(absPath, 0, fileSize: fileinfo.size);
+          ExtractCO content = await exploreNavigator.exploreFile.loadFileFromZip(absPath, 0, fileSize: fileinfo.size);
           return Image.memory(content.indexContent[0]);
         } else {
-          WholeFileContentCO content =
-              await exploreNavigator.exploreFile.loadWholeFile(absPath);
+          WholeFileContentCO content = await exploreNavigator.exploreFile.loadWholeFile(absPath);
           return Image.memory(content.content);
         }
       } else {
@@ -361,16 +317,14 @@ class ThumbnailFile extends StatelessWidget {
     return FutureBuilder<Widget>(future: () async {
       if (fileinfo.isDirectory) {
         return Icon(Icons.folder);
-      } else if ((Constants.COMPRESS_AND_IMAGE_FILE)
-          .contains((p.extension(fileinfo.filename)))) {
+      } else if ((Constants.COMPRESS_AND_IMAGE_FILE).contains((p.extension(fileinfo.filename)))) {
         FileContentCO content;
         if (Utils.isCompressFile(fileinfo.filename)) {
           content = await Utils.getFileFromZip(0, smbVO);
         } else {
           content = await Utils.getWholeFile(smbVO);
         }
-        return Image.memory(content.content, errorBuilder:
-            (BuildContext context, Object exception, StackTrace stackTrace) {
+        return Image.memory(content.content, errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
           return Icon(Icons.error);
         });
       } else {
