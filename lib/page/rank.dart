@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/Repository.dart';
-import 'package:raising/util.dart';
+import 'package:raising/image/cache.dart';
 
 //此类还没完成
 
+///这里的view层跟逻辑层耦合在一起了，需要找个办法处理一下。
 var logger = Logger();
 
 class HistoryPage extends StatefulWidget {
@@ -61,7 +62,8 @@ class _HistoryPageState extends State<HistoryPage> {
                 aspectRatio: 1,
                 child: FutureBuilder<Widget>(
                   future: () async {
-                    Uint8List bytes = await Utils.getThumbnailFile(_data[index].hostId, _data[index].absPath);
+//                    Uint8List bytes = await Utils.getThumbnailFile(_data[index].hostId, _data[index].absPath);
+                    Uint8List bytes = await CacheThumbnail.getThumbnail(_data[index].fileId);
                     if (bytes == null) {
                       return Icon(Icons.check_box_outline_blank);
                     }

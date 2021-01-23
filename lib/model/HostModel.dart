@@ -7,8 +7,6 @@ import 'package:raising/dao/MetaPO.dart';
 
 part 'HostModel.g.dart';
 
-//此类还没能持久化到数据库
-
 @JsonSerializable()
 @CustomDateTimeConverter()
 class HostPO {

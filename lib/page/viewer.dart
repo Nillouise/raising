@@ -6,6 +6,7 @@ import 'package:gallery_saver/gallery_saver.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:popup_menu/popup_menu.dart';
 import 'package:preload_page_view/preload_page_view.dart';
 import 'package:provider/provider.dart';
 import 'package:raising/dao/DirectoryVO.dart';
@@ -235,8 +236,7 @@ class ZipNavigator extends ViewerNavigator {
   ZipNavigator(this.exploreNavigator, this.fileNum, this.absPath, this._index);
 
   @override
-  Future<void> refreshView() async {
-  }
+  Future<void> refreshView() async {}
 
   int getCurIndex() {
     return _index;
@@ -420,13 +420,73 @@ class _ViewBottomState extends State<ViewBottom> {
                     "截图",
                     style: TextStyle(fontSize: 18.0),
                   ),
-                ))
+                )),
+                Expanded(
+                  child: FlipTimer(),
+                )
+//                FlipTimer()
               ],
             )
           ]));
     } else {
       return SizedBox.shrink();
     }
+  }
+}
+
+class FlipTimer extends StatelessWidget {
+  void showPopup(Offset offset) {
+    PopupMenu menu = PopupMenu(
+      // backgroundColor: Colors.teal,
+      // lineColor: Colors.tealAccent,
+      maxColumn: 3,
+      items: [
+        // MenuItem(title: 'Copy', image: Image.asset('assets/copy.png')),
+        // MenuItem(title: 'Home', image: Icon(Icons.home, color: Colors.white,)),
+        MenuItem(
+            title: 'Mail',
+            image: Icon(
+              Icons.mail,
+              color: Colors.white,
+            )),
+        MenuItem(
+            title: 'Power',
+            image: Icon(
+              Icons.power,
+              color: Colors.white,
+            )),
+        MenuItem(
+            title: 'Setting',
+            image: Icon(
+              Icons.settings,
+              color: Colors.white,
+            )),
+        MenuItem(
+            title: 'PopupMenu',
+            image: Icon(
+              Icons.menu,
+              color: Colors.white,
+            ))
+      ],
+    );
+    menu.show(rect: Rect.fromPoints(offset, offset));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    PopupMenu.context = context;
+    return InkWell(
+      //TODO:不知道为啥，接受不了tap事件。
+//      onPressed: () async {},
+      onTapDown: (TapDownDetails details) {
+        showPopup(details.globalPosition);
+//            print('fff');
+      },
+      child: Text(
+        "定时器",
+        style: TextStyle(fontSize: 18.0),
+      ),
+    );
   }
 }
 

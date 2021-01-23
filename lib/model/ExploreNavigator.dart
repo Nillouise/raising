@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:logger/logger.dart';
@@ -7,6 +8,7 @@ import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/Repository.dart';
 import 'package:raising/image/ExploreCO.dart';
 import 'package:raising/image/ExploreFile.dart';
+import 'package:raising/image/cache.dart';
 
 var logger = Logger();
 
@@ -27,6 +29,7 @@ class ExploreNavigator extends ChangeNotifier {
   set title(String title) {
     _title = title;
   }
+
   String absPath;
   List<ExploreCO> _files = List<ExploreCO>();
 
@@ -40,9 +43,12 @@ class ExploreNavigator extends ChangeNotifier {
     return exploreFile.getHost().id + "@!@" + co.absPath;
   }
 
-  void persistFileInfo(ExploreCO co, int readLength, int fileNum,
-      DateTime recentReadTime) async {
+  void persistFileInfo(ExploreCO co, int readLength, int fileNum, DateTime recentReadTime) async {
     //TODO: 实现这个功能。
+  }
+
+  Future<void> putThmnailFile(ExploreCO co, Uint8List thumbNail) async {
+    CacheThumbnail.putThumbnail(await ImageCompress.thumbNailImage(thumbNail), getFileId(co));
   }
 
   Future<void> saveExploreCO(List<ExploreCO> lst) async {

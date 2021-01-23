@@ -263,7 +263,7 @@ class FileListState extends State<FileList> {
 }
 
 /**
- * 应该改成先返回缓存的内容，然后后台查询真正的图，再替换。
+ * TODO:应该改成先返回缓存的内容，然后后台查询真正的图，再替换。
  */
 class PreviewFile extends StatelessWidget {
   final String absPath; //这个字段应当是能用来请求文件，因为fileinfo 里的信息的absPath可能不准（比如说少路径了，或者加了http://前缀之类）
@@ -280,7 +280,9 @@ class PreviewFile extends StatelessWidget {
       } else if ((Constants.COMPRESS_AND_IMAGE_FILE).contains((p.extension(fileinfo.filename)))) {
         if (Utils.isCompressFile(fileinfo.filename)) {
           ExtractCO content = await exploreNavigator.exploreFile.loadFileFromZip(absPath, 0, fileSize: fileinfo.size);
-          return Image.memory(content.indexContent[0]);
+          var thumbNail = content.indexContent[0];
+          await exploreNavigator.putThmnailFile(fileinfo, thumbNail);
+          return Image.memory(thumbNail);
         } else {
           WholeFileContentCO content = await exploreNavigator.exploreFile.loadWholeFile(absPath);
           return Image.memory(content.content);

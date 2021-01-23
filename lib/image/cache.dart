@@ -46,6 +46,18 @@ Future<Uint8List> thumbNailImage(Uint8List image) async {
   return Uint8List.fromList(result);
 }
 
+class ImageCompress {
+  static Future<Uint8List> thumbNailImage(Uint8List image) async {
+    var result = await FlutterImageCompress.compressWithList(
+      image,
+      minHeight: 100,
+      minWidth: 100,
+      quality: 50,
+    );
+    return Uint8List.fromList(result);
+  }
+}
+
 abstract class CacheContent {
   Uint8List getCacheFile();
 }
@@ -67,6 +79,31 @@ Future<CacheVO<T>> loadFromCache<T>(String key, Function() getObject,
   } catch (e) {
     logger.e(e);
   }
+}
+
+class CacheThumbnail {
+  static String _getThumbId(String fileId) {
+    return "thumbNail@$fileId";
+  }
+
+  static Future<void> putThumbnail(Uint8List thumbnail, String fileId) async {
+    await DefaultCacheManager().putFile(_getThumbId(fileId), thumbnail);
+  }
+
+  static Future<Uint8List> getThumbnail(String fileId) async {
+    FileInfo fileInfo = await DefaultCacheManager().getFileFromCache(_getThumbId(fileId));
+    if (fileInfo == null) {
+      return null;
+    }
+    return await fileInfo.file.readAsBytes();
+  }
+}
+
+//TODO: 这里把cahce层的功能做少，不知道是不是个好主意，反正也很难决定cache什么（只有图片？文件信息不cache？）。
+class CacheImage {
+  void putImage(Uint8List thumbnail, String fileId, String zipId) {}
+
+  Uint8List getImage(String fileId, String zipId) {}
 }
 
 Future<Uint8List> loadThumbnail(String key) async {
