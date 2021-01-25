@@ -16,7 +16,6 @@ class CustomDateTimeConverter implements JsonConverter<DateTime, int> {
 }
 
 
-
 class MapIntUint8listConverter
     implements JsonConverter<Map<int, Uint8List>, Map<int, Uint8List>> {
   const MapIntUint8listConverter();

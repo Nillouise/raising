@@ -163,6 +163,57 @@ public class MethodDispatcher implements MethodCallHandler {
                     result.error("extract", e.toString(), ExceptionUtils.getStackTrace(e));
                 }
             });
+        } else if (call.method.equals("smbLoadWholeFile")) {
+            executorService.submit(() -> {
+                try {
+                    ExtractCO res = ExtractChannel.INSTANCE.extract(
+                            new NativeWebDavRandomFile(
+                                    call.argument("absPath"),
+                                    call.argument("username"),
+                                    call.argument("password"),
+                                    0,
+                                    Long.valueOf((int) call.argument("fileSize"))),
+                            call.argument("index"));
+                    result.success(res.getMap());
+                } catch (Exception e) {
+                    Logger.e(e, "extract error");
+                    result.error("extract", e.toString(), ExceptionUtils.getStackTrace(e));
+                }
+            });
+        } else if (call.method.equals("smbExtract")) {
+            executorService.submit(() -> {
+                try {
+                    ExtractCO res = ExtractChannel.INSTANCE.extract(
+                            new NativeWebDavRandomFile(
+                                    call.argument("absPath"),
+                                    call.argument("username"),
+                                    call.argument("password"),
+                                    0,
+                                    Long.valueOf((int) call.argument("fileSize"))),
+                            call.argument("index"));
+                    result.success(res.getMap());
+                } catch (Exception e) {
+                    Logger.e(e, "extract error");
+                    result.error("extract", e.toString(), ExceptionUtils.getStackTrace(e));
+                }
+            });
+        } else if (call.method.equals("smbQueryFiles")) {
+            executorService.submit(() -> {
+                try {
+                    ExtractCO res = ExtractChannel.INSTANCE.extract(
+                            new NativeWebDavRandomFile(
+                                    call.argument("absPath"),
+                                    call.argument("username"),
+                                    call.argument("password"),
+                                    0,
+                                    Long.valueOf((int) call.argument("fileSize"))),
+                            call.argument("index"));
+                    result.success(res.getMap());
+                } catch (Exception e) {
+                    Logger.e(e, "extract error");
+                    result.error("extract", e.toString(), ExceptionUtils.getStackTrace(e));
+                }
+            });
         } else {
             result.notImplemented();
         }
