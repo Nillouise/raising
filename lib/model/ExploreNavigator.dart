@@ -43,12 +43,13 @@ class ExploreNavigator extends ChangeNotifier {
     return exploreFile.getHost().id + "@!@" + co.absPath;
   }
 
-  void persistFileInfo(ExploreCO co, int readLength, int fileNum, DateTime recentReadTime) async {
-    //TODO: 实现这个功能。
-  }
-
   Future<void> putThmnailFile(ExploreCO co, Uint8List thumbNail) async {
     CacheThumbnail.putThumbnail(await ImageCompress.thumbNailImage(thumbNail), getFileId(co));
+  }
+
+  ///当一本书被点击后，应该保存在数据库里的数据
+  Future<void> saveReadInfo(FileKeyPO keyPO) async {
+    await Repository.upsertFileKeyNew(keyPO);
   }
 
   Future<void> saveExploreCO(List<ExploreCO> lst) async {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -12,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/Repository.dart';
 import 'package:raising/dao/SmbVO.dart';
+import 'package:raising/image/ExploreCO.dart';
 import 'package:raising/image/ExtractCO.dart';
 import 'package:raising/model/ExploreNavigator.dart';
 
@@ -47,6 +49,10 @@ abstract class ViewerNavigator extends ChangeNotifier {
   PreloadPageController getController();
 
   Future<void> saveCurImage(BuildContext context);
+
+  void startTimerFlip(int seconds) {}
+
+  void cancelTimerFlip() {}
 }
 
 class SmbViewerNavigator extends ViewerNavigator {
@@ -83,6 +89,7 @@ class SmbViewerNavigator extends ViewerNavigator {
   }
 
   void closeViewer() {
+    //TODO:这里需要处理
     Repository.upsertFileKey(p.basename(_smbVO.absPath),
         recentReadTime: beginTime, increReadTime: (DateTime.now().millisecondsSinceEpoch - beginTime.millisecondsSinceEpoch) ~/ 1000);
     Repository.upsertFileInfo(_smbVO.absPath, _smbVO.id, _smbVO.nickName, _fileInfoPO);
@@ -224,16 +231,34 @@ class SmbViewerNavigator extends ViewerNavigator {
 
 class ZipNavigator extends ViewerNavigator {
   final ExploreNavigator exploreNavigator;
+  final ExploreCO exploreCO;
 
   bool _detailToggle = false; //要不要打开viewer内的控制面板
   var _preloadPageController = PreloadPageController(initialPage: 0);
   DateTime beginTime;
 
+  Timer flipTimer;
+
   int _index;
   int fileNum;
   String absPath;
 
-  ZipNavigator(this.exploreNavigator, this.fileNum, this.absPath, this._index);
+  ZipNavigator(this.exploreNavigator, this.exploreCO, this.fileNum, this.absPath, this._index);
+
+  void startTimerFlip(int seconds) {
+    flipTimer?.cancel();
+    flipTimer = Timer.periodic(Duration(seconds: seconds), (Timer t) {
+      if (getCurIndex() >= getLength() - 1) {
+        flipTimer.cancel();
+        return;
+      }
+      jumpTo(getCurIndex() + 1);
+    });
+  }
+
+  void cancelTimerFlip() {
+    flipTimer?.cancel();
+  }
 
   @override
   Future<void> refreshView() async {}
@@ -251,13 +276,12 @@ class ZipNavigator extends ViewerNavigator {
   }
 
   void closeViewer() {
-    // Repository.upsertFileKey(p.basename(_fileInfoPO.absPath),
-    //     recentReadTime: beginTime,
-    //     increReadTime: (DateTime.now().millisecondsSinceEpoch -
-    //         beginTime.millisecondsSinceEpoch) ~/
-    //         1000);
-    // Repository.upsertFileInfo(
-    //     _smbVO.absPath, _smbVO.id, _smbVO.nickName, _fileInfoPO);
+    ///TODO:这里需要处理fileKey的情况。
+    exploreNavigator.saveReadInfo(FileKeyPO()
+      ..fileId = exploreNavigator.getFileId(exploreCO)
+      ..filename = exploreCO.filename
+      ..recentReadTime = DateTime.now()
+      ..readLength = _index);
   }
 
   void jumpTo(int index) {
@@ -276,6 +300,9 @@ class ZipNavigator extends ViewerNavigator {
 
   void setDetailToggle(bool toggle) {
     _detailToggle = toggle;
+    if (toggle) {
+      cancelTimerFlip();
+    }
     notifyListeners();
   }
 
@@ -377,8 +404,6 @@ class ViewBottom extends StatefulWidget {
 }
 
 class _ViewBottomState extends State<ViewBottom> {
-  int sliderValue = 0;
-
   @override
   Widget build(BuildContext context) {
     ViewerNavigator viewerNavigator = Provider.of<ViewerNavigator>(context);
@@ -390,13 +415,12 @@ class _ViewBottomState extends State<ViewBottom> {
               children: <Widget>[
                 Expanded(
                     child: Slider(
-                  value: sliderValue.toDouble(),
+                  value: viewerNavigator.getCurIndex().toDouble(),
                   min: 0,
                   max: (viewerNavigator.getLength() - 1).toDouble(),
                   onChanged: (value) {
-                    if (value.round() != sliderValue) {
-                      sliderValue = value.toInt();
-                      viewerNavigator.jumpTo(sliderValue);
+                    if (value.round() != viewerNavigator.getCurIndex()) {
+                      viewerNavigator.jumpTo(value.round());
                     }
                   },
                 )),
@@ -435,56 +459,50 @@ class _ViewBottomState extends State<ViewBottom> {
 }
 
 class FlipTimer extends StatelessWidget {
-  void showPopup(Offset offset) {
+  final GlobalKey btnKey = GlobalKey();
+  ViewerNavigator viewerNavigator;
+
+//  void showPopup(Offset offset) {
+//    PopupMenu menu = PopupMenu(
+//      // backgroundColor: Colors.teal,
+//      // lineColor: Colors.tealAccent,
+//      maxColumn: lst.length,
+//      items: lst,
+//    );
+//    menu.show(rect: Rect.fromPoints(offset, offset));
+//  }
+
+  void onClickMenu(MenuItemProvider item) {
+    print('Click menu -> ${item.menuTitle}');
+    viewerNavigator.startTimerFlip(int.parse(item.menuTitle));
+    viewerNavigator.setDetailToggle(false);
+  }
+
+  void timerMenu() {
+    List<MenuItem> lst = List<MenuItem>();
+    for (int i = 1; i <= 12; i++) {
+      lst.add(MenuItem(title: (i * 2).toString()));
+    }
     PopupMenu menu = PopupMenu(
-      // backgroundColor: Colors.teal,
-      // lineColor: Colors.tealAccent,
-      maxColumn: 3,
-      items: [
-        // MenuItem(title: 'Copy', image: Image.asset('assets/copy.png')),
-        // MenuItem(title: 'Home', image: Icon(Icons.home, color: Colors.white,)),
-        MenuItem(
-            title: 'Mail',
-            image: Icon(
-              Icons.mail,
-              color: Colors.white,
-            )),
-        MenuItem(
-            title: 'Power',
-            image: Icon(
-              Icons.power,
-              color: Colors.white,
-            )),
-        MenuItem(
-            title: 'Setting',
-            image: Icon(
-              Icons.settings,
-              color: Colors.white,
-            )),
-        MenuItem(
-            title: 'PopupMenu',
-            image: Icon(
-              Icons.menu,
-              color: Colors.white,
-            ))
-      ],
-    );
-    menu.show(rect: Rect.fromPoints(offset, offset));
+        // backgroundColor: Colors.teal,
+        // lineColor: Colors.tealAccent,
+        // maxColumn: 2,
+        maxColumn: 3,
+        items: lst,
+        onClickMenu: onClickMenu);
+    menu.show(widgetKey: btnKey);
   }
 
   @override
   Widget build(BuildContext context) {
     PopupMenu.context = context;
-    return InkWell(
-      //TODO:不知道为啥，接受不了tap事件。
-//      onPressed: () async {},
-      onTapDown: (TapDownDetails details) {
-        showPopup(details.globalPosition);
-//            print('fff');
-      },
-      child: Text(
-        "定时器",
-        style: TextStyle(fontSize: 18.0),
+    viewerNavigator = Provider.of<ViewerNavigator>(context);
+    return Container(
+      child: MaterialButton(
+        key: btnKey,
+//        height: 45.0,
+        onPressed: timerMenu,
+        child: Text('定时器'),
       ),
     );
   }
@@ -606,8 +624,10 @@ enum Area { lef, right, middle }
  * 这里应当检查缓存，对ExploreFile进行验脏，如果缓存在1个小时内，则直接先用缓存里的数据。
  */
 class FutureViewerChecker extends StatelessWidget {
+  final ExploreCO exploreco;
   final int readPages; //看到第几页。
   final String absPath;
+
 //  final List<DirectoryCO> pwdFiles;
   final ExploreNavigator exploreNavigator;
 
@@ -631,7 +651,7 @@ class FutureViewerChecker extends StatelessWidget {
               create: (context) {
                 if (Utils.isCompressFile(absPath)) {
 //                  return SmbViewerNavigator(false, 0, pageSmbVO, filePo);
-                  return ZipNavigator(exploreNavigator, zip.fileNum, absPath, readPages);
+                  return ZipNavigator(exploreNavigator, exploreco, zip.fileNum, absPath, readPages);
                 } else if (Utils.isImageFile(absPath)) {
                   //TODO:需要做新的ImageViewerNavigator
                   return null;
@@ -666,7 +686,7 @@ class FutureViewerChecker extends StatelessWidget {
     );
   }
 
-  FutureViewerChecker(this.readPages, this.absPath, this.exploreNavigator);
+  FutureViewerChecker(this.exploreco, this.readPages, this.absPath, this.exploreNavigator);
 }
 
 class FutureImage extends StatelessWidget {

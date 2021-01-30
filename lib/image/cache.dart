@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -50,9 +51,9 @@ class ImageCompress {
   static Future<Uint8List> thumbNailImage(Uint8List image) async {
     var result = await FlutterImageCompress.compressWithList(
       image,
-      minHeight: 100,
-      minWidth: 100,
-      quality: 50,
+      minHeight: 200,
+      minWidth: 200,
+      quality: 90,
     );
     return Uint8List.fromList(result);
   }
@@ -90,12 +91,12 @@ class CacheThumbnail {
     await DefaultCacheManager().putFile(_getThumbId(fileId), thumbnail);
   }
 
-  static Future<Uint8List> getThumbnail(String fileId) async {
+  static Future<File> getThumbnail(String fileId) async {
     FileInfo fileInfo = await DefaultCacheManager().getFileFromCache(_getThumbId(fileId));
     if (fileInfo == null) {
       return null;
     }
-    return await fileInfo.file.readAsBytes();
+    return fileInfo.file;
   }
 }
 

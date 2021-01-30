@@ -1,5 +1,7 @@
 import 'dart:typed_data';
+import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:raising/dao/DirectoryVO.dart';
@@ -11,20 +13,76 @@ import 'package:raising/image/cache.dart';
 ///这里的view层跟逻辑层耦合在一起了，需要找个办法处理一下。
 var logger = Logger();
 
+class CacheImageProvider extends ImageProvider<CacheImageProvider> {
+  final String fileId;
+
+  CacheImageProvider(this.fileId);
+
+  @override
+  ImageStreamCompleter load(CacheImageProvider key, DecoderCallback decode) {
+    return MultiFrameImageStreamCompleter(
+      codec: _loadAsync(decode),
+      scale: 1.0,
+      debugLabel: fileId,
+      informationCollector: () sync* {
+        yield ErrorDescription('Path: $fileId');
+      },
+    );
+  }
+
+  Future<Codec> _loadAsync(DecoderCallback decode) async {
+    final Uint8List bytes = await (await CacheThumbnail.getThumbnail(fileId)).readAsBytes();
+
+    if (bytes.lengthInBytes == 0) {
+      // The file may become available later.
+      PaintingBinding.instance?.imageCache?.evict(this);
+      throw StateError('$fileId is empty and cannot be loaded as an image.');
+    }
+
+    return await decode(bytes);
+  }
+
+  @override
+  Future<CacheImageProvider> obtainKey(ImageConfiguration configuration) {
+    return SynchronousFuture<CacheImageProvider>(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType) return false;
+    bool res = other is CacheImageProvider && other.fileId == fileId;
+    return res;
+  }
+
+  @override
+  int get hashCode => fileId.hashCode;
+
+  @override
+  String toString() => '${objectRuntimeType(this, 'CacheImageProvider')}("$fileId")';
+}
+
 class HistoryPage extends StatefulWidget {
+  final bool onlyBookMark;
+  final Future<List<FileKeyPO>> Function(int, int, bool) getFileKeyList;
+
   @override
   State<StatefulWidget> createState() {
     return _HistoryPageState();
   }
 
-  HistoryPage();
+  HistoryPage(this.onlyBookMark, this.getFileKeyList, {Key key}) : super(key: key);
 }
 
 class _HistoryPageState extends State<HistoryPage> {
   int offset = 0;
   bool isGetAllData = false;
-  var _data = <FileInfoPO>[_endSignal];
-  static FileInfoPO _endSignal = FileInfoPO();
+  var _data = <FileKeyPO>[_endSignal];
+  static FileKeyPO _endSignal = FileKeyPO();
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   //TODO:这里还需要修bug，处理缓存被删的情况
   @override
@@ -55,30 +113,13 @@ class _HistoryPageState extends State<HistoryPage> {
             );
           }
         }
-
-//        return ListTile(title: Text(_data[index].filename));
         return ListTile(
             leading: AspectRatio(
                 aspectRatio: 1,
-                child: FutureBuilder<Widget>(
-                  future: () async {
-//                    Uint8List bytes = await Utils.getThumbnailFile(_data[index].hostId, _data[index].absPath);
-                    Uint8List bytes = await CacheThumbnail.getThumbnail(_data[index].fileId);
-                    if (bytes == null) {
-                      return Icon(Icons.check_box_outline_blank);
-                    }
-                    return Image.memory(bytes);
-                  }(),
-                  builder: (BuildContext context, AsyncSnapshot<Widget> snapshot) {
-                    if (snapshot.connectionState == ConnectionState.done) {
-                      if (snapshot.hasError) {
-                        return Text("Error: ${snapshot.error}");
-                      } else {
-                        return snapshot.data;
-                      }
-                    } else {
-                      return Center(child: CircularProgressIndicator());
-                    }
+                child: Image(
+                  image: CacheImageProvider(_data[index].fileId),
+                  errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
+                    return Icon(Icons.broken_image);
                   },
                 )),
             title: Text(_data[index].filename));
@@ -89,15 +130,17 @@ class _HistoryPageState extends State<HistoryPage> {
 
   void _retrieveData() {
     int size = 100;
-    Repository.historyFileInfo(offset, size + 1)
+    widget
+        .getFileKeyList(offset, size + 1, widget.onlyBookMark)
         .then((e) => {
               setState(() {
+                var begin = _data.length - 1;
                 if (e.length < size + 1) {
-                  _data.insertAll(_data.length - 1, e);
+                  _data.insertAll(begin, e);
                   isGetAllData = true;
                   offset += e.length;
                 } else {
-                  _data.insertAll(_data.length - 1, e.sublist(0, size));
+                  _data.insertAll(begin, e.sublist(0, size));
                   offset += size;
                 }
               })
@@ -122,8 +165,13 @@ class ScorePage extends StatefulWidget {
 class _ScorePageState extends State<ScorePage> {
   int offset = 0;
   bool isGetAllData = false;
-  var _data = <FileKeyPO>[_endSignal];
+  List<FileKeyPO> _data = <FileKeyPO>[_endSignal];
   static FileKeyPO _endSignal = FileKeyPO();
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -153,21 +201,16 @@ class _ScorePageState extends State<ScorePage> {
             );
           }
         }
-        return ListTile(title: Text(_data[index].filename));
-//        return ListTile(
-//          leading: AspectRatio(aspectRatio: 1, child: PreviewFile(files[index], catalog.smbVO)),
-//          title: Text(files[index].filename),
-//          onTap: () {
-//            if (files[index].isDirectory) {
-//              catalog.refreshPath(Utils.joinPath(catalog.smbVO.absPath, files[index].filename));
-//            } else if (Constants.COMPRESS_AND_IMAGE_FILE.contains(p.extension(files[index].filename))) {
-//              Navigator.push(
-//                context,
-//                MaterialPageRoute(builder: (context) => FutureViewerChecker(0, Utils.joinPath(catalog.smbVO.absPath, files[index].filename), files)),
-//              );
-//            }
-//          },
-//        );
+        return ListTile(
+            leading: AspectRatio(
+                aspectRatio: 1,
+                child: Image(
+                  image: CacheImageProvider(_data[index].fileId),
+                  errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
+                    return Icon(Icons.broken_image);
+                  },
+                )),
+            title: Text(_data[index].filename));
       },
       separatorBuilder: (context, index) => Divider(height: .0),
     );
@@ -177,12 +220,13 @@ class _ScorePageState extends State<ScorePage> {
     int size = 100;
     widget.getFileKey(offset, size + 1).then((e) => {
           setState(() {
+            var begin = _data.length - 1;
             if (e.length < size + 1) {
-              _data.insertAll(_data.length - 1, e);
+              _data.insertAll(begin, e);
               isGetAllData = true;
               offset += e.length;
             } else {
-              _data.insertAll(_data.length - 1, e.sublist(0, size));
+              _data.insertAll(begin, e.sublist(0, size));
               offset += size;
             }
           })
@@ -201,6 +245,7 @@ class RankPage extends StatefulWidget {
 
 class _RankPageState extends State<RankPage> {
   int _selectedIndex = 0;
+  bool _onlyBookmark = false;
 
   void _onItemTapped(int index) {
     setState(() {
@@ -222,21 +267,21 @@ class _RankPageState extends State<RankPage> {
     });
   }
 
-  bool _onlyBookmark = true;
-
   @override
   Widget build(BuildContext context) {
-    IconData curBoomark = _onlyBookmark ? Icons.star_border : Icons.star;
+    IconData curBookmark = _onlyBookmark ? Icons.star : Icons.star_border;
 
     return Scaffold(
       body: <Widget>[
-        ScorePage((page, size) async {
-          return await Repository.rankFileKey14("score14 desc", page, size);
-        }),
-        ScorePage((page, size) async {
-          return await Repository.rankFileKey14("score60 desc", page, size);
-        }),
-        HistoryPage(),
+        HistoryPage(_onlyBookmark, (page, size, onlyBookmark) async {
+          return await Repository.rankFileKey14("score14 desc", page, size, star: onlyBookmark);
+        }, key: Key('yuebang' + _onlyBookmark.toString())),
+        HistoryPage(_onlyBookmark, (page, size, onlyBookmark) async {
+          return await Repository.rankFileKey14("score60 desc", page, size, star: onlyBookmark);
+        }, key: Key('jibang' + _onlyBookmark.toString())),
+        HistoryPage(_onlyBookmark, (page, size, onlyBookmark) async {
+          return Repository.historyFileKey(page, size + 1, star: onlyBookmark);
+        }, key: Key("lishi" + _onlyBookmark.toString())),
         Text("ok4")
       ][_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
@@ -254,7 +299,7 @@ class _RankPageState extends State<RankPage> {
       ),
       floatingActionButton: FloatingActionButton(
           //悬浮按钮
-          child: Icon(curBoomark),
+          child: Icon(curBookmark),
           onPressed: _onChangeBookmark),
     );
   }

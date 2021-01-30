@@ -1,4 +1,8 @@
+import 'dart:typed_data';
+import 'dart:ui';
+
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as p;
@@ -12,13 +16,13 @@ import 'package:raising/image/ExploreCO.dart';
 import 'package:raising/image/ExploreFile.dart';
 import 'package:raising/image/ExtractCO.dart';
 import 'package:raising/image/WholeFileContentCO.dart';
+import 'package:raising/image/cache.dart';
 import 'package:raising/model/ExploreNavigator.dart';
 import 'package:raising/model/HostModel.dart';
 import 'package:raising/page/searchPage.dart';
 import 'package:raising/page/viewer.dart';
 
 import '../util.dart';
-import 'common_widget/LoadingWidget.dart';
 import 'drawer.dart';
 
 var logger = Logger();
@@ -245,7 +249,7 @@ class FileListState extends State<FileList> {
                       } else if (Constants.COMPRESS_AND_IMAGE_FILE.contains(p.extension(files[index].filename))) {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => FutureViewerChecker(0, files[index].absPath, exploreNavigator)),
+                          MaterialPageRoute(builder: (context) => FutureViewerChecker(files[index], 0, files[index].absPath, exploreNavigator)),
                         );
                       }
                     },
@@ -262,6 +266,56 @@ class FileListState extends State<FileList> {
   }
 }
 
+///TODO:不知道为啥，无法获取获取在memorycache的缓存
+class FutureImageProvider extends ImageProvider<FutureImageProvider> {
+  final String fileId;
+  final Future<Uint8List> Function() getImage;
+
+  FutureImageProvider(this.fileId, this.getImage);
+
+  @override
+  ImageStreamCompleter load(FutureImageProvider key, DecoderCallback decode) {
+    return MultiFrameImageStreamCompleter(
+      codec: _loadAsync(decode),
+      scale: 1.0,
+      debugLabel: fileId,
+      informationCollector: () sync* {
+        yield ErrorDescription('Path: $fileId');
+      },
+    );
+  }
+
+  Future<Codec> _loadAsync(DecoderCallback decode) async {
+    final Uint8List bytes = await getImage();
+
+    if (bytes.lengthInBytes == 0) {
+      // The file may become available later.
+      PaintingBinding.instance?.imageCache?.evict(this);
+      throw StateError('$fileId is empty and cannot be loaded as an image.');
+    }
+
+    return await decode(bytes);
+  }
+
+  @override
+  Future<FutureImageProvider> obtainKey(ImageConfiguration configuration) {
+    return SynchronousFuture<FutureImageProvider>(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType) return false;
+    bool res = other is FutureImageProvider && other.fileId == fileId;
+    return res;
+  }
+
+  @override
+  int get hashCode => fileId.hashCode;
+
+  @override
+  String toString() => '${objectRuntimeType(this, 'FutureImageProvider')}("$fileId")';
+}
+
 /**
  * TODO:应该改成先返回缓存的内容，然后后台查询真正的图，再替换。
  */
@@ -274,34 +328,131 @@ class PreviewFile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Widget>(future: () async {
-      if (fileinfo.isDirectory) {
-        return Icon(Icons.folder);
-      } else if ((Constants.COMPRESS_AND_IMAGE_FILE).contains((p.extension(fileinfo.filename)))) {
-        if (Utils.isCompressFile(fileinfo.filename)) {
-          ExtractCO content = await exploreNavigator.exploreFile.loadFileFromZip(absPath, 0, fileSize: fileinfo.size);
-          var thumbNail = content.indexContent[0];
-          await exploreNavigator.putThmnailFile(fileinfo, thumbNail);
-          return Image.memory(thumbNail);
-        } else {
-          WholeFileContentCO content = await exploreNavigator.exploreFile.loadWholeFile(absPath);
-          return Image.memory(content.content);
-        }
+//    FadeInImage(
+//      placeholder: CacheImageProvider(exploreNavigator.getFileId(fileinfo)),
+//      placeholderErrorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
+//        return Icon(Icons.image);
+//      },
+//      image: FutureImageProvider(exploreNavigator.getFileId(fileinfo), () async {
+//        ExtractCO content = await exploreNavigator.exploreFile.loadFileFromZip(absPath, 0, fileSize: fileinfo.size);
+//        var thumbNail = content.indexContent[0];
+//        exploreNavigator.putThmnailFile(fileinfo, thumbNail);
+//        return thumbNail;
+//      }),
+//    );
+    if (fileinfo.isDirectory) {
+      return Icon(Icons.folder);
+    } else if ((Constants.COMPRESS_AND_IMAGE_FILE).contains((p.extension(fileinfo.filename)))) {
+      if (Utils.isCompressFile(fileinfo.filename)) {
+//        return FadeInImage(
+//          placeholder: CacheImageProvider(exploreNavigator.getFileId(fileinfo)),
+//          placeholderErrorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
+//            return Icon(Icons.image);
+//          },
+//          image: FutureImageProvider(exploreNavigator.getFileId(fileinfo), () async {
+//            ExtractCO content = await exploreNavigator.exploreFile.loadFileFromZip(absPath, 0, fileSize: fileinfo.size);
+//            var thumbNail = content.indexContent[0];
+//            exploreNavigator.putThmnailFile(fileinfo, thumbNail);
+//            return thumbNail;
+//          }),
+//        );
+        return Image(
+            image: FutureImageProvider(
+              exploreNavigator.getFileId(fileinfo),
+              () async {
+                ExtractCO content = await exploreNavigator.exploreFile.loadFileFromZip(absPath, 0, fileSize: fileinfo.size);
+                var thumbNail = content.indexContent[0];
+                exploreNavigator.putThmnailFile(fileinfo, thumbNail);
+                return ImageCompress.thumbNailImage(thumbNail);
+              },
+            ),
+            errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
+              return Icon(Icons.broken_image);
+            });
+
+//        ExtractCO content = await exploreNavigator.exploreFile.loadFileFromZip(absPath, 0, fileSize: fileinfo.size);
+//        var thumbNail = content.indexContent[0];
+//        exploreNavigator.putThmnailFile(fileinfo, thumbNail);
+//        return Image.memory(thumbNail);
       } else {
-        return Icon(Icons.folder_open);
+//        WholeFileContentCO content = await exploreNavigator.exploreFile.loadWholeFile(absPath);
+//        var thumbNail = content.content;
+//        exploreNavigator.putThmnailFile(fileinfo, thumbNail);
+//        return Image.memory(content.content);
+        return Image(
+            image: FutureImageProvider(exploreNavigator.getFileId(fileinfo), () async {
+              WholeFileContentCO content = await exploreNavigator.exploreFile.loadWholeFile(absPath);
+              var thumbNail = content.content;
+              exploreNavigator.putThmnailFile(fileinfo, thumbNail);
+
+              ///这里必须要把图压缩再显示，不然内存缓存很容易就需要删除旧图片
+              return ImageCompress.thumbNailImage(thumbNail);
+            }),
+            errorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
+              return Icon(Icons.broken_image);
+            });
+
+//        return FadeInImage(
+//          placeholder: CacheImageProvider(exploreNavigator.getFileId(fileinfo)),
+//          placeholderErrorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
+//            return Icon(Icons.image);
+//          },
+//          image: FutureImageProvider(exploreNavigator.getFileId(fileinfo), () async {
+//            WholeFileContentCO content = await exploreNavigator.exploreFile.loadWholeFile(absPath);
+//            var thumbNail = content.content;
+//            exploreNavigator.putThmnailFile(fileinfo, thumbNail);
+//            return thumbNail;
+//            return thumbNail;
+//          }),
+//        );
       }
-    }(), builder: (BuildContext context, AsyncSnapshot<Widget> snapshot) {
-      if (snapshot.connectionState == ConnectionState.done) {
-        if (snapshot.hasError) {
-          logger.e(snapshot.error);
-          return Icon(Icons.error);
-        } else {
-          return snapshot.data;
-        }
-      } else {
-        return Center(child: LoadingWidget());
-      }
-    });
+    } else {
+      return Icon(Icons.folder_open);
+    }
+
+//    return FutureBuilder<Widget>(future: () async {
+//      if (fileinfo.isDirectory) {
+//        return Icon(Icons.folder);
+//      } else if ((Constants.COMPRESS_AND_IMAGE_FILE).contains((p.extension(fileinfo.filename)))) {
+//        if (Utils.isCompressFile(fileinfo.filename)) {
+//          return FadeInImage(
+//            placeholder: CacheImageProvider(exploreNavigator.getFileId(fileinfo)),
+//            placeholderErrorBuilder: (BuildContext context, Object exception, StackTrace stackTrace) {
+//              return Icon(Icons.image);
+//            },
+//            image: FutureImageProvider(exploreNavigator.getFileId(fileinfo), () async {
+//              ExtractCO content = await exploreNavigator.exploreFile.loadFileFromZip(absPath, 0, fileSize: fileinfo.size);
+//              var thumbNail = content.indexContent[0];
+//              exploreNavigator.putThmnailFile(fileinfo, thumbNail);
+//              return thumbNail;
+//            }),
+//          );
+//
+//          ExtractCO content = await exploreNavigator.exploreFile.loadFileFromZip(absPath, 0, fileSize: fileinfo.size);
+//          var thumbNail = content.indexContent[0];
+//          exploreNavigator.putThmnailFile(fileinfo, thumbNail);
+//          return Image.memory(thumbNail);
+//        } else {
+//          WholeFileContentCO content = await exploreNavigator.exploreFile.loadWholeFile(absPath);
+//          var thumbNail = content.content;
+//          exploreNavigator.putThmnailFile(fileinfo, thumbNail);
+//          return Image.memory(content.content);
+//        }
+//      } else {
+//        return Icon(Icons.folder_open);
+//      }
+//    }(), builder: (BuildContext context, AsyncSnapshot<Widget> snapshot) {
+//      if (snapshot.connectionState == ConnectionState.done) {
+//        if (snapshot.hasError) {
+//          logger.e(snapshot.error);
+//          return Icon(Icons.error);
+//        } else {
+//          return snapshot.data;
+//        }
+//      } else {
+//        return Center(child: LoadingWidget());
+//      }
+//    });
   }
 }
 

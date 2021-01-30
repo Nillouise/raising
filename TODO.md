@@ -29,6 +29,7 @@ bug:
 公司的电脑上的模拟器出bug了：SevenZipJBinding wasn't initialized successfully last time
 不过等app启动后过几分钟再重新调用函数，这个问题就消失了
 回家得测测有没有问题
+需要找到办法，在切换页面时，缩略图不会从新加载（或者说让加载速度感受不到）
 
 需要处理webdav无法获取ranges数据的问题，但这个优先级很小
 

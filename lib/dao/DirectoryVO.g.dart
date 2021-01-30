@@ -40,10 +40,7 @@ FileInfoPO _$FileInfoPOFromJson(Map json) {
     ..isDirectory = json['isDirectory'] as bool
     ..isCompressFile = json['isCompressFile'] as bool
     ..isShare = json['isShare'] as bool
-    ..readLength = json['readLength'] as int
-    ..fileNum = json['fileNum'] as int
-    ..recentReadTime =
-        const CustomDateTimeConverter().fromJson(json['recentReadTime'] as int);
+    ..fileNum = json['fileNum'] as int;
 }
 
 Map<String, dynamic> _$FileInfoPOToJson(FileInfoPO instance) =>
@@ -58,10 +55,7 @@ Map<String, dynamic> _$FileInfoPOToJson(FileInfoPO instance) =>
       'isDirectory': instance.isDirectory,
       'isCompressFile': instance.isCompressFile,
       'isShare': instance.isShare,
-      'readLength': instance.readLength,
       'fileNum': instance.fileNum,
-      'recentReadTime':
-          const CustomDateTimeConverter().toJson(instance.recentReadTime),
     };
 
 FileKeyPO _$FileKeyPOFromJson(Map json) {
@@ -73,7 +67,8 @@ FileKeyPO _$FileKeyPOFromJson(Map json) {
     score60: (json['score60'] as num)?.toDouble(),
     recentReadTime:
         const CustomDateTimeConverter().fromJson(json['recentReadTime'] as int),
-  );
+    comment: json['comment'] as String,
+  )..readLength = json['readLength'] as int;
 }
 
 Map<String, dynamic> _$FileKeyPOToJson(FileKeyPO instance) => <String, dynamic>{
@@ -84,4 +79,6 @@ Map<String, dynamic> _$FileKeyPOToJson(FileKeyPO instance) => <String, dynamic>{
       'score60': instance.score60,
       'recentReadTime':
           const CustomDateTimeConverter().toJson(instance.recentReadTime),
+      'comment': instance.comment,
+      'readLength': instance.readLength,
     };

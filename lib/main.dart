@@ -38,6 +38,7 @@ void main() async {
   //call the initial config method
   await onStart();
   runApp(MyApp());
+//  runApp(popup_menu.MyApp());
 }
 
 //class MyApp extends StatelessWidget {

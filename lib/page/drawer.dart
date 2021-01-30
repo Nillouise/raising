@@ -41,6 +41,7 @@ class _HostManageState extends State<HostManage> {
 
   @override
   void initState() {
+    super.initState();
     if (widget.hostId != null) {
       _nickController.text = widget.hostId.nickName;
       _hostnameController.text = widget.hostId.hostname;
@@ -90,12 +91,10 @@ class _HostManageState extends State<HostManage> {
                           if (v.trim().isEmpty) {
                             return "必填";
                           }
-                          HostModel hostModel =
-                              Provider.of<HostModel>(context, listen: false);
+                          HostModel hostModel = Provider.of<HostModel>(context, listen: false);
 //                      hostname.checkDuplicate(_nickController.text);
                           if (checkHostNickNameDuplicate(hostModel, v)) {
-                            if (widget.hostId != null &&
-                                widget.hostId.nickName == v) {
+                            if (widget.hostId != null && widget.hostId.nickName == v) {
                               return null;
                             }
                             return "跟现有昵称重复";
@@ -162,9 +161,7 @@ class _HostManageState extends State<HostManage> {
                           hintText: "Smb密码",
                           prefixIcon: Icon(Icons.lock),
                           suffixIcon: IconButton(
-                            icon: Icon(pwdShow
-                                ? Icons.visibility_off
-                                : Icons.visibility),
+                            icon: Icon(pwdShow ? Icons.visibility_off : Icons.visibility),
                             onPressed: () {
                               setState(() {
                                 pwdShow = !pwdShow;
@@ -217,10 +214,7 @@ class _HostManageState extends State<HostManage> {
         hostModel.replace(po..id = widget.hostId.id);
       } else {
         //添加host
-        hostModel.insert(po
-          ..id = _nickController.text +
-              "##~##" +
-              (new DateTime.now().millisecondsSinceEpoch).toString());
+        hostModel.insert(po..id = _nickController.text + "##~##" + (new DateTime.now().millisecondsSinceEpoch).toString());
       }
       Navigator.of(context).pop();
     }
@@ -344,8 +338,7 @@ class _HostListDrawerState extends State<HostListDrawer> {
               });
 
               // Then show a snackbar.
-              Scaffold.of(context)
-                  .showSnackBar(SnackBar(content: Text("$item dismissed")));
+              Scaffold.of(context).showSnackBar(SnackBar(content: Text("$item dismissed")));
             },
             // Show a red background as the item is swiped away.
             background: Container(color: Colors.red),
@@ -365,8 +358,7 @@ class _HostListDrawerState extends State<HostListDrawer> {
 
                 WebdavExploreFile webdavExploreFile = WebdavExploreFile(item);
                 SmbChannel.explorefiles = [webdavExploreFile];
-                ExploreNavigator catalog =
-                    Provider.of<ExploreNavigator>(context, listen: false);
+                ExploreNavigator catalog = Provider.of<ExploreNavigator>(context, listen: false);
                 catalog.refresh(webdavExploreFile, "");
                 Navigator.of(context).pop();
               },

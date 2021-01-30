@@ -105,7 +105,7 @@ class SearchingCO {
 class FileInfoPO {
   String fileId; // 现在应当使用fileId来查找文件，将来用md5，filename之类的确认一个文件，目前fileId = filename
   String hostId;
-  String hostNickName; //只用smbId可能无法恢复删除的smb链接,所以也存储一下这个nickName
+  String hostNickName; //只用hostId可能无法恢复删除的smb链接,所以也存储一下这个nickName
   String absPath; //include filename
   String filename;
   DateTime updateTime;
@@ -114,9 +114,7 @@ class FileInfoPO {
   bool isCompressFile;
   bool isShare;
 
-  int readLength; //已经看了多少页
   int fileNum;
-  DateTime recentReadTime;
 
   FileInfoPO();
 
@@ -152,17 +150,11 @@ class FileInfoPO {
   }
 }
 
+//此类应该用来代表被点开过的操作的记录
 @JsonSerializable()
 @CustomDateTimeConverter()
 class FileKeyPO {
-  FileKeyPO({
-    this.fileId,
-    this.filename,
-    this.star,
-    this.score14,
-    this.score60,
-    this.recentReadTime,
-  });
+  FileKeyPO({this.fileId, this.filename, this.star, this.score14, this.score60, this.recentReadTime, this.comment});
 
   String fileId; // 现在应当使用fileId来查找文件，将来用md5，filename之类的确认一个文件，目前fileId = filename
   String filename;
@@ -170,6 +162,8 @@ class FileKeyPO {
   double score14;
   double score60;
   DateTime recentReadTime;
+  String comment;
+  int readLength; //已经看了多少页
 
   factory FileKeyPO.fromJson(Map<String, dynamic> json) => _$FileKeyPOFromJson(json);
 
