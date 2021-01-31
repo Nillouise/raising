@@ -1,6 +1,6 @@
 package com.example.raising.smb2
 
-import org.apache.commons.lang3.StringUtils
+import com.example.raising.Utils
 import java.util.*
 
 class SmbHost {
@@ -9,8 +9,10 @@ class SmbHost {
     var hostname: String = ""
     var domain: String = ""
 
+    
     fun getOnlyHostname(): String {
-        val split: Array<String> = hostname.split("[/\\\\]").toTypedArray()
+
+        val split = Utils.splitPath(hostname)
         return if (split.isEmpty()) {
             ""
         } else split[0]

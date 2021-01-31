@@ -172,12 +172,9 @@ public class MethodDispatcher implements MethodCallHandler {
             executorService.submit(() -> {
                 try {
                     ExtractCO res = ExtractChannel.INSTANCE.extract(
-                            new NativeWebDavRandomFile(
-                                    call.argument("absPath"),
-                                    call.argument("username"),
-                                    call.argument("password"),
-                                    0,
-                                    Long.valueOf((int) call.argument("fileSize"))),
+                            SmbChannel2.INSTANCE.getFileStream(
+                                    SmbHost.Companion.fromMap(call.argument("hostPO")),
+                                    call.argument("absPath")),
                             call.argument("index"));
                     result.success(res.getMap());
                 } catch (Exception e) {
@@ -189,12 +186,9 @@ public class MethodDispatcher implements MethodCallHandler {
             executorService.submit(() -> {
                 try {
                     ExtractCO res = ExtractChannel.INSTANCE.extract(
-                            new NativeWebDavRandomFile(
-                                    call.argument("absPath"),
-                                    call.argument("username"),
-                                    call.argument("password"),
-                                    0,
-                                    Long.valueOf((int) call.argument("fileSize"))),
+                            SmbChannel2.INSTANCE.getFileStream(
+                                    SmbHost.Companion.fromMap(call.argument("hostPO")),
+                                    call.argument("absPath")),
                             call.argument("index"));
                     result.success(res.getMap());
                 } catch (Exception e) {
@@ -208,7 +202,7 @@ public class MethodDispatcher implements MethodCallHandler {
                     List<ExploreCO> res = SmbChannel2.INSTANCE.queryFiles(
                             SmbHost.Companion.fromMap(call.argument("hostPO")),
                             call.argument("absPath"));
-                    result.success(res.stream().map(ExploreCO::toMap).collect(Collectors.toList()) );
+                    result.success(res.stream().map(ExploreCO::toMap).collect(Collectors.toList()));
                 } catch (Exception e) {
                     Logger.e(e, "extract error");
                     result.error("extract", e.toString(), ExceptionUtils.getStackTrace(e));

@@ -1,7 +1,6 @@
 package com.example.raising.vo
 
 import java.util.*
-import kotlin.collections.HashMap
 
 class ExploreCO {
     /**
@@ -28,6 +27,5 @@ class ExploreCO {
         )
 
     }
-
 
 }
