@@ -118,6 +118,7 @@ class ExplorerWidget extends StatefulWidget {
   }
 }
 
+///关于AutomaticKeepAliveClientMixin的作用：https://medium.com/manabie/flutter-simple-cheatsheet-4370a68f98b3
 class ExplorerWidgetState extends State<ExplorerWidget> with AutomaticKeepAliveClientMixin<ExplorerWidget> {
   String _dirname(String path) {
     var dirname = p.dirname(path);
@@ -126,6 +127,7 @@ class ExplorerWidgetState extends State<ExplorerWidget> with AutomaticKeepAliveC
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     ExploreNavigator catalog = Provider.of<ExploreNavigator>(context);
 
     return new WillPopScope(
@@ -213,9 +215,9 @@ class FileListState extends State<FileList> {
                 title: Text('${currentHost.nickName}'),
                 onTap: () {
                   //TODO:这里需要处理选择的是SMB的情况。
-                  WebdavExploreFile webdavExploreFile = WebdavExploreFile(currentHost);
-                  SmbChannel.explorefiles = [webdavExploreFile];
-                  exploreNavigator.refresh(webdavExploreFile, "");
+                  ExploreFile exploreFile = ExploreFile.fromHost(currentHost);
+                  SmbChannel.explorefiles = [exploreFile];
+                  exploreNavigator.refresh(exploreFile, "");
                 },
               ),
             );

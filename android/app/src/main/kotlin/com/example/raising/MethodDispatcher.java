@@ -4,7 +4,10 @@ package com.example.raising;
 import android.os.Handler;
 import android.os.Looper;
 
+import com.example.raising.smb2.SmbChannel2;
+import com.example.raising.smb2.SmbHost;
 import com.example.raising.vo.DirectoryVO;
+import com.example.raising.vo.ExploreCO;
 import com.example.raising.vo.ExtractCO;
 import com.example.raising.vo.SmbCO;
 import com.example.raising.vo.SmbResult;
@@ -17,8 +20,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -151,7 +156,7 @@ public class MethodDispatcher implements MethodCallHandler {
                 try {
                     ExtractCO res = ExtractChannel.INSTANCE.extract(
                             new NativeWebDavRandomFile(
-                                    call.argument("absPath"),
+                                    call.argument("absPathLink"),
                                     call.argument("username"),
                                     call.argument("password"),
                                     0,
@@ -200,15 +205,10 @@ public class MethodDispatcher implements MethodCallHandler {
         } else if (call.method.equals("smbQueryFiles")) {
             executorService.submit(() -> {
                 try {
-                    ExtractCO res = ExtractChannel.INSTANCE.extract(
-                            new NativeWebDavRandomFile(
-                                    call.argument("absPath"),
-                                    call.argument("username"),
-                                    call.argument("password"),
-                                    0,
-                                    Long.valueOf((int) call.argument("fileSize"))),
-                            call.argument("index"));
-                    result.success(res.getMap());
+                    List<ExploreCO> res = SmbChannel2.INSTANCE.queryFiles(
+                            SmbHost.Companion.fromMap(call.argument("hostPO")),
+                            call.argument("absPath"));
+                    result.success(res.stream().map(ExploreCO::toMap).collect(Collectors.toList()) );
                 } catch (Exception e) {
                     Logger.e(e, "extract error");
                     result.error("extract", e.toString(), ExceptionUtils.getStackTrace(e));

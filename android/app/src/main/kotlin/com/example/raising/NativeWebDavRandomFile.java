@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class NativeWebDavRandomFile implements IInStream {
 
-    private String absPath;
+    private String absPathLink;//这里的basPath包含了整个url，但其他的协议的类其实要包含hostname吗，这其实会对
     private String username;
     private String password;
     private volatile AtomicLong offset;
@@ -40,8 +40,8 @@ public class NativeWebDavRandomFile implements IInStream {
     }
 
 
-    public NativeWebDavRandomFile(String absPath, String username, String password, long offset, long fileLength) {
-        this.absPath = absPath;
+    public NativeWebDavRandomFile(String absPathLink, String username, String password, long offset, long fileLength) {
+        this.absPathLink = absPathLink;
         this.offset = new AtomicLong(offset);
         this.fileLength = fileLength;
         this.username = username;
@@ -74,7 +74,7 @@ public class NativeWebDavRandomFile implements IInStream {
         HashMap<String, String> headers = new HashMap<>();
         headers.put("Range", "bytes=" + this.offset.longValue() + "-" + (this.offset.longValue() + data.length - 1));
         try {
-            InputStream inputStream = getSarding(absPath, username, password).get(this.absPath, headers);
+            InputStream inputStream = getSarding(absPathLink, username, password).get(this.absPathLink, headers);
             int co = 0;
             for (; ; ) {
                 int cr = inputStream.read(data, co, data.length - co);
@@ -90,7 +90,7 @@ public class NativeWebDavRandomFile implements IInStream {
             this.offset.addAndGet(co);
             return co;
         } catch (Exception e) {
-            Logger.e("read webdav error" + this.absPath + " " + headers + " " + ExceptionUtils.getStackTrace(e));
+            Logger.e("read webdav error" + this.absPathLink + " " + headers + " " + ExceptionUtils.getStackTrace(e));
             throw new SevenZipException("read webdav error", e);
         }
     }

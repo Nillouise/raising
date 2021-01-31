@@ -17,7 +17,14 @@ class HostPO {
   String username;
   String password;
   bool needAccount;
+
+  //具体的值看 _HostManageState._HostTypeDrawList
   String type; //用来标记是哪种服务器，转成对应的VO
+
+  static const List<String> hostTypeValues = ['WebDav', 'Samba'];
+  static const String hostTypeWebdav = 'WebDav';
+  static const String hostTypeSamba = 'Samba';
+
   //不同的类使用不同的mixin即可
   factory HostPO.fromJson(Map<String, dynamic> json) => _$HostPOFromJson(json);
 

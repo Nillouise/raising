@@ -26,7 +26,7 @@ class _HostManageState extends State<HostManage> {
   bool _nameAutoFocus = true;
 
   HostPO host;
-  static const List<String> _HostTypeDrawList = ['WebDav', 'Samba'];
+  static const List<String> _HostTypeDrawList = HostPO.hostTypeValues;
   String _selectedHostType = "WebDav";
 
   bool needAccount = true;
@@ -356,10 +356,10 @@ class _HostListDrawerState extends State<HostListDrawer> {
               onTap: () {
                 //TODO: 改成host的分类
 
-                WebdavExploreFile webdavExploreFile = WebdavExploreFile(item);
-                SmbChannel.explorefiles = [webdavExploreFile];
+                ExploreFile exploreFile = ExploreFile.fromHost(item);
+                SmbChannel.explorefiles = [exploreFile];
                 ExploreNavigator catalog = Provider.of<ExploreNavigator>(context, listen: false);
-                catalog.refresh(webdavExploreFile, "");
+                catalog.refresh(exploreFile, "");
                 Navigator.of(context).pop();
               },
             ),

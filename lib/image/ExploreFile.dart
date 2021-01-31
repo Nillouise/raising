@@ -35,6 +35,81 @@ abstract class ExploreFile {
   Future<WholeFileContentCO> loadWholeFile(String path);
 
   Future<List<int>> randomRange(String absPath, int begin, int end);
+
+  factory ExploreFile.fromHost(HostPO hostPO) {
+    if (hostPO.type == HostPO.hostTypeSamba) {
+      return SmbExploreFile(hostPO);
+    } else if (hostPO.type == HostPO.hostTypeWebdav) {
+      return WebdavExploreFile(hostPO);
+    } else {
+      throw Exception("hostType error $hostPO}");
+    }
+  }
+}
+
+class SmbExploreFile implements ExploreFile {
+  final HostPO hostPO;
+
+  SmbExploreFile(this.hostPO);
+
+  @override
+  Stream<List<ExploreCO>> bfsFiles(String path) {
+    // TODO: implement bfsFiles
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<ExtractCO> getFileNums(String absPath, {int fileSize}) {
+    // TODO: implement getFileNums
+    throw UnimplementedError();
+  }
+
+  @override
+  HostPO getHost() {
+    // TODO: implement getHost
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<ExtractCO> loadFileFromZip(String absPath, int index, {int fileSize}) {
+    // TODO: implement loadFileFromZip
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<WholeFileContentCO> loadWholeFile(String path) {
+    // TODO: implement loadWholeFile
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<ExploreCO>> queryFiles(String path) async {
+    Map arguments = {"hostPO": hostPO.toJson(), "absPath": path};
+
+    try {
+      List<dynamic> result = await SmbChannel.methodChannel
+          .invokeMethod("smbQueryFiles", arguments);
+      return result.map((e) => ExploreCO.fromJson(Map<String,dynamic>.from(e))).toList();
+    } catch (e) {
+      logger.e("PlatformException {}", e);
+    }
+    // Map<dynamic, dynamic> result = await methodChannel.invokeMethod("queryFiles", {"smbCO": smbCO.toMap()});
+
+    return null;
+    // SmbChannel.methodChannel
+  }
+
+  @override
+  Future<List<int>> randomRange(String absPath, int begin, int end) {
+    // TODO: implement randomRange
+    throw UnimplementedError();
+  }
+
+  @override
+  Stream<List<ExploreCO>> searchFiles(String path, String searchKeyword) {
+    // TODO: implement searchFiles
+    throw UnimplementedError();
+  }
 }
 
 class WebdavExploreFile implements ExploreFile {
@@ -46,7 +121,8 @@ class WebdavExploreFile implements ExploreFile {
 
   WebdavExploreFile(this.hostPO) {
     //TODO:还需要完善
-    client = WebDavClient(hostPO.hostname, "", "", "");
+    client =
+        WebDavClient(hostPO.hostname, hostPO.username, hostPO.password, "");
   }
 
   int getFileSizeCache(String absPath, int forceFileSize) {
@@ -81,7 +157,7 @@ class WebdavExploreFile implements ExploreFile {
 //    final Map<dynamic, dynamic> result = await SmbChannel.methodChannel.invokeMethod("webdavExtract", {"recallId": path, "fileSize": fileSize, "index": index});
     int curFileSize = getFileSizeCache(absPath, fileSize);
     var arguments = {
-      "absPath": client.baseUrl + absPath,
+      "absPathLink": client.baseUrl + absPath,
       "username": client.username,
       "password": client.password,
       "fileSize": curFileSize,
