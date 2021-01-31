@@ -4,6 +4,9 @@ import com.example.raising.SmbRandomFile
 import com.example.raising.Utils
 import com.example.raising.exception.SmbException
 import com.example.raising.vo.ExploreCO
+import com.example.raising.vo.ExtractCO
+import com.example.raising.vo.SmbResult
+import com.example.raising.vo.ZipFileContentCO
 import com.hierynomus.msdtyp.AccessMask
 import com.hierynomus.msfscc.FileAttributes
 import com.hierynomus.msfscc.fileinformation.FileStandardInformation
@@ -20,6 +23,7 @@ import com.rapid7.client.dcerpc.mssrvs.ServerService
 import com.rapid7.client.dcerpc.transport.SMBTransportFactories
 import net.sf.sevenzipjbinding.IInArchive
 import org.apache.commons.lang3.StringUtils
+import java.io.ByteArrayOutputStream
 import java.io.RandomAccessFile
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -192,6 +196,86 @@ object SmbChannel2 {
             Logger.e(e, "SmbHost %s", host)
             throw e
         }
+    }
+
+    @Throws(Exception::class)
+    fun loadWholeFile(host: SmbHost, absPath: String):ExtractCO {
+
+        Logger.d("getFileStream: current smb setting %s %s", host, absPath)
+        try {
+            val client = getClient(host);
+            val shareName = getShare(absPath)
+            val path = getPathOfShare(absPath)
+            Logger.d("getFileStream current path $path shareName $shareName")
+            if (StringUtils.isEmpty(path) || path == "/" || path == "\\") {
+                throw SmbException("not a file");
+            }
+
+            val connection = client.connect(host.getOnlyHostname())
+            val ac: AuthenticationContext = if (!host.password.isBlank()) {
+                AuthenticationContext(host.username, host.password.toCharArray(), host.domain)
+            } else {
+                AuthenticationContext.anonymous()
+            }
+
+            client.connect(host.getOnlyHostname()).use { connection ->
+                val ac: AuthenticationContext = if (!host.password.isBlank()) {
+                    AuthenticationContext(host.username, host.password.toCharArray(), host.domain)
+                } else {
+                    AuthenticationContext.anonymous()
+                }
+
+                ///处理没选share的情况
+                val session = connection.authenticate(ac)
+
+                try {
+                    (session.connectShare(shareName) as DiskShare).use { share ->
+                        Logger.i("previewFileQueue file name %s", path)
+                        val f: File? = null
+                        val fileExists = share.fileExists(path)
+                        if (!fileExists) {
+                            Logger.w("File %s not exist.", path)
+                            throw SmbException("File $path not exist")
+                        }
+                        val smbFileRead = share.openFile(path, EnumSet.of(AccessMask.GENERIC_READ), null, SMB2ShareAccess.ALL, SMB2CreateDisposition.FILE_OPEN, null)
+                        val info = smbFileRead.getFileInformation(FileStandardInformation::class.java)
+                        val `in` = smbFileRead.inputStream
+                        val randomAccessFile: RandomAccessFile? = null
+                        var inArchive: IInArchive? = null
+                        val buffer = ByteArrayOutputStream()
+                        var nRead: Int
+                        val data = ByteArray(16384)
+                        var total:Long = 0
+                        while (`in`.read(data, 0, data.size).also { nRead = it } != -1) {
+                            buffer.write(data, 0, nRead)
+                            total += nRead
+                        }
+                        val imagebyte = buffer.toByteArray()
+
+                        return ExtractCO().apply {
+                            filename = smbFileRead.fileName
+                            size = total
+                            fileNum = 1
+                            createTime = smbFileRead.fileInformation.basicInformation.creationTime.toDate();
+                            updateTime = smbFileRead.fileInformation.basicInformation.lastWriteTime.toDate();
+                            compressFormat = "wholeImage"
+                            indexContent = hashMapOf(0 to imagebyte)
+                        }
+
+
+                    }
+                } catch (e: Exception) {
+                    Logger.e(e, "SmbHost %s ", host)
+                    throw e
+                }
+            }
+        } catch (e: Exception) {
+            Logger.e(e, "SmbHost %s", host)
+            throw e
+        }
+
+
+
 
     }
 
