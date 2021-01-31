@@ -34,7 +34,7 @@ object SmbChannel2 {
                     .build()
             return SMBClient(config)
         }
-    
+
 
     private fun getShare(absPath: String): String {
         val split = Utils.splitPath(absPath)
@@ -116,47 +116,78 @@ object SmbChannel2 {
 
     @Throws(Exception::class)
     fun getFileStream(host: SmbHost, absPath: String): SmbRandomFile {
-        Logger.d("queryFiles: current smb setting %s", host)
+        Logger.d("getFileStream: current smb setting %s %s", host, absPath)
         try {
             val client = getClient(host);
             val shareName = getShare(absPath)
             val path = getPathOfShare(absPath)
-
+            Logger.d("getFileStream current path $path shareName $shareName")
             if (StringUtils.isEmpty(path) || path == "/" || path == "\\") {
                 throw SmbException("not a file");
             }
 
-            client.connect(host.getOnlyHostname()).use { connection ->
-                val ac: AuthenticationContext = if (!host.password.isBlank()) {
-                    AuthenticationContext(host.username, host.password.toCharArray(), host.domain)
-                } else {
-                    AuthenticationContext.anonymous()
-                }
-
-                ///处理没选share的情况
-                val session = connection.authenticate(ac)
-
-                try {
-                    (session.connectShare(shareName) as DiskShare).use { share ->
-                        Logger.i("previewFileQueue file name %s", path)
-                        val f: File? = null
-                        val fileExists = share.fileExists(path)
-                        if (!fileExists) {
-                            Logger.w("File %s not exist.", path)
-                            throw SmbException("File $path not exist")
-                        }
-                        val smbFileRead = share.openFile(path, EnumSet.of(AccessMask.GENERIC_READ), null, SMB2ShareAccess.ALL, SMB2CreateDisposition.FILE_OPEN, null)
-                        val info = smbFileRead.getFileInformation(FileStandardInformation::class.java)
-                        val `in` = smbFileRead.inputStream
-                        val randomAccessFile: RandomAccessFile? = null
-                        var inArchive: IInArchive? = null
-                        return SmbRandomFile(smbFileRead)
-                    }
-                } catch (e: Exception) {
-                    Logger.e(e, "SmbHost %s ", host)
-                    throw e
-                }
+            val connection = client.connect(host.getOnlyHostname())
+            val ac: AuthenticationContext = if (!host.password.isBlank()) {
+                AuthenticationContext(host.username, host.password.toCharArray(), host.domain)
+            } else {
+                AuthenticationContext.anonymous()
             }
+
+            ///处理没选share的情况
+            val session = connection.authenticate(ac)
+
+            try {
+                var share = (session.connectShare(shareName) as DiskShare)
+                Logger.i("previewFileQueue file name %s", path)
+                val f: File? = null
+                val fileExists = share.fileExists(path)
+                if (!fileExists) {
+                    Logger.w("File %s not exist.", path)
+                    throw SmbException("File $path not exist")
+                }
+                val smbFileRead = share.openFile(path, EnumSet.of(AccessMask.GENERIC_READ), null, SMB2ShareAccess.ALL, SMB2CreateDisposition.FILE_OPEN, null)
+                val info = smbFileRead.getFileInformation(FileStandardInformation::class.java)
+                val `in` = smbFileRead.inputStream
+                val randomAccessFile: RandomAccessFile? = null
+                var inArchive: IInArchive? = null
+                return SmbRandomFile(smbFileRead)
+
+            } catch (e: Exception) {
+                Logger.e(e, "SmbHost %s ", host)
+                throw e
+            }
+
+//            client.connect(host.getOnlyHostname()).use { connection ->
+//                val ac: AuthenticationContext = if (!host.password.isBlank()) {
+//                    AuthenticationContext(host.username, host.password.toCharArray(), host.domain)
+//                } else {
+//                    AuthenticationContext.anonymous()
+//                }
+//
+//                ///处理没选share的情况
+//                val session = connection.authenticate(ac)
+//
+//                try {
+//                    (session.connectShare(shareName) as DiskShare).use { share ->
+//                        Logger.i("previewFileQueue file name %s", path)
+//                        val f: File? = null
+//                        val fileExists = share.fileExists(path)
+//                        if (!fileExists) {
+//                            Logger.w("File %s not exist.", path)
+//                            throw SmbException("File $path not exist")
+//                        }
+//                        val smbFileRead = share.openFile(path, EnumSet.of(AccessMask.GENERIC_READ), null, SMB2ShareAccess.ALL, SMB2CreateDisposition.FILE_OPEN, null)
+//                        val info = smbFileRead.getFileInformation(FileStandardInformation::class.java)
+//                        val `in` = smbFileRead.inputStream
+//                        val randomAccessFile: RandomAccessFile? = null
+//                        var inArchive: IInArchive? = null
+//                        return SmbRandomFile(smbFileRead)
+//                    }
+//                } catch (e: Exception) {
+//                    Logger.e(e, "SmbHost %s ", host)
+//                    throw e
+//                }
+//            }
         } catch (e: Exception) {
             Logger.e(e, "SmbHost %s", host)
             throw e

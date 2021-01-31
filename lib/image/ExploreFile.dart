@@ -66,30 +66,34 @@ class SmbExploreFile implements ExploreFile {
 
   @override
   HostPO getHost() {
-    // TODO: implement getHost
-    throw UnimplementedError();
+    return hostPO;
   }
 
   @override
-  Future<ExtractCO> loadFileFromZip(String absPath, int index, {int fileSize}) async {
-    var arguments = {
-      "hostPO": hostPO.toJson(),
-      "absPath": absPath,
-      "index": index
-    };
-    final Map<dynamic, dynamic> result =
-        await SmbChannel.methodChannel.invokeMethod("smbExtract", arguments);
-    var map = Map<String, dynamic>.from(result);
-    map["indexPath"] = (Map<int, String>.from(map["indexPath"]))
-        ?.map((k, e) => MapEntry((k).toString(), e as String));
-    map["indexContent"] = (Map<int, Uint8List>.from(map["indexContent"]))
-        ?.map((k, e) => MapEntry(k as int, e as Uint8List));
+  Future<ExtractCO> loadFileFromZip(String absPath, int index,
+      {int fileSize}) async {
+    try {
+      var arguments = {
+        "hostPO": hostPO.toJson(),
+        "absPath": absPath,
+        "index": index
+      };
+      final Map<dynamic, dynamic> result =
+          await SmbChannel.methodChannel.invokeMethod("smbExtract", arguments);
+      var map = Map<String, dynamic>.from(result);
+      map["indexPath"] = (Map<int, String>.from(map["indexPath"]))
+          ?.map((k, e) => MapEntry((k).toString(), e as String));
+      map["indexContent"] = (Map<int, Uint8List>.from(map["indexContent"]))
+          ?.map((k, e) => MapEntry(k as int, e as Uint8List));
 
-    ExtractCO extractCO = ExtractCO.fromJson(map);
-    if (extractCO.msg == "OK") {
-      return extractCO;
-    } else {
-      return null;
+      ExtractCO extractCO = ExtractCO.fromJson(map);
+      if (extractCO.msg == "OK") {
+        return extractCO;
+      } else {
+        return null;
+      }
+    } catch (e) {
+      logger.e(e);
     }
   }
 
@@ -106,9 +110,10 @@ class SmbExploreFile implements ExploreFile {
     try {
       List<dynamic> result = await SmbChannel.methodChannel
           .invokeMethod("smbQueryFiles", arguments);
-      return result
-          .map((e) => ExploreCO.fromJson(Map<String, dynamic>.from(e)))
-          .toList();
+      return result.map((e) {
+        var exploreCO = ExploreCO.fromJson(Map<String, dynamic>.from(e));
+        return exploreCO..absPath = p.join(path, exploreCO.filename);
+      }).toList();
     } catch (e) {
       logger.e("PlatformException {}", e);
       throw e;
