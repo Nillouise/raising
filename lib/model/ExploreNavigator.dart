@@ -52,6 +52,10 @@ class ExploreNavigator extends ChangeNotifier {
     await Repository.upsertFileKeyNew(keyPO);
   }
 
+  Future<FileKeyPO> getFileKeyPO(String fileId) async {
+    return await Repository.getFileKey(fileId);
+  }
+
   Future<void> saveExploreCO(List<ExploreCO> lst) async {
     //TODO: FIleINFOpo 应该都不需要暴露出去。
     lst?.forEach((e) async {

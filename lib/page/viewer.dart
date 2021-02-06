@@ -53,6 +53,9 @@ abstract class ViewerNavigator extends ChangeNotifier {
   void startTimerFlip(int seconds) {}
 
   void cancelTimerFlip() {}
+
+  ///TODO:这种从数据库获取数据展示，我又遇到一个问题，就是要不要用future？
+  FileKeyPO getFileKeyPO();
 }
 
 class SmbViewerNavigator extends ViewerNavigator {
@@ -153,6 +156,12 @@ class SmbViewerNavigator extends ViewerNavigator {
     // TODO: implement getImage
     throw UnimplementedError();
   }
+
+  @override
+  FileKeyPO getFileKeyPO() {
+    // TODO: implement getFileKeyPO
+    throw UnimplementedError();
+  }
 }
 
 //TODO：需要做新的ImageViewerNavigator
@@ -242,8 +251,17 @@ class ZipNavigator extends ViewerNavigator {
   int _index;
   int fileNum;
   String absPath;
+  FileKeyPO fileKeyPO;
 
   ZipNavigator(this.exploreNavigator, this.exploreCO, this.fileNum, this.absPath, this._index);
+
+  Future<void> init() async {
+    String fileId = exploreNavigator.getFileId(exploreCO);
+    fileKeyPO = await exploreNavigator.getFileKeyPO(fileId);
+    if (fileKeyPO == null) {
+      fileKeyPO = FileKeyPO(fileId: exploreNavigator.getFileId(exploreCO), filename: exploreCO.filename, star: 0, recentReadTime: DateTime.now(), comment: "", readLength: 0);
+    }
+  }
 
   void startTimerFlip(int seconds) {
     flipTimer?.cancel();
@@ -272,12 +290,13 @@ class ZipNavigator extends ViewerNavigator {
   }
 
   void starCurFile(int star) {
-    throw UnimplementedError();
+    exploreNavigator.saveReadInfo(fileKeyPO..star = star);
+    refreshView().then((value) => notifyListeners());
   }
 
   void closeViewer() {
     ///TODO:这里需要处理fileKey的情况。
-    exploreNavigator.saveReadInfo(FileKeyPO()
+    exploreNavigator.saveReadInfo(fileKeyPO
       ..fileId = exploreNavigator.getFileId(exploreCO)
       ..filename = exploreCO.filename
       ..recentReadTime = DateTime.now()
@@ -306,24 +325,58 @@ class ZipNavigator extends ViewerNavigator {
     notifyListeners();
   }
 
-  String getCurFilename() {
-    return "test webdav";
-  }
-
   PreloadPageController getController() {
     return _preloadPageController;
   }
 
+  ///这里应该先尝试直接再读取原图保存，这样不行之类，再保存压缩图。
   @override
-  Future<void> saveCurImage(BuildContext context) {
-    // TODO: implement saveCurImage
-    throw UnimplementedError();
+  Future<void> saveCurImage(BuildContext context) async {
+    var content = await _getExtract(getCurIndex(), forceFromSource: true);
+    try {
+      String dir = (await getTemporaryDirectory()).path;
+      await new Directory('$dir/raising').create();
+      File file;
+      String pa;
+      for (int i = 0;; i++) {
+        pa = \'$dir/raising/${p.basename(fileKeyPO.filename)}P${getCurIndex()}${i > 0 ? "(" + i.toString() + ")" : ""}${p.extension(content.indexPath[getCurIndex()])}\';
+        file = File(pa);
+        if (!file.existsSync()) {
+          break;
+        }
+      }
+      await file.writeAsBytes(content.indexContent[getCurIndex()]);
+      var bool = await GallerySaver.saveImage(pa);
+      if (bool) {
+        Scaffold.of(context).showSnackBar(SnackBar(content: Text("save image successful")));
+      } else {
+        Scaffold.of(context).showSnackBar(SnackBar(content: Text("save image failed")));
+      }
+    } catch (e) {
+      logger.e(e);
+      Scaffold.of(context).showSnackBar(SnackBar(content: Text("save image failed" + e.toString())));
+    }
+  }
+
+  Future<ExtractCO> _getExtract(int index, {forceFromSource = false}) async {
+    var extractCO = await exploreNavigator.exploreFile.loadFileFromZip(absPath, index);
+    return extractCO;
   }
 
   @override
   Future<Uint8List> getImage(int index, {forceFromSource = false}) async {
-    var extractCO = await exploreNavigator.exploreFile.loadFileFromZip(absPath, index);
-    return extractCO.indexContent[index];
+    var extractCO = await _getExtract(index, forceFromSource: forceFromSource);
+    return extractCO?.indexContent[index];
+  }
+
+  @override
+  FileKeyPO getFileKeyPO() {
+    return fileKeyPO;
+  }
+
+  @override
+  String getCurFilename() {
+    return fileKeyPO?.filename;
   }
 }
 
@@ -398,6 +451,7 @@ class _ViewerAppBarState extends State<ViewerAppBar> {
   }
 }
 
+///TODO:现在这个bottom打开时，会被图片阻挡，就是说图片如何沾满下面的话，这个bottom根本没能显示出来。
 class ViewBottom extends StatefulWidget {
   @override
   _ViewBottomState createState() => _ViewBottomState();
@@ -410,6 +464,7 @@ class _ViewBottomState extends State<ViewBottom> {
     if (viewerNavigator.getDetailToggle()) {
       return Container(
           height: 100,
+          color: Colors.white,
           child: Column(children: <Widget>[
             Row(
               children: <Widget>[
@@ -512,8 +567,7 @@ class StarButton2 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     ViewerNavigator viewerNavigator = Provider.of<ViewerNavigator>(context);
-//    FileKeyPO fileKey = viewerNavigator.fileKeyPO;
-    FileKeyPO fileKey = null;
+    FileKeyPO fileKey = viewerNavigator.getFileKeyPO();
     if (fileKey?.star != null && fileKey.star > 0) {
       return FlatButton(
         onPressed: () async {
@@ -637,21 +691,22 @@ class FutureViewerChecker extends StatelessWidget {
       future: () async {
         if (Utils.isCompressOrImageFile(absPath)) {
           ExtractCO zip;
+          ViewerNavigator viewerNavigator;
           if (Utils.isCompressFile(absPath)) {
             zip = await exploreNavigator.exploreFile.getFileNums(absPath);
+            ZipNavigator zipNavigator = ZipNavigator(exploreNavigator, exploreco, zip.fileNum, absPath, readPages);
+            await zipNavigator.init();
+            viewerNavigator = zipNavigator;
 //            content = await Utils.getFileFromZip(readPages, pageSmbVO, forceFromSource: true);
           }
-//          else {
-//
-//            content = await Utils.getWholeFile(pageSmbVO, forceFromSource: true);
-//          }
-//          FileInfoPO filePo = FileInfoPO()..copyFromFileContentCO(content);
+
           return MultiProvider(providers: [
             ChangeNotifierProvider<ViewerNavigator>(
               create: (context) {
                 if (Utils.isCompressFile(absPath)) {
 //                  return SmbViewerNavigator(false, 0, pageSmbVO, filePo);
-                  return ZipNavigator(exploreNavigator, exploreco, zip.fileNum, absPath, readPages);
+//                  return ZipNavigator(exploreNavigator, exploreco, zip.fileNum, absPath, readPages);
+                  return viewerNavigator;
                 } else if (Utils.isImageFile(absPath)) {
                   //TODO:需要做新的ImageViewerNavigator
                   return null;
@@ -665,7 +720,7 @@ class FutureViewerChecker extends StatelessWidget {
                 }
               },
               lazy: false,
-            ),
+            )
           ], child: Viewer());
         } else {
           return Text("Invalid file");

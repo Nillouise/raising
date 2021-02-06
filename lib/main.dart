@@ -79,6 +79,7 @@ Future<void> onStart() async {
   MetaPo meta = MetaPo.metaPo;
   Duration difference = meta.fileKeyScoreChangeDay.difference(DateTime.now());
   if (difference.inDays.abs() > 0) {
+    ///这里决定了退火的速度
     await Repository.minFileKeyScore14(exp(-0.085 * difference.inDays.abs()));
     await Repository.minFileKeyScore60(exp(-0.02 * difference.inDays.abs()));
   }

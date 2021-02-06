@@ -154,8 +154,6 @@ class FileInfoPO {
 @JsonSerializable()
 @CustomDateTimeConverter()
 class FileKeyPO {
-  FileKeyPO({this.fileId, this.filename, this.star, this.score14, this.score60, this.recentReadTime, this.comment});
-
   String fileId; // 现在应当使用fileId来查找文件，将来用md5，filename之类的确认一个文件，目前fileId = filename
   String filename;
   int star;
@@ -168,6 +166,8 @@ class FileKeyPO {
   factory FileKeyPO.fromJson(Map<String, dynamic> json) => _$FileKeyPOFromJson(json);
 
   Map<String, dynamic> toJson() => _$FileKeyPOToJson(this);
+
+  FileKeyPO({this.fileId, this.filename, this.star, this.score14, this.score60, this.recentReadTime, this.comment, this.readLength});
 }
 
 class FileContentCO implements CacheContent {
