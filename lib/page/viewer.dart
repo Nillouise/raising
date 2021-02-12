@@ -339,7 +339,7 @@ class ZipNavigator extends ViewerNavigator {
       File file;
       String pa;
       for (int i = 0;; i++) {
-        pa = \'$dir/raising/${p.basename(fileKeyPO.filename)}P${getCurIndex()}${i > 0 ? "(" + i.toString() + ")" : ""}${p.extension(content.indexPath[getCurIndex()])}\';
+        pa = '$dir/raising/${p.basename(fileKeyPO.filename)}P${getCurIndex()}${i > 0 ? "(" + i.toString() + ")" : ""}${p.extension(content.indexPath[getCurIndex()])}';
         file = File(pa);
         if (!file.existsSync()) {
           break;

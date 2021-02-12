@@ -53,3 +53,5 @@ samples, guidance on mobile development, and a full API reference.
 我还犯了一个错误，在处理smb的连接缓存的时候，试图让应用层来决定初始化，这样很不好，java里对连接池的处理也不是这样，我只需要让smb层面根据hostname、username 做开启连接的处理以及缓存连接就可以了。
 
 我对连接的处理认识不足，导致了这个错误。看起来编程中不同资源的处理定式我还没足够熟悉，想象之后进行图形编程的时候我也会遇到问题吧。
+
+构建出问题时请看：https://stackoverflow.com/questions/37063217/stuck-with-gradle-build-running
