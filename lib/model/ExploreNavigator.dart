@@ -4,11 +4,14 @@ import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as p;
+import 'package:raising/channel/SmbChannel.dart';
 import 'package:raising/dao/DirectoryVO.dart';
 import 'package:raising/dao/Repository.dart';
 import 'package:raising/image/ExploreCO.dart';
 import 'package:raising/image/ExploreFile.dart';
 import 'package:raising/image/cache.dart';
+
+import 'HostModel.dart';
 
 var logger = Logger();
 
@@ -23,6 +26,7 @@ var logger = Logger();
 class ExploreNavigator extends ChangeNotifier {
   ExploreFile exploreFile;
   String _title;
+  HostPO hostPO;
 
   String get title => absPath;
 
@@ -31,12 +35,18 @@ class ExploreNavigator extends ChangeNotifier {
   }
 
   String absPath;
+  String rootPath;
   List<ExploreCO> _files = List<ExploreCO>();
+  List<FileKeyPO> readInfo = List<FileKeyPO>();
 
   List<ExploreCO> get files => _files;
 
   set files(List<ExploreCO> files) {
     _files = files;
+  }
+
+  String get relativePath {
+    return hostPO?.getRelativePath(absPath ?? "");
   }
 
   String getFileId(ExploreCO co) {
@@ -74,6 +84,16 @@ class ExploreNavigator extends ChangeNotifier {
     notifyListeners();
   }
 
+  void refreshHost(HostPO hostPO) async {
+    this.hostPO = hostPO;
+    ExploreFile exploreFile = ExploreFile.fromHost(hostPO);
+    SmbChannel.explorefiles = [exploreFile];
+    this.exploreFile = exploreFile;
+    this.absPath = hostPO.getRootPath();
+    this.rootPath = hostPO.getRootPath();
+    notifyListeners();
+  }
+
   void refreshPath(String absPath) {
     this.absPath = absPath;
     notifyListeners();
@@ -81,13 +101,17 @@ class ExploreNavigator extends ChangeNotifier {
 
   Future<ExploreNavigator> awaitQueryFiles() async {
     List<ExploreCO> list = await exploreFile.queryFiles(absPath);
+    Map<String, FileKeyPO> readInfoMap = await Repository.listFileKey(list.map((e) => getFileId(e)).toList());
     files = list;
+    files.forEach((e) {
+      e.readInfo = readInfoMap[getFileId(e)];
+    });
     await saveExploreCO(list);
     return this;
   }
 
   bool isRoot() {
-    return p.rootPrefix(absPath) == absPath && (absPath?.isEmpty ?? true);
+    return p.rootPrefix(relativePath) == relativePath && (relativePath?.isEmpty ?? true);
     // return false;
   }
 

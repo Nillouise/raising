@@ -16,7 +16,7 @@ tiwei浏览器
 
 本地浏览：未支持
 
-https://www.jianshu.com/p/369f00a40cc2 ： 解决切换目录的时候的刷新以及状态保存的功能
+https://www.jianshu.com/p/369f00a40cc2 ：完美解决flutter Tab/TabBar切换, TabView 页面状态保持: 解决切换目录的时候的刷新以及状态保存的功能
 
 搜索功能：
     tag搜索

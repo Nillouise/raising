@@ -300,7 +300,8 @@ class ZipNavigator extends ViewerNavigator {
       ..fileId = exploreNavigator.getFileId(exploreCO)
       ..filename = exploreCO.filename
       ..recentReadTime = DateTime.now()
-      ..readLength = _index);
+      ..readLength = _index
+      ..pageLength = exploreCO.fileNum);
   }
 
   void jumpTo(int index) {

@@ -162,6 +162,7 @@ class FileKeyPO {
   DateTime recentReadTime;
   String comment;
   int readLength; //已经看了多少页
+  int pageLength = 0; //还需要一个总数量，我怎么能忘了
 
   factory FileKeyPO.fromJson(Map<String, dynamic> json) => _$FileKeyPOFromJson(json);
 

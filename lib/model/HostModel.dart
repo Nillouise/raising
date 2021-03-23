@@ -18,6 +18,23 @@ class HostPO {
   String password;
   bool needAccount;
 
+  String getRootPath() {
+    return "/";
+  }
+
+  ///如果absPath跟rootPath并不重叠，那么就直接返回absPath，这样好吗？
+  String getRelativePath(String absPath) {
+    String c = absPath;
+    if (!absPath.startsWith("\\\\") && !absPath.startsWith("/")) {
+      c = "/" + absPath;
+    }
+    if (!c.startsWith(getRootPath())) {
+      return absPath;
+    }
+
+    return c.substring(getRootPath().length);
+  }
+
   //具体的值看 _HostManageState._HostTypeDrawList
   String type; //用来标记是哪种服务器，转成对应的VO
 

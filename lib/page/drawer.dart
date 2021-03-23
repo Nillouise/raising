@@ -1,8 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:raising/channel/SmbChannel.dart';
-import 'package:raising/image/ExploreFile.dart';
 import 'package:raising/model/ExploreNavigator.dart';
 import 'package:raising/model/HostModel.dart';
 
@@ -355,11 +353,8 @@ class _HostListDrawerState extends State<HostListDrawer> {
                   }),
               onTap: () {
                 //TODO: 改成host的分类
-
-                ExploreFile exploreFile = ExploreFile.fromHost(item);
-                SmbChannel.explorefiles = [exploreFile];
                 ExploreNavigator catalog = Provider.of<ExploreNavigator>(context, listen: false);
-                catalog.refresh(exploreFile, "");
+                catalog.refreshHost(item);
                 Navigator.of(context).pop();
               },
             ),

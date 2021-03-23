@@ -1,7 +1,6 @@
-import 'dart:typed_data';
-
 import 'package:json_annotation/json_annotation.dart';
 import 'package:raising/common/JsonConverter.dart';
+import 'package:raising/dao/DirectoryVO.dart';
 
 part 'ExploreCO.g.dart';
 
@@ -20,6 +19,9 @@ class ExploreCO {
   bool isDirectory = false;
   DateTime createTime;
   DateTime updateTime;
+
+  @JsonKey(ignore: true)
+  FileKeyPO readInfo;
 
   factory ExploreCO.fromJson(Map<String, dynamic> json) => _$ExploreCOFromJson(json);
 

@@ -287,6 +287,31 @@ class Repository {
     }
   }
 
+  static Future<Map<String, FileKeyPO>> listFileKey(List<String> fileId) async {
+    if (fileId.isEmpty) {
+      return Map();
+    }
+
+    String placeHold = fileId.map((e) => "?").toList().join(",");
+    List<Map<String, dynamic>> list = await _db.rawQuery('SELECT * FROM file_key where fileId in ($placeHold)', fileId);
+
+    Map<String, FileKeyPO> res = Map();
+
+    if (list.length > 0) {
+      try {
+        list.forEach((e) {
+          var fileKeyPO = FileKeyPO.fromJson(e);
+          res[fileKeyPO.fileId] = fileKeyPO;
+        });
+      } catch (e) {
+        logger.e(e);
+      }
+      return res;
+    } else {
+      return Map();
+    }
+  }
+
   static Future<Void> getAllInfo() async {
     // Insert some records in a transaction
     List<Map<String, dynamic>> list = await _cache_db.transaction((txn) async {

@@ -18,11 +18,11 @@ import 'WholeFileContentCO.dart';
 abstract class ExploreFile {
   HostPO getHost();
 
-  Future<List<ExploreCO>> queryFiles(String path);
+  Future<List<ExploreCO>> queryFiles(String absPath);
 
-  Stream<List<ExploreCO>> bfsFiles(String path);
+  Stream<List<ExploreCO>> bfsFiles(String absPath);
 
-  Stream<List<ExploreCO>> searchFiles(String path, String searchKeyword);
+  Stream<List<ExploreCO>> searchFiles(String absPath, String searchKeyword);
 
   /// Throw SmbException if get file error
   Future<ExtractCO> loadFileFromZip(String absPath, int index, {int fileSize});
@@ -31,7 +31,7 @@ abstract class ExploreFile {
   Future<ExtractCO> getFileNums(String absPath, {int fileSize});
 
   /// 太大的文件应当上层判断不要load，因为是load到内存里
-  Future<WholeFileContentCO> loadWholeFile(String path);
+  Future<WholeFileContentCO> loadWholeFile(String absPath);
 
   Future<List<int>> randomRange(String absPath, int begin, int end);
 

@@ -17,9 +17,9 @@ class RaisingHome extends StatelessWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-//          leading: Icon(
-//            Icons.arrow_back,
-//          ),
+          leading: Icon(
+            Icons.arrow_back,
+          ),
 //          flexibleSpace: new Column(mainAxisAlignment: MainAxisAlignment.end, children: [
 //            new TabBar(
 //              tabs: [
@@ -29,31 +29,31 @@ class RaisingHome extends StatelessWidget {
 //              ],
 //            ),
 //          ]),
-//          title: new Column(mainAxisAlignment: MainAxisAlignment.end, children: [
-//            new TabBar(
-//              tabs: [
-//                Tab(text: "浏览"),
-//                Tab(text: "排行榜"),
-//                Tab(text: "分类"),
-//              ],
-//            ),
-//          ]),
-          title: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                "current Title",
-              ),
-              Text(
-                "path",
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
+          title: new Column(mainAxisAlignment: MainAxisAlignment.end, children: [
+            new TabBar(
+              tabs: [
+                Tab(text: "浏览"),
+                Tab(text: "排行榜"),
+                Tab(text: "分类"),
+              ],
+            ),
+          ]),
+//          title: Column(
+//            mainAxisAlignment: MainAxisAlignment.start,
+//            crossAxisAlignment: CrossAxisAlignment.start,
+//            children: <Widget>[
+//              Text(
+//                "current Title",
+//              ),
+//              Text(
+//                "path",
+//                style: TextStyle(
+//                  fontSize: 12,
+//                  fontWeight: FontWeight.w400,
+//                ),
+//              ),
+//            ],
+//          ),
         ),
         drawer: HomeDrawer(),
         body: TabBarView(
